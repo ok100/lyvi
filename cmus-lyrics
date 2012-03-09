@@ -36,6 +36,7 @@ class lyrics:
 
     def get(self):
         import re
+        import sys
         import json
         from urllib2 import urlopen
         from urllib import quote_plus
@@ -44,14 +45,19 @@ class lyrics:
         page = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s' % keywords)
         raw = page.read()
         page.close()
-        self.url = "".join(str(json.loads(raw)['responseData']['results'][0]['url']))
+        try:
+            self.url = "".join(str(json.loads(raw)['responseData']['results'][0]['url']))
+        except IndexError:
+            print 'No lyrics found.'
+            sys.exit()
 
         page = urlopen(self.url)
         raw = page.read()
         page.close()
 
         if 'Submit %s New Lyrics' % self.artist in raw:
-            self.lyrics = 'No lyrics found.'
+            print 'No lyrics found.'
+            sys.exit()
         else:
             self.lyrics = self.artist + ' - ' + self.title + '\n\n' + \
                           re.compile(r'<.*?>').sub('', \
