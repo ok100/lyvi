@@ -50,12 +50,15 @@ class lyrics:
         raw = page.read()
         page.close()
 
-        self.lyrics = self.artist + ' - ' + self.title + '\n\n' + \
-                      re.compile(r'<.*?>').sub('', \
-                      raw.split('border=0><br>')[1] \
-                      .split('<div class=unit>')[0] \
-                      .replace('&quot;', '"') \
-                      .strip())
+        if 'Submit %s New Lyrics' % self.artist in raw:
+            self.lyrics = 'No lyrics found.'
+        else:
+            self.lyrics = self.artist + ' - ' + self.title + '\n\n' + \
+                          re.compile(r'<.*?>').sub('', \
+                          raw.split('border=0><br>')[1] \
+                          .split('<div class=unit>')[0] \
+                          .replace('&quot;', '"') \
+                          .strip())
 
     def show(self):
         print self.lyrics
