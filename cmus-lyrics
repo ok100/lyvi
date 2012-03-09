@@ -30,33 +30,39 @@ class cmus:
 
 
 class lyrics:
-    def get(self, artist, title):
-        import re
-        from urllib2 import urlopen
+    def __init__(self, artist, title):
+        self.artist = artist
+        self.title = title
 
-        page = urlopen('http://www.lyrics.com/%s-lyrics-%s.html' %
-                        (title.replace(' ', '-'), artist.replace(' ', '-')))
+    def get(self):
+        import re
+        import json
+        from urllib2 import urlopen
+        from urllib import quote_plus
+
+        keywords = quote_plus('%s %s sing365' % (self.artist, self.title))
+        page = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s' % keywords)
         raw = page.read()
         page.close()
-        if 'we do not have the lyric for this song.' in raw:
-            self.lyrics = 'No lyrics found'
-        elif '<div id="lyric_space">' not in raw:
-            self.lyrics = 'No lyrics found'
-        else:
-            self.lyrics = artist + ' - ' + title + '\n\n' + \
-                          re.compile(r'<.*?>').sub('',
-                          raw.split('<div id="lyric_space">')[1] \
-                          .split('---')[0] \
-                          .replace('&#8230;', '...') \
-                          .replace('&#8217;', '\'') \
-                          .replace('&#1492;', 'ä') \
-                          .strip())
+        self.url = "".join(str(json.loads(raw)['responseData']['results'][0]['url']))
+
+        page = urlopen(self.url)
+        raw = page.read()
+        page.close()
+
+        self.lyrics = self.artist + ' - ' + self.title + '\n\n' + \
+                      re.compile(r'<.*?>').sub('', \
+                      raw.split('border=0><br>')[1] \
+                      .split('<div class=unit>')[0] \
+                      .replace('&quot;', '"') \
+                      .strip())
 
     def show(self):
         print self.lyrics
 
 
-c = cmus()
-l = lyrics()
-l.get(c.artist, c.title)
-l.show()
+if __name__ == '__main__':
+    c = cmus()
+    l = lyrics(c.artist, c.title)
+    l.get()
+    l.show()
