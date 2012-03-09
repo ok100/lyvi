@@ -30,6 +30,7 @@ class cmus:
 
 class lyrics:
     def get(self, artist, title):
+        import re
         from urllib2 import urlopen
 
         page = urlopen('http://www.lyrics.com/%s-lyrics-%s.html' %
@@ -42,10 +43,12 @@ class lyrics:
             self.lyrics = 'No lyrics found'
         else:
             self.lyrics = artist + ' - ' + title + '\n\n' + \
+                          re.compile(r'<.*?>').sub('',
                           raw.split('<div id="lyric_space">')[1] \
                           .split('---')[0] \
-                          .replace('<br />', '') \
-                          .strip()
+                          .replace('&#8230;', '...') \
+                          .replace('&#8217;', '\'') \
+                          .strip())
 
     def show(self):
         print self.lyrics
