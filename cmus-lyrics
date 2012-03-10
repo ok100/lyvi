@@ -20,8 +20,14 @@ socket.getaddrinfo = getAddrInfoWrapper
 class cmus:
     def __init__(self):
         import os
+        import sys
 
         self.status = os.popen('cmus-remote -Q').read().split('\n')
+        if (self.status == ['']):
+            sys.exit()
+        elif 'status stopped' in self.status:
+            print 'cmus is not playing'
+            sys.exit()
         for line in self.status:
             if 'tag artist' in line:
                 self.artist = line.split('tag artist ')[1]
