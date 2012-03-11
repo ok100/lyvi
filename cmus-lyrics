@@ -1,12 +1,20 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
 # and/or modify it under the terms of the Do What The Fuck You Want
 # To Public License, Version 2, as published by Sam Hocevar. See
 # http://sam.zoy.org/wtfpl/COPYING for more details.
 
+import os
+import sys
+import string
 import socket
+import urllib2
+import curses
+from time import sleep
+from threading import Thread
+
+from BeautifulSoup import BeautifulSoup
 
 origGetAddrInfo = socket.getaddrinfo
 
@@ -17,18 +25,26 @@ def getAddrInfoWrapper(host, port, family=0, socktype=0, proto=0, flags=0):
 socket.getaddrinfo = getAddrInfoWrapper
 
 
+def wrap(text, cols):
+    wrap_text = ''
+    for line in text.split('\n'):
+        while len(line) > cols:
+            wrap_text += line[:cols] + '\n'
+            line = line[cols:]
+        wrap_text += line + '\n'
+
+    return wrap_text[:-1]
+
+
 class cmus:
     def __init__(self):
-        import os
-        import sys
+        if not os.path.exists(os.environ['HOME'] + '/.cmus/cmusfm.socket'):
+            print 'Cmus is not running'
+            sys.exit()
 
-        self.status = os.popen('cmus-remote -Q').read().split('\n')
-        if (self.status == ['']):
-            sys.exit()
-        elif 'status stopped' in self.status:
-            print 'cmus is not playing'
-            sys.exit()
-        for line in self.status:
+    def status(self):
+        self.stat = os.popen('cmus-remote -Q').read().split('\n')
+        for line in self.stat:
             if 'tag artist' in line:
                 self.artist = line.split('tag artist ')[1]
             elif 'tag title' in line:
@@ -36,48 +52,117 @@ class cmus:
 
 
 class lyrics:
-    def __init__(self, artist, title):
-        self.artist = artist
-        self.title = title
+    def get(self, artist, title):
+        cache_dir = os.environ['HOME'] + '/.lyrics'
+        lyrics_file = '%s - %s' % (artist, title)
 
-    def get(self):
-        import re
-        import sys
-        import json
-        from urllib2 import urlopen
-        from urllib import quote_plus
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+        cache = [file for file in os.listdir(cache_dir)]
 
-        keywords = quote_plus('%s %s sing365' % (self.artist, self.title))
-        page = urlopen('http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=%s' % keywords)
-        raw = page.read()
-        page.close()
-        try:
-            self.url = "".join(str(json.loads(raw)['responseData']['results'][0]['url']))
-        except IndexError:
-            print 'No lyrics found.'
-            sys.exit()
-
-        page = urlopen(self.url)
-        raw = page.read()
-        page.close()
-
-        if 'Submit %s New Lyrics' % self.artist in raw:
-            print 'No lyrics found.'
-            sys.exit()
+        if lyrics_file in cache:
+            f = open('%s/%s' % (cache_dir, lyrics_file), 'r')
+            self.lyrics = f.read()
+            f.close()
         else:
-            self.lyrics = self.artist + ' - ' + self.title + '\n\n' + \
-                          re.compile(r'<.*?>').sub('', \
-                          raw.split('border=0><br>')[1] \
-                          .split('<div class=unit>')[0] \
-                          .replace('&quot;', '"') \
-                          .strip())
+            keywords = ('%s:%s' % (artist, title)).replace(' ', '_')
+            url = 'http://lyrics.wikia.com/%s' % keywords
+            try:
+                p = urllib2.urlopen(url)
+            except urllib2.HTTPError:
+                self.lyrics = 'Nothing found.'
+            else:
+                s = BeautifulSoup(p.read(),
+                                  convertEntities=BeautifulSoup.HTML_ENTITIES)
+                p.close()
+                self.lyrics = ''
+                try:
+                    for line in str(s).split('height="17" /></a></div>')[1] \
+                                .split('<!--')[0] \
+                                .split('<br />'):
+                        self.lyrics += string.strip(line) + '\n'
+                except IndexError:
+                    self.lyrics = 'Nothing found.'
+                else:
+                    f = open('%s/%s' % (cache_dir, lyrics_file), 'w')
+                    f.write(self.lyrics)
+                    f.close()
 
-    def show(self):
-        print self.lyrics
+
+class ui:
+    def __init__(self):
+        self.screen = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        curses.curs_set(0)
+        self.screen.keypad(1)
+        self.rows, self.cols = self.screen.getmaxyx()
+        self.text = ''
+        self.quit = False
+
+    def update(self, header, text):
+        self.pos_y = 0
+        self.text = text
+        self.text_lines = len(wrap(self.text, self.cols).split('\n'))
+        if self.text_lines > self.rows:
+            pad_lines = self.text_lines + 2
+        else:
+            pad_lines = self.rows
+        self.pad = curses.newpad(pad_lines, self.cols)
+        self.pad.addstr(0, 0, header + '\n\n', curses.A_BOLD)
+        self.pad.addstr(2, 0, self.text)
+        self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
+
+    def control(self):
+        self.pos_y = 0
+        while 1:
+            key = self.screen.getch()
+            if  (key == curses.KEY_DOWN or key == ord('j')):
+                if (self.pos_y < self.text_lines + 1 - self.rows):
+                    self.pos_y += 1
+                    self.pad.refresh(self.pos_y, 0,
+                                     0, 0, self.rows - 1, self.cols)
+            elif (key == curses.KEY_UP or key == ord('k')):
+                if self.pos_y > 0:
+                    self.pos_y -= 1
+                    self.pad.refresh(self.pos_y, 0,
+                                     0, 0, self.rows - 1, self.cols)
+            elif key == ord('q'):
+                self.quit = True
+
+    def exit(self):
+        curses.endwin()
+
+
+def main():
+    c = cmus()
+    l = lyrics()
+    u = ui()
+
+    ui_control = Thread(target=u.control)
+    ui_control.daemon = True
+    ui_control.start()
+
+    artist_prev = ''
+    title_prev = ''
+
+    while True:
+        c.status()
+
+        if c.stat == [''] or u.quit == True:
+            break
+
+        if c.artist != artist_prev or c.title != title_prev:
+            l.get(c.artist, c.title)
+            u.update(c.artist + ' - ' + c.title, l.lyrics)
+            artist_prev = c.artist
+            title_prev = c.title
+
+        sleep(1)
+
+    u.exit()
+    sys.exit()
 
 
 if __name__ == '__main__':
-    c = cmus()
-    l = lyrics(c.artist, c.title)
-    l.get()
-    l.show()
+    main()
