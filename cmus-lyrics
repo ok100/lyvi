@@ -104,6 +104,10 @@ class ui:
         curses.curs_set(0)
         self.screen.keypad(1)
         self.rows, self.cols = self.screen.getmaxyx()
+        if self.cols < 50:
+            self.exit()
+            print 'Window too small'
+            sys.exit()
         self.text = ''
         self.quit = False
 
