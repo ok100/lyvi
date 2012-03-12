@@ -1,6 +1,9 @@
 cmus-lyrics
 ===========
 
+Introduction
+------------
+
 A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/).
 
 **Screenshot:**
@@ -24,8 +27,8 @@ Installation
 - [BeautifulSoup](http://pypi.python.org/pypi/BeautifulSoup)
 - And cmus, of course :)
 
-Usage:
-------
+Usage
+-----
 Simple:
 
 	$ cmus-lyrics
