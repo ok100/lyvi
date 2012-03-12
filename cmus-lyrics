@@ -139,9 +139,21 @@ class ui:
                     self.pad.refresh(self.pos_y, 0,
                                      0, 0, self.rows - 1, self.cols)
 
+            elif key == curses.KEY_NPAGE:
+                if (self.header_lines + self.text_lines - self.pos_y > self.rows):
+                    self.pos_y += self.rows
+                    self.pad.refresh(self.pos_y, 0,
+                                     0, 0, self.rows - 1, self.cols)
+
             elif (key == curses.KEY_UP or key == ord('k')):
                 if self.pos_y > 0:
                     self.pos_y -= 1
+                    self.pad.refresh(self.pos_y, 0,
+                                     0, 0, self.rows - 1, self.cols)
+
+            elif key == curses.KEY_PPAGE:
+                if (self.pos_y >= self.rows):
+                    self.pos_y -= self.rows
                     self.pad.refresh(self.pos_y, 0,
                                      0, 0, self.rows - 1, self.cols)
 
