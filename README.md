@@ -27,4 +27,5 @@ Installation
 Usage:
 ------
 Simple:
+
 	$ cmus-lyrics
