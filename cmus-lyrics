@@ -12,6 +12,7 @@ import string
 import socket
 import urllib2
 import curses
+import curses.wrapper
 from time import sleep
 from threading import Thread
 
@@ -26,21 +27,21 @@ def getAddrInfoWrapper(host, port, family=0, socktype=0, proto=0, flags=0):
 socket.getaddrinfo = getAddrInfoWrapper
 
 
-def strip_html(data):
+def strip_html(text):
     p = re.compile(r'<.*?>')
 
-    return p.sub('', data)
+    return p.sub('', text)
 
 
 def wrap(text, cols):
-    wrap_text = ''
+    wrapped_text = ''
     for line in text.split('\n'):
         while len(line) > cols:
-            wrap_text += line[:cols] + '\n'
-            line = line[cols:]
-        wrap_text += line + '\n'
+            wrapped_text += line[:cols - 2] + '->' + '\n'
+            line = line[cols - 2:]
+        wrapped_text += line + '\n'
 
-    return wrap_text[:-1]
+    return wrapped_text[:-1]
 
 
 class cmus:
@@ -50,12 +51,17 @@ class cmus:
             sys.exit()
 
     def status(self):
-        self.stat = os.popen('cmus-remote -Q').read().split('\n')
-        for line in self.stat:
-            if 'tag artist' in line:
-                self.artist = line.split('tag artist ')[1]
-            elif 'tag title' in line:
-                self.title = line.split('tag title ')[1]
+        try:
+            self.stat = os.popen('cmus-remote -Q').read()
+        except IOError:
+            pass
+        else:
+            try:
+                self.artist = self.stat.split('tag artist ')[1].split('\n')[0]
+                self.title = self.stat.split('tag title ')[1].split('\n')[0]
+            except IndexError:
+                self.artist = 'N/A'
+                self.title = 'N/A'
 
 
 class lyrics:
@@ -97,58 +103,69 @@ class lyrics:
 
 
 class ui:
-    def __init__(self):
-        self.screen = curses.initscr()
+    def init(self, screen):
+        self.quit = False
+        self.screen = screen
+
+        self.get_size()
         curses.noecho()
         curses.cbreak()
         curses.curs_set(0)
+        curses.use_default_colors()
         self.screen.keypad(1)
+
+    def get_size(self):
         self.rows, self.cols = self.screen.getmaxyx()
-        if self.cols < 50:
-            self.exit()
-            print 'Window too small'
-            sys.exit()
-        self.text = ''
-        self.quit = False
 
     def update(self, header, text):
         self.pos_y = 0
-        self.text = text
-        self.text_lines = len(wrap(self.text, self.cols).split('\n'))
+        self.header = wrap(header, self.cols - 1)
+        self.text = wrap(text, self.cols - 1)
+        self.header_lines = len(self.header.split('\n'))
+        self.text_lines = len(self.text.split('\n'))
+
         if self.text_lines > self.rows:
-            pad_lines = self.text_lines + 2
+            pad_lines = self.text_lines + self.header_lines
         else:
             pad_lines = self.rows
+
         self.pad = curses.newpad(pad_lines, self.cols)
-        self.pad.addstr(0, 0, header + '\n\n', curses.A_BOLD)
-        self.pad.addstr(2, 0, self.text)
+        self.pad.addstr(0, 0, self.header, curses.A_BOLD)
+        self.pad.addstr(self.header_lines, 0, self.text)
         self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
 
     def control(self):
-        self.pos_y = 0
-        while 1:
+        while True:
             key = self.screen.getch()
+
             if  (key == curses.KEY_DOWN or key == ord('j')):
-                if (self.pos_y < self.text_lines + 1 - self.rows):
+                if (self.pos_y < self.header_lines + self.text_lines - self.rows):
                     self.pos_y += 1
                     self.pad.refresh(self.pos_y, 0,
                                      0, 0, self.rows - 1, self.cols)
+
             elif (key == curses.KEY_UP or key == ord('k')):
                 if self.pos_y > 0:
                     self.pos_y -= 1
                     self.pad.refresh(self.pos_y, 0,
                                      0, 0, self.rows - 1, self.cols)
+
             elif key == ord('q'):
                 self.quit = True
+
+            elif key == curses.KEY_RESIZE:
+                self.get_size()
+                self.update(self.header, self.text)
 
     def exit(self):
         curses.endwin()
 
 
-def main():
+def main(stdscr):
     c = cmus()
     l = lyrics()
     u = ui()
+    u.init(stdscr)
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
@@ -176,4 +193,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    curses.wrapper(main)
