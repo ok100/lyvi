@@ -118,15 +118,17 @@ class ui:
         self.rows, self.cols = self.screen.getmaxyx()
 
     def update(self, header, text):
+        self.header = header
+        self.text = text
         self.pos_y = 0
-        self.header = wrap(header, self.cols - 1)
-        self.text = wrap(text, self.cols - 1)
-        self.header_lines = len(self.header.split('\n')) - 1
-        self.text_lines = len(self.text.split('\n'))
+        self.header_wrapped = wrap(header, self.cols - 1)
+        self.text_wrapped = wrap(text, self.cols - 1)
+        self.header_wrapped_lines = len(self.header_wrapped.split('\n')) - 1
+        self.text_wrapped_lines = len(self.text_wrapped.split('\n'))
 
         self.pad = curses.newpad(5000, self.cols)
-        self.pad.addstr(0, 0, self.header, curses.A_BOLD)
-        self.pad.addstr(self.header_lines, 0, self.text)
+        self.pad.addstr(0, 0, self.header_wrapped, curses.A_BOLD)
+        self.pad.addstr(self.header_wrapped_lines, 0, self.text_wrapped)
         self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
 
     def control(self):
@@ -134,13 +136,13 @@ class ui:
             key = self.screen.getch()
 
             if  (key == curses.KEY_DOWN or key == ord('j')):
-                if (self.pos_y < self.header_lines + self.text_lines - self.rows - 3):
+                if (self.pos_y < self.header_wrapped_lines + self.text_wrapped_lines - self.rows - 3):
                     self.pos_y += 1
                     self.pad.refresh(self.pos_y, 0,
                                      0, 0, self.rows - 1, self.cols)
 
             elif key == curses.KEY_NPAGE:
-                if (self.header_lines + self.text_lines - self.pos_y > self.rows):
+                if (self.header_wrapped_lines + self.text_wrapped_lines - self.pos_y > self.rows):
                     self.pos_y += self.rows
                     self.pad.refresh(self.pos_y, 0,
                                      0, 0, self.rows - 1, self.cols)
