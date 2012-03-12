@@ -124,12 +124,7 @@ class ui:
         self.header_lines = len(self.header.split('\n')) - 1
         self.text_lines = len(self.text.split('\n'))
 
-        if self.text_lines > self.rows:
-            pad_lines = self.text_lines + self.header_lines
-        else:
-            pad_lines = self.rows
-
-        self.pad = curses.newpad(pad_lines, self.cols)
+        self.pad = curses.newpad(5000, self.cols)
         self.pad.addstr(0, 0, self.header, curses.A_BOLD)
         self.pad.addstr(self.header_lines, 0, self.text)
         self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
@@ -139,7 +134,7 @@ class ui:
             key = self.screen.getch()
 
             if  (key == curses.KEY_DOWN or key == ord('j')):
-                if (self.pos_y < self.header_lines + self.text_lines - self.rows):
+                if (self.pos_y < self.header_lines + self.text_lines - self.rows - 3):
                     self.pos_y += 1
                     self.pad.refresh(self.pos_y, 0,
                                      0, 0, self.rows - 1, self.cols)
