@@ -22,3 +22,9 @@ Installation
 
 - Python (2.x)
 - [BeautifulSoup](http://pypi.python.org/pypi/BeautifulSoup)
+- And cmus, of course :)
+
+Usage:
+------
+Simple:
+	$ cmus-lyrics
