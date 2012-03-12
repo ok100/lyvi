@@ -46,7 +46,7 @@ def wrap(text, cols):
 
 class cmus:
     def __init__(self):
-        if not os.path.exists(os.environ['HOME'] + '/.cmus/cmusfm.socket'):
+        if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
             print 'Cmus is not running'
             sys.exit()
 
