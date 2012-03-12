@@ -41,7 +41,7 @@ def wrap(text, cols):
             line = line[cols - 2:]
         wrapped_text += line + '\n'
 
-    return wrapped_text[:-1]
+    return wrapped_text + '\n'
 
 
 class cmus:
@@ -121,7 +121,7 @@ class ui:
         self.pos_y = 0
         self.header = wrap(header, self.cols - 1)
         self.text = wrap(text, self.cols - 1)
-        self.header_lines = len(self.header.split('\n'))
+        self.header_lines = len(self.header.split('\n')) - 1
         self.text_lines = len(self.text.split('\n'))
 
         if self.text_lines > self.rows:
