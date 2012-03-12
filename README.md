@@ -1,5 +1,5 @@
 cmus-lyrics
------------
+===========
 
 A simple lyrics viewer for cmus.
 
