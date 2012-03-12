@@ -27,6 +27,8 @@ Installation
 - [BeautifulSoup](http://pypi.python.org/pypi/BeautifulSoup)
 - And cmus, of course :)
 
+For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=57528)
+
 Usage
 -----
 Simple:
