@@ -1,6 +1,9 @@
+cmus-lyrics
+-----------
+
 A simple lyrics viewer for cmus.
 
-Screenshot:
+**Screenshot:**
 
 [![Screenshot](http://ompldr.org/tZDBjMQ "screenshot")](http://ompldr.org/vZDBjMQ)
 
