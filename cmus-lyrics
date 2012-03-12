@@ -177,7 +177,7 @@ def main(stdscr):
     while True:
         c.status()
 
-        if c.stat == [''] or u.quit == True:
+        if c.stat == '' or u.quit == True:
             break
 
         if c.artist != artist_prev or c.title != title_prev:
