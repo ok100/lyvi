@@ -157,9 +157,6 @@ class ui:
                 self.get_size()
                 self.update(self.header, self.text)
 
-    def exit(self):
-        curses.endwin()
-
 
 def main(stdscr):
     c = cmus()
@@ -187,9 +184,6 @@ def main(stdscr):
             title_prev = c.title
 
         sleep(1)
-
-    u.exit()
-    sys.exit()
 
 
 if __name__ == '__main__':
