@@ -1,7 +1,7 @@
 cmus-lyrics
 ===========
 
-A simple lyrics viewer for cmus.
+A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/).
 
 **Screenshot:**
 
@@ -10,7 +10,7 @@ A simple lyrics viewer for cmus.
 
 **Features:**
 
-- Ncurses UI (currently only allows scrolling)
+- Ncurses UI
 - Downloads lyrics from [LyricsWiki](http://lyrics.wikia.com/Lyrics_Wiki)
 - Cache for downloaded lyrics
 - Automatically update when song in cmus changes
