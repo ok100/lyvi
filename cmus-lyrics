@@ -145,21 +145,22 @@ class ui:
 
             else:
                 if key == curses.KEY_DOWN or key == ord('j'):
-                    if (self.pos_y + 1 < self.pad_lines - self.rows):
+                    if self.pos_y + 1 < self.pad_lines - self.rows:
                         self.pos_y += 1
 
-                elif key == curses.KEY_NPAGE:
-                    if (self.pos_y + self.rows < self.pad_lines):
+                elif key == curses.KEY_NPAGE or key == curses.KEY_RIGHT:
+                    if self.pos_y + self.rows + 1 < self.pad_lines:
                         self.pos_y += self.rows
 
                 elif key == curses.KEY_END or key == ord('G'):
-                    self.pos_y = self.pad_lines - self.rows - 1
+                    if self.pos_y < self.pad_lines - self.rows - 1:
+                        self.pos_y = self.pad_lines - self.rows - 1
 
                 elif key == curses.KEY_UP or key == ord('k'):
                     if self.pos_y > 0:
                         self.pos_y -= 1
 
-                elif key == curses.KEY_PPAGE:
+                elif key == curses.KEY_PPAGE or key == curses.KEY_LEFT:
                         if self.pos_y - self.rows > 0:
                             self.pos_y -= self.rows
                         else:
