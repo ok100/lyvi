@@ -85,21 +85,25 @@ class lyrics:
             except urllib2.HTTPError:
                 self.lyrics = 'Nothing found.'
             else:
-                s = BeautifulSoup(p.read(),
-                                  convertEntities=BeautifulSoup.HTML_ENTITIES)
-                p.close()
-                self.lyrics = ''
                 try:
-                    for line in str(s).split('height="17" /></a></div>')[1] \
-                                .split('<!--')[0] \
-                                .split('<br />'):
-                        self.lyrics += strip_html(string.strip(line) + '\n')
-                except IndexError:
+                    s = BeautifulSoup(p.read(),
+                                      convertEntities=BeautifulSoup.HTML_ENTITIES)
+                except TypeError:
                     self.lyrics = 'Nothing found.'
                 else:
-                    f = open('%s/%s' % (cache_dir, lyrics_file), 'w')
-                    f.write(self.lyrics)
-                    f.close()
+                    self.lyrics = ''
+                    try:
+                        for line in str(s).split('height="17" /></a></div>')[1] \
+                                    .split('<!--')[0] \
+                                    .split('<br />'):
+                            self.lyrics += strip_html(string.strip(line) + '\n')
+                    except IndexError:
+                        self.lyrics = 'Nothing found.'
+                    else:
+                        f = open('%s/%s' % (cache_dir, lyrics_file), 'w')
+                        f.write(self.lyrics)
+                        f.close()
+                p.close()
 
 
 class ui:
