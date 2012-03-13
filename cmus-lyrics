@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 # This program is free software. It comes without any warranty, to
 # the extent permitted by applicable law. You can redistribute it
 # and/or modify it under the terms of the Do What The Fuck You Want
@@ -11,12 +12,15 @@ import sys
 import string
 import socket
 import urllib2
+import locale
 import curses
 import curses.wrapper
 from time import sleep
 from threading import Thread
 
 from BeautifulSoup import BeautifulSoup
+
+locale.setlocale(locale.LC_ALL, '')
 
 origGetAddrInfo = socket.getaddrinfo
 
@@ -97,6 +101,7 @@ class lyrics:
                                     .split('<!--')[0] \
                                     .split('<br />'):
                             self.lyrics += strip_html(string.strip(line) + '\n')
+                            self.lyrics = self.lyrics.replace('…', '...')
                     except IndexError:
                         self.lyrics = 'Nothing found.'
                     else:
@@ -145,16 +150,16 @@ class ui:
 
             else:
                 if key == curses.KEY_DOWN or key == ord('j'):
-                    if self.pos_y < self.pad_lines - self.rows:
+                    if self.pos_y < self.pad_lines - self.rows - 1:
                         self.pos_y += 1
 
                 elif key == curses.KEY_NPAGE or key == curses.KEY_RIGHT:
-                    if self.pos_y + self.rows < self.pad_lines:
+                    if self.pos_y + self.rows < self.pad_lines - 1:
                         self.pos_y += self.rows
 
                 elif key == curses.KEY_END or key == ord('G'):
                     if self.pos_y < self.pad_lines - self.rows:
-                        self.pos_y = self.pad_lines - self.rows
+                        self.pos_y = self.pad_lines - self.rows - 1
 
                 elif key == curses.KEY_UP or key == ord('k'):
                     if self.pos_y > 0:
