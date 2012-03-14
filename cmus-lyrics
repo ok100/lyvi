@@ -49,11 +49,6 @@ def wrap(text, cols):
 
 
 class cmus:
-    def __init__(self):
-        if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
-            print 'Cmus is not running'
-            sys.exit()
-
     def status(self):
         try:
             self.stat = os.popen('cmus-remote -Q').read()
@@ -210,4 +205,8 @@ def main(stdscr):
 
 
 if __name__ == '__main__':
+    if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
+        print 'Cmus is not running'
+        sys.exit()
+
     curses.wrapper(main)
