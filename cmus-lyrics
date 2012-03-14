@@ -95,11 +95,15 @@ class lyrics:
                         for line in str(s).split('height="17" /></a></div>')[1] \
                                     .split('<!--')[0] \
                                     .split('<br />'):
-                            self.lyrics += strip_html(string.strip(line) + '\n')
-                            self.lyrics = self.lyrics.replace('…', '...')
+                            if 'External links' not in line:
+                                self.lyrics += strip_html(string.strip(line) + '\n')
+                                self.lyrics = self.lyrics.replace('…', '...')
+                            else:
+                                self.lyrics = 'Nothing found.'
                     except IndexError:
                         self.lyrics = 'Nothing found.'
-                    else:
+
+                    if self.lyrics != 'Nothing found.':
                         f = open('%s/%s' % (cache_dir, lyrics_file), 'w')
                         f.write(self.lyrics)
                         f.close()
