@@ -24,7 +24,7 @@ Installation
 **Requirements:**
 
 - Python (2.x)
-- [BeautifulSoup](http://pypi.python.org/pypi/BeautifulSoup)
+- [glyr](https://github.com/sahib/glyr)
 - And cmus, of course :)
 
 For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=57528)
