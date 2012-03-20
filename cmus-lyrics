@@ -9,16 +9,12 @@
 import re
 import os
 import sys
-import string
 import socket
-import urllib2
 import locale
 import curses
 import curses.wrapper
 from time import sleep
 from threading import Thread
-
-from BeautifulSoup import BeautifulSoup
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -65,49 +61,23 @@ class cmus:
 
 class lyrics:
     def get(self, artist, title):
-        cache_dir = os.environ['HOME'] + '/.lyrics'
-        lyrics_file = '%s - %s' % (artist, title)
-
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
-        cache = [file for file in os.listdir(cache_dir)]
-
-        if lyrics_file in cache:
-            f = open('%s/%s' % (cache_dir, lyrics_file), 'r')
-            self.lyrics = f.read()
-            f.close()
+        if artist == 'N/A' and title == 'N/A':
+            self.lyrics = 'Not playing'
         else:
-            keywords = ('%s:%s' % (artist, title)).replace(' ', '_')
-            url = 'http://lyrics.wikia.com/%s' % keywords
-            try:
-                p = urllib2.urlopen(url)
-            except urllib2.HTTPError:
-                self.lyrics = 'Nothing found.'
-            else:
-                try:
-                    s = BeautifulSoup(p.read(),
-                                      convertEntities=BeautifulSoup.HTML_ENTITIES)
-                except TypeError:
-                    self.lyrics = 'Nothing found.'
-                else:
-                    self.lyrics = ''
-                    try:
-                        for line in str(s).split('height="17" /></a></div>')[1] \
-                                    .split('<!--')[0] \
-                                    .split('<br />'):
-                            if 'External links' not in line:
-                                self.lyrics += strip_html(string.strip(line) + '\n')
-                                self.lyrics = self.lyrics.replace('…', '...')
-                            else:
-                                self.lyrics = 'Nothing found.'
-                    except IndexError:
-                        self.lyrics = 'Nothing found.'
+            cache_dir = os.environ['XDG_CACHE_HOME'] + '/cmus-lyrics'
+            if not os.path.exists(cache_dir):
+                os.makedirs(cache_dir)
 
-                    if self.lyrics != 'Nothing found.':
-                        f = open('%s/%s' % (cache_dir, lyrics_file), 'w')
-                        f.write(self.lyrics)
-                        f.close()
-                p.close()
+            self.lyrics = os.popen('glyrc lyrics \
+                                   -a "%s" \
+                                   -t "%s" \
+                                   -v 0 \
+                                   -w stdout \
+                                   --callback "cat <path>" \
+                                   -c %s' % (artist, title, cache_dir)).read()
+
+            if self.lyrics == '':
+                self.lyrics = 'Nothing found'
 
 
 class ui:
