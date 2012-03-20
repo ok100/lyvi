@@ -14,7 +14,7 @@ A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/).
 **Features:**
 
 - Ncurses UI
-- Downloads lyrics from [LyricsWiki](http://lyrics.wikia.com/Lyrics_Wiki)
+- Downloads lyrics from sites that are supported by [glyr](https://github.com/sahib/glyr)
 - Cache for downloaded lyrics
 - Automatically update when song in cmus changes
 
