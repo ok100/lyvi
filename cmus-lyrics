@@ -58,7 +58,8 @@ class lyrics:
                                    -v 0 \
                                    -w stdout \
                                    --callback "cat <path>" \
-                                   -c %s' % (artist, title, cache_dir)).read()
+                                   -c %s' % (artist, title, cache_dir)) \
+                                   .read().strip()
 
             if self.lyrics == '':
                 self.lyrics = 'Nothing found'
@@ -103,16 +104,16 @@ class ui:
 
             else:
                 if key == curses.KEY_DOWN or key == ord('j'):
-                    if self.pos_y < self.pad_lines - self.rows - 1:
+                    if self.pos_y < self.pad_lines - self.rows:
                         self.pos_y += 1
 
                 elif key == curses.KEY_NPAGE or key == curses.KEY_RIGHT:
-                    if self.pos_y + self.rows < self.pad_lines - 1:
+                    if self.pos_y + self.rows < self.pad_lines:
                         self.pos_y += self.rows
 
                 elif key == curses.KEY_END or key == ord('G'):
                     if self.pos_y < self.pad_lines - self.rows:
-                        self.pos_y = self.pad_lines - self.rows - 1
+                        self.pos_y = self.pad_lines - self.rows
 
                 elif key == curses.KEY_UP or key == ord('k'):
                     if self.pos_y > 0:
