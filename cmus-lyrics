@@ -9,7 +9,6 @@
 import re
 import os
 import sys
-import socket
 import locale
 import curses
 import curses.wrapper
@@ -17,14 +16,6 @@ from time import sleep
 from threading import Thread
 
 locale.setlocale(locale.LC_ALL, '')
-
-origGetAddrInfo = socket.getaddrinfo
-
-
-def getAddrInfoWrapper(host, port, family=0, socktype=0, proto=0, flags=0):
-    return origGetAddrInfo(host, port, socket.AF_INET, socktype, proto, flags)
-
-socket.getaddrinfo = getAddrInfoWrapper
 
 
 def strip_html(text):
