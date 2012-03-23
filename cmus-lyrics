@@ -48,7 +48,10 @@ class lyrics:
         if artist == 'N/A' and title == 'N/A':
             self.lyrics = 'Not playing'
         else:
-            cache_dir = os.environ['HOME'] + '/.cmus-lyrics'
+            try:
+                cache_dir = os.environ['XDG_CACHE_HOME'] + '/cmus-lyrics'
+            except KeyError:
+                cache_dir = os.environ['HOME'] + '/.cache/cmus-lyrics'
             if not os.path.exists(cache_dir):
                 os.makedirs(cache_dir)
 
