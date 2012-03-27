@@ -43,6 +43,18 @@ class cmus:
                 self.title = 'N/A'
 
 
+class shellfm:
+    def status(self):
+        try:
+            f = open(os.environ['HOME'] + '/.shell-fm/nowplaying')
+        except IOError:
+            sys.exit()
+        else:
+            self.stat = f.read()
+            f.close()
+            self.artist, self.title = self.stat.split(' | ')
+
+
 class lyrics:
     def get(self, artist, title):
         if artist == 'N/A' and title == 'N/A':
@@ -139,7 +151,10 @@ class ui:
 
 
 def main(stdscr):
-    c = cmus()
+    if player == cmus:
+        p = cmus()
+    elif player == shellfm:
+        p = shellfm()
     l = lyrics()
     u = ui()
     u.init(stdscr)
@@ -152,23 +167,27 @@ def main(stdscr):
     title_prev = ''
 
     while True:
-        c.status()
+        p.status()
 
-        if c.stat == '' or u.quit == True:
+        if p.stat == '' or u.quit == True:
             break
 
-        if c.artist != artist_prev or c.title != title_prev:
-            l.get(c.artist, c.title)
-            u.update(c.artist + ' - ' + c.title, l.lyrics)
-            artist_prev = c.artist
-            title_prev = c.title
+        if p.artist != artist_prev or p.title != title_prev:
+            l.get(p.artist, p.title)
+            u.update(p.artist + ' - ' + p.title, l.lyrics)
+            artist_prev = p.artist
+            title_prev = p.title
 
         sleep(1)
 
 
 if __name__ == '__main__':
-    if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
-        print 'Cmus is not running'
+    if os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
+        player = cmus
+    elif os.path.exists(os.environ['HOME'] + '/.shell-fm/nowplaying'):
+        player = shellfm
+    else:
+        print 'No supported player found.'
         sys.exit()
 
     curses.wrapper(main)
