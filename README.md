@@ -32,7 +32,7 @@ For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packag
 Configuration
 -------------
 
-- For use with shell-fm, add these lines to your ~/.shell-fm/shell-fm.rc:
+For use with shell-fm, add these lines to your ~/.shell-fm/shell-fm.rc:
 
     np-file = /home/YOURUSERNAME/.shell-fm/nowplaying
 	np-file-format = %a | %t
