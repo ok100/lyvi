@@ -4,7 +4,7 @@ cmus-lyrics
 Introduction
 ------------
 
-A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/) and [shell-fm](http://nex.scrapping.cc/shell-fm/).
+A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [shell-fm](http://nex.scrapping.cc/shell-fm/) and [pianobar](http://6xq.net/projects/pianobar/).
 
 **Screenshot:**
 
