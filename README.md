@@ -47,8 +47,8 @@ Add these lines to your ~/.shell-fm/shell-fm.rc:
 
 Copy [eventcmd](https://raw.github.com/ok100/cmus-lyrics/master/scripts/pianobar/eventcmd) script from scripts/pianobar/ to ~/.config/pianobar/ and make it executable:
 
-    cp scripts/pianobar/eventcmd ~/.config/pianobar/
-	chmod +x ~/.config/pianobar/eventcmd
+    $ cp scripts/pianobar/eventcmd ~/.config/pianobar/
+	$ chmod +x ~/.config/pianobar/eventcmd
 
 Add this line to ~/.config/pianobar/config:
 
