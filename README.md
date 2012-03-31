@@ -32,10 +32,27 @@ For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packag
 Configuration
 -------------
 
-For use with shell-fm, add these lines to your ~/.shell-fm/shell-fm.rc:
+**cmus**
+
+Works out of box.
+
+**shell-fm**
+
+Add these lines to your ~/.shell-fm/shell-fm.rc:
 
     np-file = /home/YOURUSERNAME/.shell-fm/nowplaying
 	np-file-format = %a | %t
+
+**pianobar**
+
+Copy eventcmd script from scripts/pianobar to ~/.config/pianobar and make it executable:
+
+    cp scripts/pianobar/eventcmd ~/.config/pianobar
+	chmod +x ~/.config/pianobar/eventcmd
+
+Add this line to ~/.config/pianobar/config:
+
+    event_command = /home/YOURUSERNAME/.config/pianobar/eventcmd
 
 Usage
 -----

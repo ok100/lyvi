@@ -58,6 +58,23 @@ class shellfm:
             self.artist, self.title = s.split(' | ')
 
 
+class pianobar:
+    def status(self):
+        if 'pianobar' not in os.popen('ps -C pianobar').read():
+            os.remove(os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying')
+            sys.exit()
+
+        try:
+            f = open(os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying')
+        except IOError:
+            self.artist = 'N/A'
+            self.title = 'N/A'
+        else:
+            s = f.read().strip()
+            f.close()
+            self.artist, self.title = s.split(' | ')
+
+
 class lyrics:
     def get(self, artist, title):
         if artist == 'N/A' and title == 'N/A':
@@ -158,6 +175,9 @@ def main(stdscr):
         p = cmus()
     elif player == shellfm:
         p = shellfm()
+    elif player == pianobar:
+        p = pianobar()
+
     l = lyrics()
     u = ui()
     u.init(stdscr)
@@ -190,6 +210,8 @@ if __name__ == '__main__':
         player = cmus
     elif os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
         player = shellfm
+    elif 'pianobar' in os.popen('ps -C pianobar').read():
+        player = pianobar
     else:
         print 'No supported player found.'
         sys.exit()
