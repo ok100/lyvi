@@ -60,12 +60,14 @@ class shellfm:
 
 class pianobar:
     def status(self):
+        np = os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying'
         if 'pianobar' not in os.popen('ps -C pianobar').read():
-            os.remove(os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying')
+            if os.path.exists(np):
+                os.remove(np)
             sys.exit()
 
         try:
-            f = open(os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying')
+            f = open(np)
         except IOError:
             self.artist = 'N/A'
             self.title = 'N/A'
