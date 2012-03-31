@@ -25,7 +25,7 @@ Installation
 
 - Python (2.x)
 - [glyr](https://github.com/sahib/glyr)
-- And cmus or shell-fm, of course :)
+- And cmus, shell-fm or pianobar of course :)
 
 For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=57528)
 
