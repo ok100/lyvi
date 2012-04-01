@@ -60,7 +60,10 @@ class shellfm:
 
 class pianobar:
     def status(self):
-        np = os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying'
+        try:
+            np = os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying'
+        except KeyError:
+            np = os.environ['HOME'] + '/.config/pianobar/nowplaying'
         if 'pianobar' not in os.popen('ps -C pianobar').read():
             if os.path.exists(np):
                 os.remove(np)
