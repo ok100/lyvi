@@ -218,7 +218,7 @@ if __name__ == '__main__':
     elif 'pianobar' in os.popen('ps -C pianobar').read():
         player = pianobar
     else:
-        print 'No supported player found.'
+        print('No supported player found.')
         sys.exit()
 
     curses.wrapper(main)
