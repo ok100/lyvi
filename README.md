@@ -23,7 +23,7 @@ Installation
 
 **Requirements:**
 
-- Python (2.x)
+- Python
 - [glyr](https://github.com/sahib/glyr)
 - And cmus, shell-fm or pianobar of course :)
 
