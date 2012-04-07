@@ -42,7 +42,7 @@ Configuration
 
 ```
 np-file = /home/YOURUSERNAME/.shell-fm/nowplaying
-np-file-format = %a | %t
+np-file-format = %a|%t
 ```
 
 ### pianobar
@@ -54,7 +54,7 @@ $ cp scripts/pianobar/eventcmd ~/.config/pianobar/
 $ chmod +x ~/.config/pianobar/eventcmd
 ```
 
-If you already have custom eventcmd script, modify it to write `'$artist | $title'` to `~/.config/pianobar/nowplaying` file on songstart event like in the example script.
+If you already have custom eventcmd script, modify it to write `'$artist|$title'` to `~/.config/pianobar/nowplaying` file on songstart event like in the example script.
 
 - Add this line to `~/.config/pianobar/config`:
 
