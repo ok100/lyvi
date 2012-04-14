@@ -33,13 +33,17 @@ class cmus:
         if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
             sys.exit()
 
-        s = os.popen('cmus-remote -Q').read()
         try:
-            self.artist = s.split('tag artist ')[1].split('\n')[0]
-            self.title = s.split('tag title ')[1].split('\n')[0]
-        except IndexError:
-            self.artist = 'N/A'
-            self.title = 'N/A'
+            s = os.popen('cmus-remote -Q').read()
+        except IOError:
+            pass
+        else:
+            try:
+                self.artist = s.split('tag artist ')[1].split('\n')[0]
+                self.title = s.split('tag title ')[1].split('\n')[0]
+            except IndexError:
+                self.artist = 'N/A'
+                self.title = 'N/A'
 
 
 class shellfm:
@@ -64,10 +68,13 @@ class pianobar:
             np = os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying'
         except KeyError:
             np = os.environ['HOME'] + '/.config/pianobar/nowplaying'
-        if 'pianobar' not in os.popen('ps -C pianobar').read():
-            if os.path.exists(np):
-                os.remove(np)
-            sys.exit()
+        try:
+            if 'pianobar' not in os.popen('ps -C pianobar').read():
+                if os.path.exists(np):
+                    os.remove(np)
+                sys.exit()
+        except IOError:
+            pass
 
         try:
             f = open(np)
@@ -121,12 +128,12 @@ class ui:
         self.rows, self.cols = self.screen.getmaxyx()
 
     def update(self, header, text):
-        self.header = header
-        self.text = text
         self.pos_y = 0
+        self.header = header
         self.header_wrapped = wrap(header, self.cols - 1)
-        self.text_wrapped = wrap(text, self.cols - 1)
         self.header_wrapped_lines = len(self.header_wrapped.split('\n'))
+        self.text = text
+        self.text_wrapped = wrap(text, self.cols - 1)
         self.text_wrapped_lines = len(self.text_wrapped.split('\n'))
         self.pad_lines = self.header_wrapped_lines + 1 + self.text_wrapped_lines
 
