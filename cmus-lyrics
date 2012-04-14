@@ -18,14 +18,14 @@ locale.setlocale(locale.LC_ALL, '')
 
 
 def wrap(text, cols):
-    wrapped_text = ''
+    wrap_text = ''
     for line in text.split('\n'):
         while len(line) > cols:
-            wrapped_text += line[:cols - 2] + '->' + '\n'
+            wrap_text += line[:cols - 2] + '->' + '\n'
             line = line[cols - 2:]
-        wrapped_text += line + '\n'
+        wrap_text += line + '\n'
 
-    return wrapped_text[:-1]
+    return wrap_text[:-1]
 
 
 class cmus:
@@ -130,16 +130,16 @@ class ui:
     def update(self, header, text):
         self.pos_y = 0
         self.header = header
-        self.header_wrapped = wrap(header, self.cols - 1)
-        self.header_wrapped_lines = len(self.header_wrapped.split('\n'))
+        self.header_wrap = wrap(header, self.cols - 1)
+        self.header_wrap_lines = len(self.header_wrap.split('\n'))
         self.text = text
-        self.text_wrapped = wrap(text, self.cols - 1)
-        self.text_wrapped_lines = len(self.text_wrapped.split('\n'))
-        self.pad_lines = self.header_wrapped_lines + 1 + self.text_wrapped_lines
+        self.text_wrap = wrap(text, self.cols - 1)
+        self.text_wrap_lines = len(self.text_wrap.split('\n'))
+        self.pad_lines = self.header_wrap_lines + 1 + self.text_wrap_lines
 
         self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
-        self.pad.addstr(0, 0, self.header_wrapped, curses.A_BOLD)
-        self.pad.addstr(self.header_wrapped_lines + 1, 0, self.text_wrapped)
+        self.pad.addstr(0, 0, self.header_wrap, curses.A_BOLD)
+        self.pad.addstr(self.header_wrap_lines + 1, 0, self.text_wrap)
         self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
 
     def control(self):
