@@ -113,7 +113,7 @@ class lyrics:
 
 
 class ui:
-    def init(self, screen):
+    def __init__(self, screen):
         self.quit = False
         self.screen = screen
 
@@ -191,8 +191,7 @@ def main(stdscr):
         p = pianobar()
 
     l = lyrics()
-    u = ui()
-    u.init(stdscr)
+    u = ui(stdscr)
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
