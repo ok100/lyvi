@@ -58,7 +58,7 @@ $ cp scripts/pianobar/eventcmd ~/.config/pianobar/
 $ chmod +x ~/.config/pianobar/eventcmd
 ```
 
-If you already have custom eventcmd script, modify it to write `'$artist|$title'` to `~/.config/pianobar/nowplaying` file on songstart event like in the example script.
+If you already have custom eventcmd script, add songstart event like in the [example script](https://raw.github.com/ok100/cmus-lyrics/master/scripts/pianobar/eventcmd).
 
 - Add this line to `~/.config/pianobar/config`:
 
