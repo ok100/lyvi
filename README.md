@@ -18,6 +18,10 @@ A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [sh
 - Cache for downloaded lyrics
 - Automatically update when song changes
 
+**User reviews:**
+
+[stormdragon2976](http://stormdragon.us/?p=251)
+
 Installation
 ------------
 
