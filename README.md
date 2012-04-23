@@ -14,8 +14,9 @@ A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [sh
 **Features:**
 
 - Ncurses UI
-- Downloads lyrics from sites that are supported by [glyr](https://github.com/sahib/glyr)
-- Cache for downloaded lyrics
+- Can display lyrics and artist info
+- Downloads metadata from sites that are supported by [glyr](https://github.com/sahib/glyr)
+- Cache for downloaded metadata
 - Automatically update when song changes
 
 **User reviews:**
@@ -29,7 +30,6 @@ Installation
 
 - Python
 - [glyr](https://github.com/sahib/glyr)
-- And cmus, shell-fm or pianobar of course :)
 
 For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=57528)
 
@@ -71,3 +71,15 @@ Usage
 Simple:
 
 	$ cmus-lyrics
+
+### Keys
+
+Key        | Function
+-----------|---------
+Up/k       | Scroll up
+Down/j     | Scroll down
+Left/PgUp  | Page up
+Right/PgDn | Page down
+g/Home     | Scroll top
+G/End      | Scroll bottom
+a          | Toggle between lyrics and artist info

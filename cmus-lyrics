@@ -9,6 +9,7 @@
 import os
 import sys
 import locale
+import textwrap
 import curses
 import curses.wrapper
 from time import sleep
@@ -18,14 +19,50 @@ locale.setlocale(locale.LC_ALL, '')
 
 
 def wrap(text, cols):
-    wrap_text = ''
-    for line in text.split('\n'):
-        while len(line) > cols:
-            wrap_text += line[:cols - 2] + '->' + '\n'
-            line = line[cols - 2:]
-        wrap_text += line + '\n'
+    wt = ''
+    for l in text.split('\n'):
+        while len(l) > cols:
+            wt += l[:cols - 2] + '->' + '\n'
+            l = l[cols - 2:]
+        wt += l + '\n'
 
-    return wrap_text[:-1]
+    return wt[:-1]
+
+
+def wrapwords(text, cols):
+    wt = ''
+    for l in text.split('\n'):
+        for wl in textwrap.wrap(l, cols):
+            wt += wl.strip() + '\n'
+        wt += '\n'
+
+    return wt.strip()
+
+
+def metadata_get(type, artist, title):
+    if artist == 'N/A' and title == 'N/A':
+        m = 'Not playing'
+    else:
+        try:
+            cache_dir = os.environ['XDG_CACHE_HOME'] + '/cmus-lyrics'
+        except KeyError:
+            cache_dir = os.environ['HOME'] + '/.cache/cmus-lyrics'
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+
+        m = os.popen('glyrc %s \
+                      -a "%s" \
+                      -t "%s" \
+                      -v 0 \
+                      -w stdout \
+                      --callback "cat <path>" \
+                      -c %s' % (type, artist, title, cache_dir)) \
+                      .read().strip()
+
+        if m == '':
+            m = 'No %s found.' % type
+
+    return m
 
 
 class cmus:
@@ -87,31 +124,6 @@ class pianobar:
             self.artist, self.title = s.split('|')
 
 
-class lyrics:
-    def get(self, artist, title):
-        if artist == 'N/A' and title == 'N/A':
-            self.lyrics = 'Not playing'
-        else:
-            try:
-                cache_dir = os.environ['XDG_CACHE_HOME'] + '/cmus-lyrics'
-            except KeyError:
-                cache_dir = os.environ['HOME'] + '/.cache/cmus-lyrics'
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-
-            self.lyrics = os.popen('glyrc lyrics \
-                                   -a "%s" \
-                                   -t "%s" \
-                                   -v 0 \
-                                   -w stdout \
-                                   --callback "cat <path>" \
-                                   -c %s' % (artist, title, cache_dir)) \
-                                   .read().strip()
-
-            if self.lyrics == '':
-                self.lyrics = 'No lyrics found.'
-
-
 class ui:
     def __init__(self, screen):
         self.quit = False
@@ -124,22 +136,34 @@ class ui:
         curses.use_default_colors()
         self.screen.keypad(1)
 
+        self.type = 'lyrics'
+
+        self.artist = ''
+        self.title = ''
+        self.lyrics = ''
+        self.artistbio = ''
+
     def get_size(self):
         self.rows, self.cols = self.screen.getmaxyx()
 
-    def update(self, header, text):
+    def update(self):
         self.pos_y = 0
-        self.header = header
-        self.header_wrap = wrap(header, self.cols - 1)
-        self.header_wrap_lines = len(self.header_wrap.split('\n'))
-        self.text = text
-        self.text_wrap = wrap(text, self.cols - 1)
-        self.text_wrap_lines = len(self.text_wrap.split('\n'))
-        self.pad_lines = self.header_wrap_lines + 1 + self.text_wrap_lines
+        if self.type == 'lyrics':
+            self.header = self.artist + ' - ' + self.title
+            self.text = self.lyrics
+            text_wrap = wrap(self.text, self.cols - 1)
+        elif self.type == 'artistbio':
+            self.header = self.artist
+            self.text = self.artistbio
+            text_wrap = wrapwords(self.text, self.cols - 1)
+        header_wrap = wrap(self.header, self.cols - 1)
+        header_wrap_lines = len(header_wrap.split('\n'))
+        text_wrap_lines = len(text_wrap.split('\n'))
+        self.pad_lines = header_wrap_lines + 1 + text_wrap_lines
 
         self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
-        self.pad.addstr(0, 0, self.header_wrap, curses.A_BOLD)
-        self.pad.addstr(self.header_wrap_lines + 1, 0, self.text_wrap)
+        self.pad.addstr(0, 0, header_wrap, curses.A_BOLD)
+        self.pad.addstr(header_wrap_lines + 1, 0, text_wrap)
         self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
 
     def control(self):
@@ -177,7 +201,14 @@ class ui:
 
                 elif key == curses.KEY_RESIZE:
                     self.get_size()
-                    self.update(self.header, self.text)
+                    self.update()
+
+                elif key == ord('a'):
+                    if self.type == 'lyrics':
+                        self.type = 'artistbio'
+                    elif self.type == 'artistbio':
+                        self.type = 'lyrics'
+                    self.update()
 
                 self.pad.refresh(self.pos_y, 0, 0, 0, self.rows - 1, self.cols)
 
@@ -190,28 +221,28 @@ def main(stdscr):
     elif player == pianobar:
         p = pianobar()
 
-    l = lyrics()
     u = ui(stdscr)
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
     ui_control.start()
 
-    artist_prev = ''
-    title_prev = ''
-
     while True:
-        p.status()
-
         if u.quit == True:
             break
 
-        if p.artist != artist_prev or p.title != title_prev:
-            u.update(p.artist + ' - ' + p.title, 'Downloading lyrics...')
-            l.get(p.artist, p.title)
-            u.update(p.artist + ' - ' + p.title, l.lyrics)
-            artist_prev = p.artist
-            title_prev = p.title
+        p.status()
+
+        if p.artist != u.artist or p.title != u.title:
+            u.artist = p.artist
+            u.title = p.title
+            u.lyrics = 'Downloading lyrics...'
+            u.artistbio = 'Downloading artist info...'
+            u.update()
+
+            u.lyrics = metadata_get('lyrics', p.artist, p.title)
+            u.artistbio = metadata_get('artistbio', p.artist, p.title)
+            u.update()
 
         sleep(1)
 
