@@ -74,12 +74,14 @@ Simple:
 
 ### Keys
 
-Key        | Function
------------|---------
-Up/k       | Scroll up
-Down/j     | Scroll down
-Left/PgUp  | Page up
-Right/PgDn | Page down
-g/Home     | Scroll top
-G/End      | Scroll bottom
-a          | Toggle between lyrics and artist info
+|------------|---------------------------------------|
+| Key        | Function                              |
+|------------|---------------------------------------|
+| Up/k       | Scroll up                             |
+| Down/j     | Scroll down                           |
+| Left/PgUp  | Page up                               |
+| Right/PgDn | Page down                             |
+| g/Home     | Scroll top                            |
+| G/End      | Scroll bottom                         |
+| a          | Toggle between lyrics and artist info |
+|------------|---------------------------------------|
