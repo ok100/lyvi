@@ -40,8 +40,8 @@ def wrapwords(text, cols):
 
 
 def metadata_get(type, artist, title):
-    if artist == 'N/A' and title == 'N/A':
-        m = 'Not playing'
+    if artist == 'N/A' or title == 'N/A':
+        m = 'Missing tags.'
     else:
         try:
             cache_dir = os.environ['XDG_CACHE_HOME'] + '/cmus-lyrics'
@@ -75,6 +75,10 @@ class cmus:
         except IOError:
             pass
         else:
+            if 'status playing' in s or 'status paused' in s:
+                self.playing = True
+            else:
+                self.playing = False
             try:
                 self.artist = s.split('tag artist ')[1].split('\n')[0]
                 self.title = s.split('tag title ')[1].split('\n')[0]
@@ -91,11 +95,13 @@ class shellfm:
         try:
             f = open(os.environ['HOME'] + '/.shell-fm/nowplaying')
         except IOError:
+            self.playing = False
             self.artist = 'N/A'
             self.title = 'N/A'
         else:
             s = f.read()
             f.close()
+            self.playing = True
             self.artist, self.title = s.split('|')
 
 
@@ -116,11 +122,13 @@ class pianobar:
         try:
             f = open(np)
         except IOError:
+            self.playing = False
             self.artist = 'N/A'
             self.title = 'N/A'
         else:
             s = f.read().strip()
             f.close()
+            self.playing = True
             self.artist, self.title = s.split('|')
 
 
@@ -233,15 +241,22 @@ def main(stdscr):
 
         p.status()
 
-        if p.artist != u.artist or p.title != u.title:
+        if p.playing == True:
+            if p.artist != u.artist or p.title != u.title:
+                u.artist = p.artist
+                u.title = p.title
+                u.lyrics = 'Downloading lyrics...'
+                u.artistbio = 'Downloading artist info...'
+                u.update()
+
+                u.lyrics = metadata_get('lyrics', p.artist, p.title)
+                u.artistbio = metadata_get('artistbio', p.artist, p.title)
+                u.update()
+        else:
             u.artist = p.artist
             u.title = p.title
-            u.lyrics = 'Downloading lyrics...'
-            u.artistbio = 'Downloading artist info...'
-            u.update()
-
-            u.lyrics = metadata_get('lyrics', p.artist, p.title)
-            u.artistbio = metadata_get('artistbio', p.artist, p.title)
+            u.lyrics = 'Not playing'
+            u.artistbio = 'Not playing'
             u.update()
 
         sleep(1)
