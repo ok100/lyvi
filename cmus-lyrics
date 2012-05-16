@@ -40,7 +40,8 @@ def wrapwords(text, cols):
 
 
 def metadata_get(type, artist, title):
-    if artist == 'N/A' or title == 'N/A':
+    if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A')) or
+        (type == 'artistbio' and artist == 'N/A')):
         m = 'Missing tags.'
     else:
         try:
@@ -79,11 +80,15 @@ class cmus:
                 self.playing = True
             else:
                 self.playing = False
-            try:
+
+            if 'tag artist' in s:
                 self.artist = s.split('tag artist ')[1].split('\n')[0]
-                self.title = s.split('tag title ')[1].split('\n')[0]
-            except IndexError:
+            else:
                 self.artist = 'N/A'
+
+            if 'tag title' in s:
+                self.title = s.split('tag title ')[1].split('\n')[0]
+            else:
                 self.title = 'N/A'
 
 
