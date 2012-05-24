@@ -204,10 +204,10 @@ class ui:
                         self.pos_y -= 1
 
                 elif key == curses.KEY_PPAGE or key == curses.KEY_LEFT:
-                        if self.pos_y - self.rows > 0:
-                            self.pos_y -= self.rows
-                        else:
-                            self.pos_y = 0
+                    if self.pos_y - self.rows > 0:
+                        self.pos_y -= self.rows
+                    else:
+                        self.pos_y = 0
 
                 elif key == curses.KEY_HOME or key == ord('g'):
                     self.pos_y = 0
