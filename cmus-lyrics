@@ -51,14 +51,19 @@ def metadata_get(type, artist, title):
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
-        m = os.popen('glyrc %s \
-                      -a "%s" \
-                      -t "%s" \
-                      -v 0 \
-                      -w stdout \
-                      --callback "cat <path>" \
-                      -c %s' % (type, artist, title, cache_dir)) \
-                      .read().strip()
+        while True:
+            try:
+                m = os.popen('glyrc %s \
+                              -a "%s" \
+                              -t "%s" \
+                              -v 0 \
+                              -w stdout \
+                              --callback "cat <path>" \
+                              -c %s' % (type, artist, title, cache_dir)) \
+                              .read().strip()
+                break
+            except IOError:
+                pass
 
         if m == '':
             m = 'No %s found.' % type
@@ -67,6 +72,17 @@ def metadata_get(type, artist, title):
 
 
 class cmus:
+    def __init__(self):
+        self.commands = {
+            'play': 'cmus-remote -p',
+            'pause': 'cmus-remote -u',
+            'next': 'cmus-remote -n',
+            'prev': 'cmus-remote -r',
+            'stop': 'cmus-remote -s',
+            'volup': 'cmus-remote -v +5',
+            'voldn': 'cmus-remote -v -5',
+        }
+
     def status(self):
         if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
             sys.exit()
@@ -93,6 +109,17 @@ class cmus:
 
 
 class shellfm:
+    def __init__(self):
+        self.commands = {
+            'play': '',
+            'pause': '',
+            'next': '',
+            'prev': '',
+            'stop': '',
+            'volup': '',
+            'voldn': '',
+        }
+
     def status(self):
         if not os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
             sys.exit()
@@ -111,6 +138,17 @@ class shellfm:
 
 
 class pianobar:
+    def __init__(self):
+        self.commands = {
+            'play': '',
+            'pause': '',
+            'next': '',
+            'prev': '',
+            'stop': '',
+            'volup': '',
+            'voldn': '',
+        }
+
     def status(self):
         try:
             np = os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying'
@@ -138,7 +176,7 @@ class pianobar:
 
 
 class ui:
-    def __init__(self, screen):
+    def __init__(self, screen, commands):
         self.quit = False
         self.screen = screen
 
@@ -155,6 +193,8 @@ class ui:
         self.title = ''
         self.lyrics = ''
         self.artistbio = ''
+
+        self.commands = commands
 
     def get_size(self):
         self.rows, self.cols = self.screen.getmaxyx()
@@ -223,6 +263,27 @@ class ui:
                         self.type = 'lyrics'
                     self.update()
 
+                elif key == ord('z'):
+                    os.system(self.commands['prev'])
+
+                elif key == ord('x'):
+                    os.system(self.commands['play'])
+
+                elif key == ord('c'):
+                    os.system(self.commands['pause'])
+
+                elif key == ord('v'):
+                    os.system(self.commands['stop'])
+
+                elif key == ord('b'):
+                    os.system(self.commands['next'])
+
+                elif key == ord('='):
+                    os.system(self.commands['volup'])
+
+                elif key == ord('-'):
+                    os.system(self.commands['voldn'])
+
                 self.pad.refresh(self.pos_y, 0, 0, 0, self.rows - 1, self.cols)
 
 
@@ -234,7 +295,7 @@ def main(stdscr):
     elif player == pianobar:
         p = pianobar()
 
-    u = ui(stdscr)
+    u = ui(stdscr, p.commands)
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True

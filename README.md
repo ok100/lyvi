@@ -18,6 +18,7 @@ A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [sh
 - Downloads metadata from sites that are supported by [glyr](https://github.com/sahib/glyr)
 - Cache for downloaded metadata
 - Automatically update when song changes
+- Player control with cmus-like bindings (currently only cmus)
 
 **User reviews:**
 
@@ -83,3 +84,10 @@ Right/PgDn | Page down
 g/Home     | Scroll top                           
 G/End      | Scroll bottom                        
 a          | Toggle between lyrics and artist info
+z          | Previous track (cmus only)
+x          | Play (cmus only)
+c          | Pause (cmus only)
+v          | Stop (cmus only)
+b          | Next track (cmus only)
+=          | Increase volume (cmus only)
+-          | Decrease volume (cmus only)
