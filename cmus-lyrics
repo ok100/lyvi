@@ -12,6 +12,7 @@ import locale
 import textwrap
 import curses
 import curses.wrapper
+import socket
 from time import sleep
 from threading import Thread, Lock
 
@@ -37,6 +38,13 @@ def wrapwords(text, cols):
         wt += '\n'
 
     return wt.strip()
+
+
+def process_socket(command, file):
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.connect(file)
+    s.send(command)
+    s.close()
 
 
 def metadata_get(type, artist, title):
@@ -85,16 +93,21 @@ def get_and_update(artist, title, data):
 
 
 class cmus:
-    def __init__(self):
-        self.commands = {
-            'play': 'cmus-remote -p',
-            'pause': 'cmus-remote -u',
-            'next': 'cmus-remote -n',
-            'prev': 'cmus-remote -r',
-            'stop': 'cmus-remote -s',
-            'volup': 'cmus-remote -v +5',
-            'voldn': 'cmus-remote -v -5',
-        }
+    def command(self, command):
+        if command == 'play':
+            os.system('cmus-remote -p')
+        elif command == 'pause':
+            os.system('cmus-remote -u')
+        elif command == 'next':
+            os.system('cmus-remote -n')
+        elif command == 'prev':
+            os.system('cmus-remote -r')
+        elif command == 'stop':
+            os.system('cmus-remote -s')
+        elif command == 'volup':
+            os.system('cmus-remote -v +5')
+        elif command == 'voldn':
+            os.system('cmus-remote -v -5')
 
     def status(self):
         if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
@@ -122,16 +135,19 @@ class cmus:
 
 
 class shellfm:
-    def __init__(self):
-        self.commands = {
-            'play': '',
-            'pause': '',
-            'next': '',
-            'prev': '',
-            'stop': '',
-            'volup': '',
-            'voldn': '',
-        }
+    def command(self, command):
+        socket = os.environ['HOME'] + '/.shell-fm/socket'
+
+        if command == 'pause':
+            process_socket('pause\n', socket)
+        elif command == 'next':
+            process_socket('skip\n', socket)
+        elif command == 'stop':
+            process_socket('stop\n', socket)
+        elif command == 'volup':
+            process_socket('volume +5\n', socket)
+        elif command == 'voldn':
+            process_socket('volume -5\n', socket)
 
     def status(self):
         if not os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
@@ -151,16 +167,9 @@ class shellfm:
 
 
 class pianobar:
-    def __init__(self):
-        self.commands = {
-            'play': '',
-            'pause': '',
-            'next': '',
-            'prev': '',
-            'stop': '',
-            'volup': '',
-            'voldn': '',
-        }
+    def command(self, command):
+        # FIXME: add commands for pianobar control
+        pass
 
     def status(self):
         try:
@@ -189,7 +198,7 @@ class pianobar:
 
 
 class ui:
-    def __init__(self, screen, commands):
+    def __init__(self, screen, player):
         self.quit = False
         self.screen = screen
 
@@ -207,7 +216,7 @@ class ui:
         self.lyrics = ''
         self.artistbio = ''
 
-        self.commands = commands
+        self.player = player
 
     def get_size(self):
         self.rows, self.cols = self.screen.getmaxyx()
@@ -277,25 +286,25 @@ class ui:
                     self.update()
 
                 elif key == ord('z'):
-                    os.system(self.commands['prev'])
+                    self.player.command('prev')
 
                 elif key == ord('x'):
-                    os.system(self.commands['play'])
+                    self.player.command('play')
 
                 elif key == ord('c'):
-                    os.system(self.commands['pause'])
+                    self.player.command('pause')
 
                 elif key == ord('v'):
-                    os.system(self.commands['stop'])
+                    self.player.command('stop')
 
                 elif key == ord('b'):
-                    os.system(self.commands['next'])
+                    self.player.command('next')
 
                 elif key == ord('='):
-                    os.system(self.commands['volup'])
+                    self.player.command('volup')
 
                 elif key == ord('-'):
-                    os.system(self.commands['voldn'])
+                    self.player.command('voldn')
 
                 self.pad.refresh(self.pos_y, 0, 0, 0, self.rows - 1, self.cols)
 
@@ -308,7 +317,7 @@ def main(stdscr):
     elif player == pianobar:
         p = pianobar()
 
-    u = ui(stdscr, p.commands)
+    u = ui(stdscr, p)
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
