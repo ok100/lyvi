@@ -23,19 +23,19 @@ def wrap(text, cols):
     wt = ''
     for l in text.split('\n'):
         while len(l) > cols:
-            wt += l[:cols - 2] + '->' + '\n'
+            wt += l[:cols - 2] + '->' + '\n '
             l = l[cols - 2:]
-        wt += l + '\n'
+        wt += l + '\n '
 
-    return wt[:-1]
+    return wt[:-2]
 
 
 def wrapwords(text, cols):
     wt = ''
     for l in text.split('\n'):
         for wl in textwrap.wrap(l, cols):
-            wt += wl.strip() + '\n'
-        wt += '\n'
+            wt += wl.strip() + '\n '
+        wt += '\n '
 
     return wt.strip()
 
@@ -226,19 +226,19 @@ class ui:
         if self.type == 'lyrics':
             self.header = self.artist + ' - ' + self.title
             self.text = self.lyrics
-            text_wrap = wrap(self.text, self.cols - 1)
+            text_wrap = wrap(self.text, self.cols - 2)
         elif self.type == 'artistbio':
             self.header = self.artist
             self.text = self.artistbio
-            text_wrap = wrapwords(self.text, self.cols - 1)
-        header_wrap = wrap(self.header, self.cols - 1)
+            text_wrap = wrapwords(self.text, self.cols - 2)
+        header_wrap = wrap(self.header, self.cols - 2)
         header_wrap_lines = len(header_wrap.split('\n'))
         text_wrap_lines = len(text_wrap.split('\n'))
         self.pad_lines = header_wrap_lines + 1 + text_wrap_lines
 
         self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
-        self.pad.addstr(0, 0, header_wrap, curses.A_BOLD)
-        self.pad.addstr(header_wrap_lines + 1, 0, text_wrap)
+        self.pad.addstr(0, 1, header_wrap, curses.A_BOLD)
+        self.pad.addstr(header_wrap_lines + 1, 1, text_wrap)
         self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
 
     def control(self):
