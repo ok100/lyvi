@@ -48,6 +48,7 @@ Configuration
 ```
 np-file = /home/YOURUSERNAME/.shell-fm/nowplaying
 np-file-format = %a|%t
+unix = /home/YOURUSERNAME/.shell-fm/socket
 ```
 
 ### pianobar
