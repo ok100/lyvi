@@ -87,9 +87,7 @@ a          | Toggle between lyrics and artist info
 
 ### Player control keys
 
-           |                                      | Supported players
-Key        | Function                             |------|----------|---------
-           |                                      | Cmus | Shell-fm | Pianobar
+Key        | Function                             | Cmus | Shell-fm | Pianobar
 -----------|--------------------------------------|------|----------|---------
 z          | Previous track                       | Yes  | No       | No
 x          | Play                                 | Yes  | No       | No
