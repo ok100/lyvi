@@ -13,7 +13,7 @@ import textwrap
 import curses
 import curses.wrapper
 from time import sleep
-from threading import Thread
+from threading import Thread, Lock
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -69,6 +69,19 @@ def metadata_get(type, artist, title):
             m = 'No %s found.' % type
 
     return m
+
+
+def get_and_update(artist, title, data):
+    lyrics = metadata_get('lyrics', artist, title)
+    artistbio = metadata_get('artistbio', artist, title)
+    data['lock'].acquire()
+    try:
+        if data['ui'].artist + data['ui'].title == artist + title:
+            data['ui'].lyrics = lyrics
+            data['ui'].artistbio = artistbio
+            data['ui'].update()
+    finally:
+        data['lock'].release()
 
 
 class cmus:
@@ -301,6 +314,9 @@ def main(stdscr):
     ui_control.daemon = True
     ui_control.start()
 
+    lock = Lock()
+    data = {'ui': u, 'lock': lock}
+
     while True:
         if u.quit == True:
             break
@@ -309,15 +325,20 @@ def main(stdscr):
 
         if p.playing == True:
             if p.artist != u.artist or p.title != u.title:
-                u.artist = p.artist
-                u.title = p.title
-                u.lyrics = 'Downloading lyrics...'
-                u.artistbio = 'Downloading artist info...'
-                u.update()
+                lock.acquire()
+                try:
+                    u.artist = p.artist
+                    u.title = p.title
+                    u.lyrics = 'Downloading lyrics...'
+                    u.artistbio = 'Downloading artist info...'
+                    u.update()
+                finally:
+                    lock.release()
 
-                u.lyrics = metadata_get('lyrics', p.artist, p.title)
-                u.artistbio = metadata_get('artistbio', p.artist, p.title)
-                u.update()
+                worker = Thread(target=get_and_update,
+                                args=(p.artist, p.title, data))
+                worker.daemon = True
+                worker.start()
         else:
             u.artist = p.artist
             u.title = p.title
