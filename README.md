@@ -92,7 +92,7 @@ Key        | Function                             | Cmus | Shell-fm | Pianobar
 -----------|--------------------------------------|------|----------|---------
 z          | Previous track                       | Yes  | No       | No
 x          | Play                                 | Yes  | No       | No
-c          | Pause                                | Yes  | Yes      | No
+c          | Play/Pause                           | Yes  | Yes      | No
 v          | Stop                                 | Yes  | Yes      | No
 b          | Next track                           | Yes  | Yes      | No
 =          | Increase volume                      | Yes  | Yes      | No
