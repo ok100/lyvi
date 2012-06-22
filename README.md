@@ -14,7 +14,7 @@ A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [sh
 **Features:**
 
 - Ncurses UI
-- Can display lyrics and artist info
+- Can display lyrics, artist info and guitar tabs
 - Downloads metadata from sites that are supported by [glyr](https://github.com/sahib/glyr)
 - Cache for downloaded metadata
 - Automatically update when song changes
@@ -77,14 +77,14 @@ Simple:
 ### Basic keys
 
 Key        | Function                             
------------|--------------------------------------
+-----------|--------------------------------------------------
 Up/k       | Scroll up                            
 Down/j     | Scroll down                          
 Left/PgUp  | Page up                              
 Right/PgDn | Page down                            
 g/Home     | Scroll top                           
 G/End      | Scroll bottom                        
-a          | Toggle between lyrics and artist info
+a          | Toggle between lyrics, artist info and guitar tab
 
 ### Player control keys
 

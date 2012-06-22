@@ -49,7 +49,8 @@ def process_socket(command, file):
 
 def metadata_get(type, artist, title):
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A')) or
-        (type == 'artistbio' and artist == 'N/A')):
+        (type == 'artistbio' and artist == 'N/A') or
+        (type == 'guitartabs' and (artist == 'N/A' or title == 'N/A'))):
         m = 'Missing tags.'
     else:
         try:
@@ -82,11 +83,13 @@ def metadata_get(type, artist, title):
 def get_and_update(artist, title, data):
     lyrics = metadata_get('lyrics', artist, title)
     artistbio = metadata_get('artistbio', artist, title)
+    guitartabs = metadata_get('guitartabs', artist, title)
     data['lock'].acquire()
     try:
         if data['ui'].artist + data['ui'].title == artist + title:
             data['ui'].lyrics = lyrics
             data['ui'].artistbio = artistbio
+            data['ui'].guitartabs = guitartabs
             data['ui'].update()
     finally:
         data['lock'].release()
@@ -215,6 +218,7 @@ class ui:
         self.title = ''
         self.lyrics = ''
         self.artistbio = ''
+        self.guitartabs = ''
 
         self.player = player
 
@@ -231,6 +235,10 @@ class ui:
             self.header = self.artist
             self.text = self.artistbio
             text_wrap = wrapwords(self.text, self.cols - 2)
+        elif self.type == 'guitartabs':
+            self.header = self.artist + ' - ' + self.title
+            self.text = self.guitartabs
+            text_wrap = wrap(self.text, self.cols - 2)
         header_wrap = wrap(self.header, self.cols - 2)
         header_wrap_lines = len(header_wrap.split('\n'))
         text_wrap_lines = len(text_wrap.split('\n'))
@@ -282,6 +290,8 @@ class ui:
                     if self.type == 'lyrics':
                         self.type = 'artistbio'
                     elif self.type == 'artistbio':
+                        self.type = 'guitartabs'
+                    elif self.type == 'guitartabs':
                         self.type = 'lyrics'
                     self.update()
 
@@ -340,6 +350,7 @@ def main(stdscr):
                     u.title = p.title
                     u.lyrics = 'Downloading lyrics...'
                     u.artistbio = 'Downloading artist info...'
+                    u.guitartabs = 'Downloading guitar tab...'
                     u.update()
                 finally:
                     lock.release()
@@ -353,6 +364,7 @@ def main(stdscr):
             u.title = p.title
             u.lyrics = 'Not playing'
             u.artistbio = 'Not playing'
+            u.guitartabs = 'Not playing'
             u.update()
 
         sleep(1)
