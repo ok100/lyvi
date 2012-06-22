@@ -4,7 +4,7 @@ cmus-lyrics
 Introduction
 ------------
 
-A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [shell-fm](http://nex.scrapping.cc/shell-fm/), [pianobar](http://6xq.net/projects/pianobar/) and [MPD](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki).
+A simple lyrics viewer for various audio players.
 
 **Screenshots:**
 
@@ -12,6 +12,12 @@ A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [sh
 [![Screenshot](http://ompldr.org/tZWZvcg "screenshot")](http://ompldr.org/vZWZvcg)
 [![Screenshot](http://ompldr.org/tZWZvdg "screenshot")](http://ompldr.org/vZWZvdg)
 
+**Supported players:**
+
+- [C\* Music Player](http://cmus.sourceforge.net/)
+- [MPD](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki).
+- [shell-fm](http://nex.scrapping.cc/shell-fm/)
+- [pianobar](http://6xq.net/projects/pianobar/)
 
 **Features:**
 
