@@ -176,30 +176,53 @@ class shellfm:
 
 
 class pianobar:
-    def command(self, command):
+    def __init__(self):
         try:
-            fifo = os.environ['XDG_CONFIG_HOME'] + '/pianobar/ctl'
+            self.config_dir = os.environ['XDG_CONFIG_HOME'] + '/pianobar/'
         except KeyError:
-            fifo = os.environ['HOME'] + '/.config/pianobar/ctl'
+            self.config_dir = os.environ['HOME'] + '/.config/pianobar/'
+
+        # set default keys
+        self.key_pause = 'p'
+        self.key_next = 'n'
+        self.key_stop = 'q'
+        self.key_volup = ')'
+        self.key_voldn = '('
+
+        # get keybindings from config file, in case they differ from defaults
+        f = open(self.config_dir + 'config', 'r')
+        for l in f.read().splitlines():
+            if 'act_songpause' in l:
+                self.key_pause = l.split('=')[1].strip()
+            elif 'act_songnext' in l:
+                self.key_next = l.split('=')[1].strip()
+            elif 'act_quit' in l:
+                self.key_stop = l.split('=')[1].strip()
+            elif 'act_volup' in l:
+                self.key_volup = l.split('=')[1].strip()
+            elif 'act_voldown' in l:
+                self.key_voldn = l.split('=')[1].strip()
+        f.close()
+
+    def command(self, command):
+        fifo = self.config_dir + 'ctl'
 
         if command == 'play':
-            process_fifo('p\n', fifo)
-        if command == 'pause':
-            process_fifo('p\n', fifo)
+            process_fifo(self.key_pause + '\n', fifo)
+        elif command == 'pause':
+            process_fifo(self.key_pause + '\n', fifo)
         elif command == 'next':
-            process_fifo('n\n', fifo)
+            process_fifo(self.key_next + '\n', fifo)
         elif command == 'stop':
-            process_fifo('q\n', fifo)
+            process_fifo(self.key_stop + '\n', fifo)
         elif command == 'volup':
-            process_fifo(')\n', fifo)
+            process_fifo(self.key_volup + '\n', fifo)
         elif command == 'voldn':
-            process_fifo('(\n', fifo)
+            process_fifo(self.key_voldn + '\n', fifo)
 
     def status(self):
-        try:
-            np = os.environ['XDG_CONFIG_HOME'] + '/pianobar/nowplaying'
-        except KeyError:
-            np = os.environ['HOME'] + '/.config/pianobar/nowplaying'
+        np = self.config_dir + 'nowplaying'
+
         try:
             if 'pianobar' not in os.popen('ps -C pianobar').read():
                 if os.path.exists(np):
