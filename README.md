@@ -76,6 +76,12 @@ If you already have custom eventcmd script, add songstart event like in the [exa
 event_command = /home/YOURUSERNAME/.config/pianobar/eventcmd
 ```
 
+- Create a fifo file:
+
+```
+mkfifo ~/.config/pianobar/ctl
+```
+
 ### MPD
 
 - Install `mpc` package
@@ -103,9 +109,9 @@ a          | Toggle between lyrics, artist info and guitar tab
 Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD
 -----------|--------------------------------------|------|----------|----------|-----
 z          | Previous track                       | Yes  | No       | No       | Yes
-x          | Play                                 | Yes  | No       | No       | Yes
-c          | Play/Pause                           | Yes  | Yes      | No       | Yes
-v          | Stop                                 | Yes  | Yes      | No       | Yes
-b          | Next track                           | Yes  | Yes      | No       | Yes
-=          | Increase volume                      | Yes  | Yes      | No       | Yes
--          | Decrease volume                      | Yes  | Yes      | No       | Yes
+x          | Play                                 | Yes  | No       | Yes      | Yes
+c          | Play/Pause                           | Yes  | Yes      | Yes      | Yes
+v          | Stop                                 | Yes  | Yes      | Yes      | Yes
+b          | Next track                           | Yes  | Yes      | Yes      | Yes
+=          | Increase volume                      | Yes  | Yes      | Yes      | Yes
+-          | Decrease volume                      | Yes  | Yes      | Yes      | Yes

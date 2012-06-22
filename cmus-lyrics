@@ -47,6 +47,12 @@ def process_socket(command, file):
     s.close()
 
 
+def process_fifo(command, file):
+    f = open(file, 'w')
+    f.write(command)
+    f.flush()
+
+
 def metadata_get(type, artist, title):
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A')) or
         (type == 'artistbio' and artist == 'N/A') or
@@ -171,8 +177,23 @@ class shellfm:
 
 class pianobar:
     def command(self, command):
-        # FIXME: add commands for pianobar control
-        pass
+        try:
+            fifo = os.environ['XDG_CONFIG_HOME'] + '/pianobar/ctl'
+        except KeyError:
+            fifo = os.environ['HOME'] + '/.config/pianobar/ctl'
+
+        if command == 'play':
+            process_fifo('p\n', fifo)
+        if command == 'pause':
+            process_fifo('p\n', fifo)
+        elif command == 'next':
+            process_fifo('n\n', fifo)
+        elif command == 'stop':
+            process_fifo('q\n', fifo)
+        elif command == 'volup':
+            process_fifo(')\n', fifo)
+        elif command == 'voldn':
+            process_fifo('(\n', fifo)
 
     def status(self):
         try:
