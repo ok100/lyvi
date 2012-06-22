@@ -289,6 +289,50 @@ class mpd:
                 self.playing = True
 
 
+class moc:
+    def command(self, command):
+        if command == 'play':
+            os.system('mocp -U 2> /dev/null')
+        elif command == 'pause':
+            os.system('mocp -P 2> /dev/null')
+        elif command == 'next':
+            os.system('mocp -f 2> /dev/null')
+        elif command == 'prev':
+            os.system('mocp -r 2> /dev/null')
+        elif command == 'stop':
+            os.system('mocp -s 2> /dev/null')
+        elif command == 'volup':
+            os.system('mocp --volume +5 2> /dev/null')
+        elif command == 'voldn':
+            os.system('mocp --volume -5 2> /dev/null')
+
+    def status(self):
+        if not os.path.exists(os.environ['HOME'] + '/.moc/pid'):
+            sys.exit()
+
+        try:
+            s = os.popen('mocp -i 2> /dev/null').read()
+        except IOError:
+            pass
+        else:
+            if 'State: PLAY' in s or 'State: PAUSE' in s:
+                self.playing = True
+
+                if 'Artist: \n' not in s:
+                    self.artist = s.split('Artist: ')[1].split('\n')[0]
+                else:
+                    self.artist = 'N/A'
+
+                if 'SongTitle: \n' not in s:
+                    self.title = s.split('SongTitle: ')[1].split('\n')[0]
+                else:
+                    self.title = 'N/A'
+            else:
+                self.playing = False
+                self.artist = 'N/A'
+                self.title = 'N/A'
+
+
 class ui:
     def __init__(self, screen, player):
         self.quit = False
@@ -461,6 +505,8 @@ if __name__ == '__main__':
         p = pianobar()
     elif 'mpd' in os.popen('ps -C mpd').read():
         p = mpd()
+    elif os.path.exists(os.environ['HOME'] + '/.moc/pid'):
+        p = moc()
     else:
         print('No supported player found.')
         sys.exit()

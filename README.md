@@ -18,6 +18,7 @@ A simple command-line lyrics viewer for various audio players.
 - [Music Player Daemon](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki)
 - [shell-fm](http://nex.scrapping.cc/shell-fm/)
 - [pianobar](http://6xq.net/projects/pianobar/)
+- [MOC](http://moc.daper.net/)
 
 **Features:**
 
@@ -86,6 +87,10 @@ mkfifo ~/.config/pianobar/ctl
 
 - Install `mpc` package
 
+### MOC
+
+- Works out of box.
+
 Usage
 -----
 Simple:
@@ -106,12 +111,12 @@ a          | Toggle between lyrics, artist info and guitar tab
 
 ### Player control keys
 
-Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD
------------|--------------------------------------|------|----------|----------|-----
-z          | Previous track                       | Yes  | No       | No       | Yes
-x          | Play                                 | Yes  | No       | Yes      | Yes
-c          | Play/Pause                           | Yes  | Yes      | Yes      | Yes
-v          | Stop                                 | Yes  | Yes      | Yes      | Yes
-b          | Next track                           | Yes  | Yes      | Yes      | Yes
-=          | Increase volume                      | Yes  | Yes      | Yes      | Yes
--          | Decrease volume                      | Yes  | Yes      | Yes      | Yes
+Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD | MOC
+-----------|--------------------------------------|------|----------|----------|-----|----
+z          | Previous track                       | Yes  | No       | No       | Yes | Yes
+x          | Play                                 | Yes  | No       | Yes      | Yes | Yes
+c          | Play/Pause                           | Yes  | Yes      | Yes      | Yes | Yes
+v          | Stop                                 | Yes  | Yes      | Yes      | Yes | Yes
+b          | Next track                           | Yes  | Yes      | Yes      | Yes | Yes
+=          | Increase volume                      | Yes  | Yes      | Yes      | Yes | Yes
+-          | Decrease volume                      | Yes  | Yes      | Yes      | Yes | Yes
