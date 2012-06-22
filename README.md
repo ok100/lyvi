@@ -4,7 +4,7 @@ cmus-lyrics
 Introduction
 ------------
 
-A simple lyrics viewer for various audio players.
+A simple command-line lyrics viewer for various audio players.
 
 **Screenshots:**
 
