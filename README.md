@@ -4,7 +4,7 @@ cmus-lyrics
 Introduction
 ------------
 
-A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [shell-fm](http://nex.scrapping.cc/shell-fm/) and [pianobar](http://6xq.net/projects/pianobar/).
+A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [shell-fm](http://nex.scrapping.cc/shell-fm/), [pianobar](http://6xq.net/projects/pianobar/) and [MPD](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki).
 
 **Screenshots:**
 
@@ -70,6 +70,10 @@ If you already have custom eventcmd script, add songstart event like in the [exa
 event_command = /home/YOURUSERNAME/.config/pianobar/eventcmd
 ```
 
+### MPD
+
+- Install `mpc` package
+
 Usage
 -----
 Simple:
@@ -90,12 +94,12 @@ a          | Toggle between lyrics, artist info and guitar tab
 
 ### Player control keys
 
-Key        | Function                             | Cmus | Shell-fm | Pianobar
------------|--------------------------------------|------|----------|---------
-z          | Previous track                       | Yes  | No       | No
-x          | Play                                 | Yes  | No       | No
-c          | Play/Pause                           | Yes  | Yes      | No
-v          | Stop                                 | Yes  | Yes      | No
-b          | Next track                           | Yes  | Yes      | No
-=          | Increase volume                      | Yes  | Yes      | No
--          | Decrease volume                      | Yes  | Yes      | No
+Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD
+-----------|--------------------------------------|------|----------|----------|-----
+z          | Previous track                       | Yes  | No       | No       | Yes
+x          | Play                                 | Yes  | No       | No       | Yes
+c          | Play/Pause                           | Yes  | Yes      | No       | Yes
+v          | Stop                                 | Yes  | Yes      | No       | Yes
+b          | Next track                           | Yes  | Yes      | No       | Yes
+=          | Increase volume                      | Yes  | Yes      | No       | Yes
+-          | Decrease volume                      | Yes  | Yes      | No       | Yes

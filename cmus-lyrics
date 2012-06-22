@@ -200,6 +200,51 @@ class pianobar:
             self.artist, self.title = s.split('|')
 
 
+class mpd:
+    def command(self, command):
+        if command == 'play':
+            os.system('mpc play > /dev/null')
+        elif command == 'pause':
+            os.system('mpc pause > /dev/null')
+        elif command == 'next':
+            os.system('mpc next > /dev/null')
+        elif command == 'prev':
+            os.system('mpc prev > /dev/null')
+        elif command == 'stop':
+            os.system('mpc stop > /dev/null')
+        elif command == 'volup':
+            os.system('mpc volume +5 > /dev/null')
+        elif command == 'voldn':
+            os.system('mpc volume -5 > /dev/null')
+
+    def status(self):
+        try:
+            if 'mpd' not in os.popen('ps -C mpd').read():
+                sys.exit()
+        except IOError:
+            pass
+
+        try:
+            s = os.popen('mpc current -f "%artist%\\%title%"').read()
+        except IOError:
+            pass
+        else:
+            try:
+                self.artist = s.split('\\')[0]
+                if self.artist == '':
+                    self.artist = 'N/A'
+
+                self.title = s.split('\\')[1].strip()
+                if self.title == '':
+                    self.title = 'N/A'
+            except IndexError:
+                self.artist = 'N/A'
+                self.title = 'N/A'
+                self.playing = False
+            else:
+                self.playing = True
+
+
 class ui:
     def __init__(self, screen, player):
         self.quit = False
@@ -326,6 +371,8 @@ def main(stdscr):
         p = shellfm()
     elif player == pianobar:
         p = pianobar()
+    elif player == mpd:
+        p = mpd()
 
     u = ui(stdscr, p)
 
@@ -377,6 +424,8 @@ if __name__ == '__main__':
         player = shellfm
     elif 'pianobar' in os.popen('ps -C pianobar').read():
         player = pianobar
+    elif 'mpd' in os.popen('ps -C mpd').read():
+        player = mpd
     else:
         print('No supported player found.')
         sys.exit()
