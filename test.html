@@ -1,0 +1,109 @@
+<h1>cmus-lyrics</h1>
+
+<h2>Introduction</h2>
+
+<p>A simple lyrics viewer for <a href="http://cmus.sourceforge.net/">C* Music Player</a>, <a href="http://nex.scrapping.cc/shell-fm/">shell-fm</a> and <a href="http://6xq.net/projects/pianobar/">pianobar</a>.</p>
+
+<p><strong>Screenshot:</strong></p>
+
+<p><a href="http://ompldr.org/vZWZvdQ"><img src="http://ompldr.org/tZWZvdQ" alt="Screenshot" title="screenshot" /></a>
+<a href="http://ompldr.org/vZWZvcg"><img src="http://ompldr.org/tZWZvcg" alt="Screenshot" title="screenshot" /></a>
+<a href="http://ompldr.org/vZWZvdg"><img src="http://ompldr.org/tZWZvdg" alt="Screenshot" title="screenshot" /></a></p>
+
+<p><strong>Features:</strong></p>
+
+<ul>
+<li>Ncurses UI</li>
+<li>Can display lyrics, artist info and guitar tabs</li>
+<li>Downloads metadata from sites that are supported by <a href="https://github.com/sahib/glyr">glyr</a></li>
+<li>Cache for downloaded metadata</li>
+<li>Automatically update when song changes</li>
+<li>Player control with cmus-like bindings</li>
+</ul>
+
+<p><strong>User reviews:</strong></p>
+
+<p><a href="http://stormdragon.us/?p=251">stormdragon2976</a></p>
+
+<h2>Installation</h2>
+
+<p><strong>Requirements:</strong></p>
+
+<ul>
+<li>Python</li>
+<li><a href="https://github.com/sahib/glyr">glyr</a></li>
+</ul>
+
+<p>For Arch Linux users. there is an <a href="https://aur.archlinux.org/packages.php?ID=57528">AUR package</a></p>
+
+<h2>Configuration</h2>
+
+<h3>cmus</h3>
+
+<ul>
+<li>Works out of box.</li>
+</ul>
+
+<h3>shell-fm</h3>
+
+<ul>
+<li>Add these lines to your <code>~/.shell-fm/shell-fm.rc</code>:</li>
+</ul>
+
+<p><code>
+np-file = /home/YOURUSERNAME/.shell-fm/nowplaying
+np-file-format = %a|%t
+unix = /home/YOURUSERNAME/.shell-fm/socket
+</code></p>
+
+<h3>pianobar</h3>
+
+<ul>
+<li>Copy <a href="https://raw.github.com/ok100/cmus-lyrics/master/scripts/pianobar/eventcmd">eventcmd</a> script from <code>scripts/pianobar/</code> to <code>~/.config/pianobar/</code> and make it executable:</li>
+</ul>
+
+<p><code>
+$ cp scripts/pianobar/eventcmd ~/.config/pianobar/
+$ chmod +x ~/.config/pianobar/eventcmd
+</code></p>
+
+<p>If you already have custom eventcmd script, add songstart event like in the <a href="https://raw.github.com/ok100/cmus-lyrics/master/scripts/pianobar/eventcmd">example script</a>.</p>
+
+<ul>
+<li>Add this line to <code>~/.config/pianobar/config</code>:</li>
+</ul>
+
+<p><code>
+event_command = /home/YOURUSERNAME/.config/pianobar/eventcmd
+</code></p>
+
+<h2>Usage</h2>
+
+<p>Simple:</p>
+
+<pre><code>$ cmus-lyrics
+</code></pre>
+
+<h3>Basic keys</h3>
+
+<p>Key        | Function <br />
+-----------|--------------------------------------------------
+Up/k       | Scroll up <br />
+Down/j     | Scroll down <br />
+Left/PgUp  | Page up <br />
+Right/PgDn | Page down <br />
+g/Home     | Scroll top <br />
+G/End      | Scroll bottom <br />
+a          | Toggle between lyrics, artist info and guitar tab</p>
+
+<h3>Player control keys</h3>
+
+<p>Key        | Function                             | Cmus | Shell-fm | Pianobar
+-----------|--------------------------------------|------|----------|---------
+z          | Previous track                       | Yes  | No       | No
+x          | Play                                 | Yes  | No       | No
+c          | Play/Pause                           | Yes  | Yes      | No
+v          | Stop                                 | Yes  | Yes      | No
+b          | Next track                           | Yes  | Yes      | No
+=          | Increase volume                      | Yes  | Yes      | No
+-          | Decrease volume                      | Yes  | Yes      | No</p>

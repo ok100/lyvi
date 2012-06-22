@@ -6,9 +6,11 @@ Introduction
 
 A simple lyrics viewer for [C\* Music Player](http://cmus.sourceforge.net/), [shell-fm](http://nex.scrapping.cc/shell-fm/) and [pianobar](http://6xq.net/projects/pianobar/).
 
-**Screenshot:**
+**Screenshots:**
 
-[![Screenshot](http://ompldr.org/tZDBjMQ "screenshot")](http://ompldr.org/vZDBjMQ)
+[![Screenshot](http://ompldr.org/tZWZvdQ "screenshot")](http://ompldr.org/vZWZvdQ)
+[![Screenshot](http://ompldr.org/tZWZvcg "screenshot")](http://ompldr.org/vZWZvcg)
+[![Screenshot](http://ompldr.org/tZWZvdg "screenshot")](http://ompldr.org/vZWZvdg)
 
 
 **Features:**
