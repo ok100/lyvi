@@ -365,15 +365,6 @@ class ui:
 
 
 def main(stdscr):
-    if player == cmus:
-        p = cmus()
-    elif player == shellfm:
-        p = shellfm()
-    elif player == pianobar:
-        p = pianobar()
-    elif player == mpd:
-        p = mpd()
-
     u = ui(stdscr, p)
 
     ui_control = Thread(target=u.control)
@@ -419,13 +410,13 @@ def main(stdscr):
 
 if __name__ == '__main__':
     if os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
-        player = cmus
+        p = cmus()
     elif os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
-        player = shellfm
+        p = shellfm()
     elif 'pianobar' in os.popen('ps -C pianobar').read():
-        player = pianobar
+        p = pianobar()
     elif 'mpd' in os.popen('ps -C mpd').read():
-        player = mpd
+        p = mpd()
     else:
         print('No supported player found.')
         sys.exit()
