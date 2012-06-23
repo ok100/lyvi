@@ -192,16 +192,18 @@ class pianobar:
         # get keybindings from config file, in case they differ from defaults
         f = open(self.config_dir + 'config', 'r')
         for l in f.read().splitlines():
-            if 'act_songpause' in l:
-                self.key_pause = l.split('=')[1].strip()
+            if '#' in l:
+                continue
+            elif 'act_songpause' in l:
+                self.key_pause = l.split('=', 1)[1].strip()
             elif 'act_songnext' in l:
-                self.key_next = l.split('=')[1].strip()
+                self.key_next = l.split('=', 1)[1].strip()
             elif 'act_quit' in l:
-                self.key_stop = l.split('=')[1].strip()
+                self.key_stop = l.split('=', 1)[1].strip()
             elif 'act_volup' in l:
-                self.key_volup = l.split('=')[1].strip()
+                self.key_volup = l.split('=', 1)[1].strip()
             elif 'act_voldown' in l:
-                self.key_voldn = l.split('=')[1].strip()
+                self.key_voldn = l.split('=', 1)[1].strip()
         f.close()
 
     def command(self, command):
