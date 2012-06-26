@@ -359,7 +359,24 @@ class ui:
     def get_size(self):
         self.rows, self.cols = self.screen.getmaxyx()
 
+    def update_statusbar(self):
+        if self.pad_lines <= self.rows - 1:
+            pos_perc = 'All'
+        elif self.pos_y == 0:
+            pos_perc = 'Top'
+        elif self.pos_y > self.pad_lines - self.rows:
+            pos_perc = 'Bot'
+        else:
+            pos_perc = str(int((100 / float(self.pad_lines - self.rows)) \
+                               * self.pos_y - 1)) + '%'
+
+        self.get_size()
+        self.statusbar.erase()
+        self.statusbar.addstr(0, self.cols - len(pos_perc) - 1, pos_perc)
+        self.statusbar.refresh()
+
     def update(self):
+        self.get_size()
         self.pos_y = 0
         if self.type == 'lyrics':
             self.header = self.artist + ' - ' + self.title
@@ -378,10 +395,16 @@ class ui:
         text_wrap_lines = len(text_wrap.split('\n'))
         self.pad_lines = header_wrap_lines + 1 + text_wrap_lines
 
+        # main window
         self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
         self.pad.addstr(0, 1, header_wrap, curses.A_BOLD)
         self.pad.addstr(header_wrap_lines + 1, 1, text_wrap)
-        self.pad.refresh(0, 0, 0, 0, self.rows - 1, self.cols)
+        self.pad.refresh(0, 0, 0, 0, self.rows - 2, self.cols)
+
+        # statusbar
+        self.statusbar = curses.newwin(1, self.cols, self.rows - 1, 0)
+        self.statusbar.resize(1, self.cols)
+        self.update_statusbar()
 
     def control(self):
         while True:
@@ -392,16 +415,16 @@ class ui:
 
             else:
                 if key == curses.KEY_DOWN or key == ord('j'):
-                    if self.pos_y < self.pad_lines - self.rows:
+                    if self.pos_y < self.pad_lines - self.rows + 1:
                         self.pos_y += 1
 
                 elif key == curses.KEY_NPAGE or key == curses.KEY_RIGHT:
-                    if self.pos_y + self.rows < self.pad_lines:
-                        self.pos_y += self.rows
+                    if self.pos_y < self.pad_lines - self.rows + 1:
+                        self.pos_y += self.rows - 1
 
                 elif key == curses.KEY_END or key == ord('G'):
-                    if self.pos_y < self.pad_lines - self.rows:
-                        self.pos_y = self.pad_lines - self.rows
+                    if self.pos_y < self.pad_lines - self.rows + 1:
+                        self.pos_y = self.pad_lines - self.rows + 1
 
                 elif key == curses.KEY_UP or key == ord('k'):
                     if self.pos_y > 0:
@@ -409,7 +432,7 @@ class ui:
 
                 elif key == curses.KEY_PPAGE or key == curses.KEY_LEFT:
                     if self.pos_y - self.rows > 0:
-                        self.pos_y -= self.rows
+                        self.pos_y -= self.rows - 1
                     else:
                         self.pos_y = 0
 
@@ -417,7 +440,6 @@ class ui:
                     self.pos_y = 0
 
                 elif key == curses.KEY_RESIZE:
-                    self.get_size()
                     self.update()
 
                 elif key == ord('a'):
@@ -450,7 +472,8 @@ class ui:
                 elif key == ord('-'):
                     self.player.command('voldn')
 
-                self.pad.refresh(self.pos_y, 0, 0, 0, self.rows - 1, self.cols)
+                self.pad.refresh(self.pos_y, 0, 0, 0, self.rows - 2, self.cols)
+                self.update_statusbar()
 
 
 def main(stdscr):
