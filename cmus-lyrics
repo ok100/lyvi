@@ -11,7 +11,6 @@ import sys
 import locale
 import textwrap
 import curses
-import curses.wrapper
 import socket
 from time import sleep
 from threading import Thread, Lock
@@ -192,7 +191,7 @@ class pianobar:
         # get keybindings from config file, in case they differ from defaults
         f = open(self.config_dir + 'config', 'r')
         for l in f.read().splitlines():
-            if '#' in l:
+            if l.strip().startswith('#'):
                 continue
             elif 'act_songpause' in l:
                 self.key_pause = l.split('=', 1)[1].strip()
