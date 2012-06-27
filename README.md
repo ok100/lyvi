@@ -63,7 +63,7 @@ key_next   | b             | "Next song" key
 key_prev   | z             | "Previous song" key
 key_stop   | v             | "Stop" key
 key_volup  | =             | "Volume up" key
-key_voldn  | -             | "volume down" key
+key_voldn  | -             | "Volume down" key
 
 ### Player configuration
 
