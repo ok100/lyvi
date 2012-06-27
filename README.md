@@ -43,13 +43,26 @@ Installation
 
 For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=57528)
 
-## Player configuration
+Configuration
+-------------
 
-### cmus
+Config file is located at `~/.config/cmus-lyrics/rc` in the following form:
+
+```
+key = value
+```
+
+Key  | Value                              | Description
+-----|------------------------------------|--------------------------------
+lang | ISO 639-1 language code (en,de...) | Preferred language for metadata
+
+### Player configuration
+
+#### cmus
 
 - Works out of box.
 
-### shell-fm
+#### shell-fm
 
 - Add these lines to your `~/.shell-fm/shell-fm.rc`:
 
@@ -59,7 +72,7 @@ np-file-format = %a|%t
 unix = /home/YOURUSERNAME/.shell-fm/socket
 ```
 
-### pianobar
+#### pianobar
 
 - Copy [eventcmd](https://raw.github.com/ok100/cmus-lyrics/master/scripts/pianobar/eventcmd) script from `scripts/pianobar/` to `~/.config/pianobar/` and make it executable:
 
@@ -82,26 +95,13 @@ event_command = /home/YOURUSERNAME/.config/pianobar/eventcmd
 mkfifo ~/.config/pianobar/ctl
 ```
 
-### MPD
+#### MPD
 
 - Install `mpc` package
 
-### MOC
+#### MOC
 
 - Works out of box.
-
-Configuration
--------------
-
-Config file is located at `~/.config/cmus-lyrics/rc` in the following form:
-
-```
-key = value
-```
-
-Key  | Value                              | Description
------|------------------------------------|--------------------------------
-lang | ISO 639-1 language code (en,de...) | Preferred language for metadata
 
 Usage
 -----
