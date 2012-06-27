@@ -43,8 +43,7 @@ Installation
 
 For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=57528)
 
-Configuration
--------------
+## Player configuration
 
 ### cmus
 
@@ -90,6 +89,19 @@ mkfifo ~/.config/pianobar/ctl
 ### MOC
 
 - Works out of box.
+
+Configuration
+-------------
+
+Config file is located at `~/.config/cmus-lyrics/rc` in the following form:
+
+```
+key = value
+```
+
+Key  | Value                              | Description
+-----|------------------------------------|--------------------------------
+lang | ISO 639-1 language code (en,de...) | Preferred language for metadata
 
 Usage
 -----

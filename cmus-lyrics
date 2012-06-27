@@ -18,6 +18,29 @@ from subprocess import Popen, PIPE
 
 locale.setlocale(locale.LC_ALL, '')
 
+lang = 'en'
+
+
+def parse_config():
+    global lang
+
+    try:
+        config_file = os.environ['XDG_CONFIG_HOME'] + '/cmus-lyrics/rc'
+    except KeyError:
+        config_file = os.environ['HOME'] + '/.config/cmus-lyrics/rc'
+
+    try:
+        f = open(config_file, 'r')
+    except IOError:
+        pass
+    else:
+        for l in f.read().splitlines():
+            if l.strip().startswith('#'):
+                continue
+            elif 'lang' in l:
+                lang = l.split('=', 1)[1].strip()
+        f.close()
+
 
 def wrap(text, cols):
     wt = ''
@@ -53,7 +76,7 @@ def process_fifo(command, file):
     f.flush()
 
 
-def metadata_get(type, artist, title):
+def metadata_get(type, artist, title, lang):
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A')) or
         (type == 'artistbio' and artist == 'N/A') or
         (type == 'guitartabs' and (artist == 'N/A' or title == 'N/A'))):
@@ -68,7 +91,7 @@ def metadata_get(type, artist, title):
 
         m = Popen(['glyrc', type, '-a', artist, '-t', title,
                    '-v', '0', '-w', 'stdout', '--callback', 'cat <path>',
-                   '-c', cache_dir],
+                   '-l', lang, '-c', cache_dir],
                   stdout=PIPE, stderr=PIPE).communicate()[0].strip()
 
         if m == '':
@@ -78,9 +101,11 @@ def metadata_get(type, artist, title):
 
 
 def get_and_update(artist, title, data):
-    lyrics = metadata_get('lyrics', artist, title)
-    artistbio = metadata_get('artistbio', artist, title)
-    guitartabs = metadata_get('guitartabs', artist, title)
+    global lang
+
+    lyrics = metadata_get('lyrics', artist, title, lang)
+    artistbio = metadata_get('artistbio', artist, title, lang)
+    guitartabs = metadata_get('guitartabs', artist, title, lang)
     data['lock'].acquire()
     try:
         if data['ui'].artist + data['ui'].title == artist + title:
@@ -455,6 +480,8 @@ class ui:
 
 
 def main(stdscr):
+    parse_config()
+
     u = ui(stdscr, p)
 
     ui_control = Thread(target=u.control)
