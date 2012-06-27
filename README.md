@@ -27,7 +27,7 @@ A simple command-line lyrics viewer for various audio players.
 - Downloads metadata from sites that are supported by [glyr](https://github.com/sahib/glyr)
 - Cache for downloaded metadata
 - Automatically update when song changes
-- Player control with cmus-like bindings
+- Player control with configurable keybindings
 
 **User reviews:**
 
