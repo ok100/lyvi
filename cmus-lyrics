@@ -14,13 +14,14 @@ import curses
 import socket
 from time import sleep
 from threading import Thread, Lock
+from subprocess import Popen, PIPE
 
 locale.setlocale(locale.LC_ALL, '')
 
 
 def wrap(text, cols):
     wt = ''
-    for l in text.split('\n'):
+    for l in text.splitlines():
         while len(l) > cols:
             wt += l[:cols - 2] + '->' + '\n '
             l = l[cols - 2:]
@@ -65,19 +66,10 @@ def metadata_get(type, artist, title):
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
-        while True:
-            try:
-                m = os.popen('glyrc %s \
-                              -a "%s" \
-                              -t "%s" \
-                              -v 0 \
-                              -w stdout \
-                              --callback "cat <path>" \
-                              -c %s' % (type, artist, title, cache_dir)) \
-                              .read().strip()
-                break
-            except IOError:
-                pass
+        m = Popen(['glyrc', type, '-a', artist, '-t', title,
+                   '-v', '0', '-w', 'stdout', '--callback', 'cat <path>',
+                   '-c', cache_dir],
+                  stdout=PIPE, stderr=PIPE).communicate()[0].strip()
 
         if m == '':
             m = 'No %s found.' % type
@@ -121,25 +113,23 @@ class cmus:
         if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
             sys.exit()
 
-        try:
-            s = os.popen('cmus-remote -Q').read()
-        except IOError:
-            pass
+        s = Popen(['cmus-remote', '-Q'],
+                  stdout=PIPE, stderr=PIPE).communicate()[0]
+
+        if 'status stopped' in s:
+            self.playing = False
         else:
-            if 'status playing' in s or 'status paused' in s:
-                self.playing = True
-            else:
-                self.playing = False
+            self.playing = True
 
-            if 'tag artist' in s:
-                self.artist = s.split('tag artist ')[1].split('\n')[0]
-            else:
-                self.artist = 'N/A'
+        if 'tag artist' in s:
+            self.artist = s.split('tag artist ')[1].splitlines()[0]
+        else:
+            self.artist = 'N/A'
 
-            if 'tag title' in s:
-                self.title = s.split('tag title ')[1].split('\n')[0]
-            else:
-                self.title = 'N/A'
+        if 'tag title' in s:
+            self.title = s.split('tag title ')[1].splitlines()[0]
+        else:
+            self.title = 'N/A'
 
 
 class shellfm:
@@ -162,16 +152,15 @@ class shellfm:
             sys.exit()
 
         try:
-            f = open(os.environ['HOME'] + '/.shell-fm/nowplaying')
+            np = open(os.environ['HOME'] + '/.shell-fm/nowplaying')
         except IOError:
             self.playing = False
             self.artist = 'N/A'
             self.title = 'N/A'
         else:
-            s = f.read()
-            f.close()
             self.playing = True
-            self.artist, self.title = s.split('|')
+            self.artist, self.title = np.read().split('|')
+            np.close()
 
 
 class pianobar:
@@ -223,14 +212,11 @@ class pianobar:
 
     def status(self):
         np = self.config_dir + 'nowplaying'
-
-        try:
-            if 'pianobar' not in os.popen('ps -C pianobar').read():
-                if os.path.exists(np):
-                    os.remove(np)
-                sys.exit()
-        except IOError:
-            pass
+        if 'pianobar' not in Popen(['ps', '-C', 'pianobar'],
+                                   stdout=PIPE, stderr=PIPE).communicate()[0]:
+            if os.path.exists(np):
+                os.remove(np)
+            sys.exit()
 
         try:
             f = open(np)
@@ -239,10 +225,9 @@ class pianobar:
             self.artist = 'N/A'
             self.title = 'N/A'
         else:
-            s = f.read().strip()
-            f.close()
             self.playing = True
-            self.artist, self.title = s.split('|')
+            self.artist, self.title = f.read().split('|')
+            f.close()
 
 
 class mpd:
@@ -263,31 +248,27 @@ class mpd:
             os.system('mpc volume -5 > /dev/null')
 
     def status(self):
-        try:
-            if 'mpd' not in os.popen('ps -C mpd').read():
-                sys.exit()
-        except IOError:
-            pass
+        if 'mpd' not in Popen(['ps', '-C', 'mpd'],
+                              stdout=PIPE, stderr=PIPE).communicate()[0]:
+            sys.exit()
+
+        s = Popen(['mpc', 'current', '-f', '%artist%\\%title%'],
+                  stdout=PIPE, stderr=PIPE).communicate()[0]
 
         try:
-            s = os.popen('mpc current -f "%artist%\\%title%"').read()
-        except IOError:
-            pass
-        else:
-            try:
-                self.artist = s.split('\\')[0]
-                if self.artist == '':
-                    self.artist = 'N/A'
-
-                self.title = s.split('\\')[1].strip()
-                if self.title == '':
-                    self.title = 'N/A'
-            except IndexError:
+            self.artist = s.split('\\')[0]
+            if self.artist == '':
                 self.artist = 'N/A'
+
+            self.title = s.split('\\')[1].strip()
+            if self.title == '':
                 self.title = 'N/A'
-                self.playing = False
-            else:
-                self.playing = True
+        except IndexError:
+            self.artist = 'N/A'
+            self.title = 'N/A'
+            self.playing = False
+        else:
+            self.playing = True
 
 
 class moc:
@@ -311,27 +292,24 @@ class moc:
         if not os.path.exists(os.environ['HOME'] + '/.moc/pid'):
             sys.exit()
 
-        try:
-            s = os.popen('mocp -i 2> /dev/null').read()
-        except IOError:
-            pass
-        else:
-            if 'State: PLAY' in s or 'State: PAUSE' in s:
-                self.playing = True
+        s = Popen(['mocp', '-i'], stdout=PIPE, stderr=PIPE).communicate()[0]
 
-                if 'Artist: \n' not in s:
-                    self.artist = s.split('Artist: ')[1].split('\n')[0]
-                else:
-                    self.artist = 'N/A'
+        if 'State: PLAY' in s or 'State: PAUSE' in s:
+            self.playing = True
 
-                if 'SongTitle: \n' not in s:
-                    self.title = s.split('SongTitle: ')[1].split('\n')[0]
-                else:
-                    self.title = 'N/A'
+            if 'Artist: \n' not in s:
+                self.artist = s.split('Artist: ')[1].splitlines()[0]
             else:
-                self.playing = False
                 self.artist = 'N/A'
+
+            if 'SongTitle: \n' not in s:
+                self.title = s.split('SongTitle: ')[1].splitlines()[0]
+            else:
                 self.title = 'N/A'
+        else:
+            self.playing = False
+            self.artist = 'N/A'
+            self.title = 'N/A'
 
 
 class ui:
@@ -391,8 +369,8 @@ class ui:
             self.text = self.guitartabs
             text_wrap = wrap(self.text, self.cols - 2)
         header_wrap = wrap(self.header, self.cols - 2)
-        header_wrap_lines = len(header_wrap.split('\n'))
-        text_wrap_lines = len(text_wrap.split('\n'))
+        header_wrap_lines = len(header_wrap.splitlines())
+        text_wrap_lines = len(text_wrap.splitlines())
         self.pad_lines = header_wrap_lines + 1 + text_wrap_lines
 
         # main window
