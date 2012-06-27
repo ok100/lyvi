@@ -46,7 +46,7 @@ For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packag
 Configuration
 -------------
 
-Config file is located at `~/.config/cmus-lyrics/rc` in the following form:
+Configuration file is located at `~/.config/cmus-lyrics/rc` in the following form:
 
 ```
 key = value
