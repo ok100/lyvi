@@ -52,9 +52,18 @@ Configuration file is located at `~/.config/cmus-lyrics/rc` in the following for
 key = value
 ```
 
-Key  | Value                              | Description
------|------------------------------------|--------------------------------
-lang | ISO 639-1 language code (en,de...) | Preferred language for metadata
+Key        | Default value | Description
+-----------|---------------|--------------------------------
+lang       | en            | Preferred language for metadata
+key_quit   | q             | "Quit" key
+key_toggle | a             | "Toggle between metadata" key
+key_play   | x             | "Play" key
+key_pause  | c             | "Pause" key
+key_next   | b             | "Next song" key
+key_prev   | z             | "Previous song" key
+key_stop   | v             | "Stop" key
+key_volup  | =             | "Volume up" key
+key_voldn  | -             | "volume down" key
 
 ### Player configuration
 

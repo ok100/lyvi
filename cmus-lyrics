@@ -18,11 +18,23 @@ from subprocess import Popen, PIPE
 
 locale.setlocale(locale.LC_ALL, '')
 
-lang = 'en'
+
+def config_get_value(line):
+    return line.split('=', 1)[1].strip()
 
 
 def parse_config():
-    global lang
+    # set defaults
+    settings = {'lang': 'en',
+                'key_quit': 'q',
+                'key_toggle': 'a',
+                'key_play': 'x',
+                'key_pause': 'c',
+                'key_next': 'b',
+                'key_prev': 'z',
+                'key_stop': 'v',
+                'key_volup': '=',
+                'key_voldn': '-'}
 
     try:
         config_file = os.environ['XDG_CONFIG_HOME'] + '/cmus-lyrics/rc'
@@ -38,8 +50,28 @@ def parse_config():
             if l.strip().startswith('#'):
                 continue
             elif 'lang' in l:
-                lang = l.split('=', 1)[1].strip()
+                settings['lang'] = config_get_value(l)
+            elif 'key_quit' in l:
+                settings['key_quit'] = config_get_value(l)
+            elif 'key_toggle' in l:
+                settings['key_toggle'] = config_get_value(l)
+            elif 'key_play' in l:
+                settings['key_play'] = config_get_value(l)
+            elif 'key_pause' in l:
+                settings['key_pause'] = config_get_value(l)
+            elif 'key_next' in l:
+                settings['key_next'] = config_get_value(l)
+            elif 'key_prev' in l:
+                settings['key_prev'] = config_get_value(l)
+            elif 'key_stop' in l:
+                settings['key_stop'] = config_get_value(l)
+            elif 'key_volup' in l:
+                settings['key_volup'] = config_get_value(l)
+            elif 'key_voldn' in l:
+                settings['key_voldn'] = config_get_value(l)
         f.close()
+
+    return settings
 
 
 def wrap(text, cols):
@@ -101,11 +133,9 @@ def metadata_get(type, artist, title, lang):
 
 
 def get_and_update(artist, title, data):
-    global lang
-
-    lyrics = metadata_get('lyrics', artist, title, lang)
-    artistbio = metadata_get('artistbio', artist, title, lang)
-    guitartabs = metadata_get('guitartabs', artist, title, lang)
+    lyrics = metadata_get('lyrics', artist, title, data['lang'])
+    artistbio = metadata_get('artistbio', artist, title, data['lang'])
+    guitartabs = metadata_get('guitartabs', artist, title, data['lang'])
     data['lock'].acquire()
     try:
         if data['ui'].artist + data['ui'].title == artist + title:
@@ -208,15 +238,15 @@ class pianobar:
             if l.strip().startswith('#'):
                 continue
             elif 'act_songpause' in l:
-                self.key_pause = l.split('=', 1)[1].strip()
+                self.key_pause = config_get_value(l)
             elif 'act_songnext' in l:
-                self.key_next = l.split('=', 1)[1].strip()
+                self.key_next = config_get_value(l)
             elif 'act_quit' in l:
-                self.key_stop = l.split('=', 1)[1].strip()
+                self.key_stop = config_get_value(l)
             elif 'act_volup' in l:
-                self.key_volup = l.split('=', 1)[1].strip()
+                self.key_volup = config_get_value(l)
             elif 'act_voldown' in l:
-                self.key_voldn = l.split('=', 1)[1].strip()
+                self.key_voldn = config_get_value(l)
         f.close()
 
     def command(self, command):
@@ -338,7 +368,7 @@ class moc:
 
 
 class ui:
-    def __init__(self, screen, player):
+    def __init__(self, screen, data):
         self.quit = False
         self.screen = screen
 
@@ -357,7 +387,8 @@ class ui:
         self.artistbio = ''
         self.guitartabs = ''
 
-        self.player = player
+        self.settings = data['settings']
+        self.player = data['player']
 
     def get_size(self):
         self.rows, self.cols = self.screen.getmaxyx()
@@ -413,7 +444,7 @@ class ui:
         while True:
             key = self.screen.getch()
 
-            if key == ord('q'):
+            if key == ord(self.settings['key_quit']):
                 self.quit = True
 
             else:
@@ -445,7 +476,7 @@ class ui:
                 elif key == curses.KEY_RESIZE:
                     self.update()
 
-                elif key == ord('a'):
+                elif key == ord(self.settings['key_toggle']):
                     if self.type == 'lyrics':
                         self.type = 'artistbio'
                     elif self.type == 'artistbio':
@@ -454,25 +485,25 @@ class ui:
                         self.type = 'lyrics'
                     self.update()
 
-                elif key == ord('z'):
-                    self.player.command('prev')
-
-                elif key == ord('x'):
+                elif key == ord(self.settings['key_play']):
                     self.player.command('play')
 
-                elif key == ord('c'):
+                elif key == ord(self.settings['key_pause']):
                     self.player.command('pause')
 
-                elif key == ord('v'):
-                    self.player.command('stop')
-
-                elif key == ord('b'):
+                elif key == ord(self.settings['key_next']):
                     self.player.command('next')
 
-                elif key == ord('='):
+                elif key == ord(self.settings['key_prev']):
+                    self.player.command('prev')
+
+                elif key == ord(self.settings['key_stop']):
+                    self.player.command('stop')
+
+                elif key == ord(self.settings['key_volup']):
                     self.player.command('volup')
 
-                elif key == ord('-'):
+                elif key == ord(self.settings['key_voldn']):
                     self.player.command('voldn')
 
                 self.pad.refresh(self.pos_y, 0, 0, 0, self.rows - 2, self.cols)
@@ -480,16 +511,16 @@ class ui:
 
 
 def main(stdscr):
-    parse_config()
+    settings = parse_config()
 
-    u = ui(stdscr, p)
+    u = ui(stdscr, {'player': p, 'settings': settings})
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
     ui_control.start()
 
     lock = Lock()
-    data = {'ui': u, 'lock': lock}
+    data = {'ui': u, 'lock': lock, 'lang': settings['lang']}
 
     while True:
         if u.quit == True:
