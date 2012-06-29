@@ -53,10 +53,11 @@ key = value
 ```
 
 Key        | Default value | Description
------------|---------------|--------------------------------
+-----------|---------------|-----------------------------------------------------------------
 lang       | en            | Preferred language for metadata
+view       | lyrics        | Default view. Possible values are: lyrics, artistbio, guitartabs
 key_quit   | q             | "Quit" key
-key_toggle | a             | "Toggle between metadata" key
+key_toggle | a             | "Toggle between views" key
 key_play   | x             | "Play" key
 key_pause  | c             | "Pause" key
 key_next   | b             | "Next song" key

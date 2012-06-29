@@ -341,8 +341,6 @@ class ui:
         curses.use_default_colors()
         self.screen.keypad(1)
 
-        self.type = 'lyrics'
-
         self.artist = ''
         self.title = ''
         self.lyrics = ''
@@ -374,15 +372,15 @@ class ui:
     def update(self):
         self.get_size()
         self.pos_y = 0
-        if self.type == 'lyrics':
+        if self.settings['view'] == 'lyrics':
             self.header = self.artist + ' - ' + self.title
             self.text = self.lyrics
             text_wrap = wrap(self.text, self.cols - 2)
-        elif self.type == 'artistbio':
+        elif self.settings['view'] == 'artistbio':
             self.header = self.artist
             self.text = self.artistbio
             text_wrap = wrapwords(self.text, self.cols - 2)
-        elif self.type == 'guitartabs':
+        elif self.settings['view'] == 'guitartabs':
             self.header = self.artist + ' - ' + self.title
             self.text = self.guitartabs
             text_wrap = wrap(self.text, self.cols - 2)
@@ -439,12 +437,12 @@ class ui:
                     self.update()
 
                 elif key == ord(self.settings['key_toggle']):
-                    if self.type == 'lyrics':
-                        self.type = 'artistbio'
-                    elif self.type == 'artistbio':
-                        self.type = 'guitartabs'
-                    elif self.type == 'guitartabs':
-                        self.type = 'lyrics'
+                    if self.settings['view'] == 'lyrics':
+                        self.settings['view'] = 'artistbio'
+                    elif self.settings['view'] == 'artistbio':
+                        self.settings['view'] = 'guitartabs'
+                    elif self.settings['view'] == 'guitartabs':
+                        self.settings['view'] = 'lyrics'
                     self.update()
 
                 elif key == ord(self.settings['key_play']):
@@ -480,6 +478,7 @@ def main(stdscr):
 
     # default settings
     settings = {'lang': 'en',
+                'view': 'lyrics',
                 'key_quit': 'q',
                 'key_toggle': 'a',
                 'key_play': 'x',
