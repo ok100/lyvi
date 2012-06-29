@@ -74,6 +74,16 @@ def parse_config():
     return settings
 
 
+def safe_encode(string):
+    try:
+        if isinstance(string, unicode):
+            string = string.encode('utf-8')
+    except NameError:
+        pass
+
+    return string
+
+
 def wrap(text, cols):
     wt = ''
     for l in text.splitlines():
@@ -124,7 +134,7 @@ def metadata_get(type, artist, title, lang):
         m = Popen(['glyrc', type, '-a', artist, '-t', title,
                    '-v', '0', '-w', 'stdout', '--callback', 'cat <path>',
                    '-l', lang, '-c', cache_dir],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].strip()
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8').strip()
 
         if m == '':
             m = 'No %s found.' % type
@@ -169,7 +179,7 @@ class cmus:
             sys.exit()
 
         s = Popen(['cmus-remote', '-Q'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0]
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8')
 
         if 'status stopped' in s:
             self.playing = False
@@ -268,7 +278,7 @@ class pianobar:
     def status(self):
         np = self.config_dir + 'nowplaying'
         if 'pianobar' not in Popen(['ps', '-C', 'pianobar'],
-                                   stdout=PIPE, stderr=PIPE).communicate()[0]:
+                                   stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
             if os.path.exists(np):
                 os.remove(np)
             sys.exit()
@@ -304,11 +314,11 @@ class mpd:
 
     def status(self):
         if 'mpd' not in Popen(['ps', '-C', 'mpd'],
-                              stdout=PIPE, stderr=PIPE).communicate()[0]:
+                              stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
             sys.exit()
 
         s = Popen(['mpc', 'current', '-f', '%artist%\\%title%'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0]
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8')
 
         try:
             self.artist = s.split('\\')[0]
@@ -347,7 +357,7 @@ class moc:
         if not os.path.exists(os.environ['HOME'] + '/.moc/pid'):
             sys.exit()
 
-        s = Popen(['mocp', '-i'], stdout=PIPE, stderr=PIPE).communicate()[0]
+        s = Popen(['mocp', '-i'], stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8')
 
         if 'State: PLAY' in s or 'State: PAUSE' in s:
             self.playing = True
@@ -431,8 +441,8 @@ class ui:
 
         # main window
         self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
-        self.pad.addstr(0, 1, header_wrap, curses.A_BOLD)
-        self.pad.addstr(header_wrap_lines + 1, 1, text_wrap)
+        self.pad.addstr(0, 1, safe_encode(header_wrap), curses.A_BOLD)
+        self.pad.addstr(header_wrap_lines + 1, 1, safe_encode(text_wrap))
         self.pad.refresh(0, 0, 0, 0, self.rows - 2, self.cols)
 
         # statusbar
