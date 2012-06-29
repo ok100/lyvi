@@ -19,56 +19,19 @@ from subprocess import Popen, PIPE
 locale.setlocale(locale.LC_ALL, '')
 
 
-def config_get_value(line):
-    return line.split('=', 1)[1].strip()
-
-
-def parse_config():
-    # set defaults
-    settings = {'lang': 'en',
-                'key_quit': 'q',
-                'key_toggle': 'a',
-                'key_play': 'x',
-                'key_pause': 'c',
-                'key_next': 'b',
-                'key_prev': 'z',
-                'key_stop': 'v',
-                'key_volup': '=',
-                'key_voldn': '-'}
-
+def parse_config(file):
     try:
-        config_file = os.environ['XDG_CONFIG_HOME'] + '/cmus-lyrics/rc'
-    except KeyError:
-        config_file = os.environ['HOME'] + '/.config/cmus-lyrics/rc'
-
-    try:
-        f = open(config_file, 'r')
+        f = open(file, 'r')
     except IOError:
         pass
     else:
+        settings = {}
         for l in f.read().splitlines():
-            if l.strip().startswith('#'):
+            if not l.strip().startswith('#') and '=' in l:
+                key, value = l.split('=', 1)
+                settings[key.strip()] = value.strip()
+            else:
                 continue
-            elif 'lang' in l:
-                settings['lang'] = config_get_value(l)
-            elif 'key_quit' in l:
-                settings['key_quit'] = config_get_value(l)
-            elif 'key_toggle' in l:
-                settings['key_toggle'] = config_get_value(l)
-            elif 'key_play' in l:
-                settings['key_play'] = config_get_value(l)
-            elif 'key_pause' in l:
-                settings['key_pause'] = config_get_value(l)
-            elif 'key_next' in l:
-                settings['key_next'] = config_get_value(l)
-            elif 'key_prev' in l:
-                settings['key_prev'] = config_get_value(l)
-            elif 'key_stop' in l:
-                settings['key_stop'] = config_get_value(l)
-            elif 'key_volup' in l:
-                settings['key_volup'] = config_get_value(l)
-            elif 'key_voldn' in l:
-                settings['key_voldn'] = config_get_value(l)
         f.close()
 
     return settings
@@ -134,7 +97,8 @@ def metadata_get(type, artist, title, lang):
         m = Popen(['glyrc', type, '-a', artist, '-t', title,
                    '-v', '0', '-w', 'stdout', '--callback', 'cat <path>',
                    '-l', lang, '-c', cache_dir],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8').strip()
+                  stdout=PIPE, stderr=PIPE) \
+            .communicate()[0].decode('utf-8').strip()
 
         if m == '':
             m = 'No %s found.' % type
@@ -236,49 +200,35 @@ class pianobar:
             self.config_dir = os.environ['HOME'] + '/.config/pianobar/'
 
         # set default keys
-        self.key_pause = 'p'
-        self.key_next = 'n'
-        self.key_stop = 'q'
-        self.key_volup = ')'
-        self.key_voldn = '('
+        self.settings = {'key_pause': 'p',
+                         'key_next': 'n',
+                         'key_stop': 'q',
+                         'key_volup': ')',
+                         'key_voldn': '('}
 
-        # get keybindings from config file, in case they differ from defaults
-        f = open(self.config_dir + 'config', 'r')
-        for l in f.read().splitlines():
-            if l.strip().startswith('#'):
-                continue
-            elif 'act_songpause' in l:
-                self.key_pause = config_get_value(l)
-            elif 'act_songnext' in l:
-                self.key_next = config_get_value(l)
-            elif 'act_quit' in l:
-                self.key_stop = config_get_value(l)
-            elif 'act_volup' in l:
-                self.key_volup = config_get_value(l)
-            elif 'act_voldown' in l:
-                self.key_voldn = config_get_value(l)
-        f.close()
+        self.settings.update(parse_config(self.config_dir + 'config'))
 
     def command(self, command):
         fifo = self.config_dir + 'ctl'
 
         if command == 'play':
-            process_fifo(self.key_pause + '\n', fifo)
+            process_fifo(self.settings['key_pause'] + '\n', fifo)
         elif command == 'pause':
-            process_fifo(self.key_pause + '\n', fifo)
+            process_fifo(self.settings['key_pause'] + '\n', fifo)
         elif command == 'next':
-            process_fifo(self.key_next + '\n', fifo)
+            process_fifo(self.settings['key_next'] + '\n', fifo)
         elif command == 'stop':
-            process_fifo(self.key_stop + '\n', fifo)
+            process_fifo(self.settings['key_stop'] + '\n', fifo)
         elif command == 'volup':
-            process_fifo(self.key_volup + '\n', fifo)
+            process_fifo(self.settings['key_volup'] + '\n', fifo)
         elif command == 'voldn':
-            process_fifo(self.key_voldn + '\n', fifo)
+            process_fifo(self.settings['key_voldn'] + '\n', fifo)
 
     def status(self):
         np = self.config_dir + 'nowplaying'
         if 'pianobar' not in Popen(['ps', '-C', 'pianobar'],
-                                   stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
+                                   stdout=PIPE, stderr=PIPE) \
+                             .communicate()[0].decode('utf-8'):
             if os.path.exists(np):
                 os.remove(np)
             sys.exit()
@@ -314,7 +264,8 @@ class mpd:
 
     def status(self):
         if 'mpd' not in Popen(['ps', '-C', 'mpd'],
-                              stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
+                              stdout=PIPE, stderr=PIPE) \
+                        .communicate()[0].decode('utf-8'):
             sys.exit()
 
         s = Popen(['mpc', 'current', '-f', '%artist%\\%title%'],
@@ -357,7 +308,8 @@ class moc:
         if not os.path.exists(os.environ['HOME'] + '/.moc/pid'):
             sys.exit()
 
-        s = Popen(['mocp', '-i'], stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8')
+        s = Popen(['mocp', '-i'], stdout=PIPE, stderr=PIPE) \
+            .communicate()[0].decode('utf-8')
 
         if 'State: PLAY' in s or 'State: PAUSE' in s:
             self.playing = True
@@ -521,7 +473,24 @@ class ui:
 
 
 def main(stdscr):
-    settings = parse_config()
+    try:
+        config_file = os.environ['XDG_CONFIG_HOME'] + '/cmus-lyrics/rc'
+    except KeyError:
+        config_file = os.environ['HOME'] + '/.config/cmus-lyrics/rc'
+
+    # default settings
+    settings = {'lang': 'en',
+                'key_quit': 'q',
+                'key_toggle': 'a',
+                'key_play': 'x',
+                'key_pause': 'c',
+                'key_next': 'b',
+                'key_prev': 'z',
+                'key_stop': 'v',
+                'key_volup': '=',
+                'key_voldn': '-'}
+
+    settings.update(parse_config(config_file))
 
     u = ui(stdscr, {'player': p, 'settings': settings})
 
