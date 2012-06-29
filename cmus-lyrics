@@ -20,12 +20,12 @@ locale.setlocale(locale.LC_ALL, '')
 
 
 def parse_config(file):
+    settings = {}
     try:
         f = open(file, 'r')
     except IOError:
         pass
     else:
-        settings = {}
         for l in f.read().splitlines():
             if not l.strip().startswith('#') and '=' in l:
                 key, value = l.split('=', 1)
