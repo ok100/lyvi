@@ -71,7 +71,7 @@ def wrapwords(text, cols):
 def process_socket(command, file):
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.connect(file)
-    s.send(command)
+    s.send(command.encode('utf-8'))
     s.close()
 
 
