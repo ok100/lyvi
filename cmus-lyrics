@@ -395,8 +395,7 @@ class vlc:
             process_socket('voldown 1\n', socket)
 
     def status(self):
-        if 'vlc' not in Popen(['ps', '-C', 'vlc'],
-            stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
+        if not os.path.exists('/tmp/vlc.sock'):
             sys.exit()
 
         s = urlopen('http://localhost:8080/requests/status.xml').read() \
@@ -635,7 +634,7 @@ if __name__ == '__main__':
         p = moc()
     elif 'mplayer' in os.popen('ps -C mplayer').read():
         p = mplayer()
-    elif 'vlc' in os.popen('ps -C vlc').read():
+    if os.path.exists('/tmp/vlc.sock'):
         p = vlc()
     else:
         print('No supported player found.')
