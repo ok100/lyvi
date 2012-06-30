@@ -16,6 +16,11 @@ from time import sleep
 from threading import Thread, Lock
 from subprocess import Popen, PIPE
 
+try:
+    from urllib2 import urlopen
+except ImportError:
+    from urllib.request import urlopen
+
 locale.setlocale(locale.LC_ALL, '')
 
 
@@ -370,6 +375,46 @@ class mplayer:
             self.artist = 'N/A'
 
 
+class vlc:
+    def command(self, command):
+        socket = '/tmp/vlc.sock'
+
+        if command == 'play':
+            process_socket('pause\n', socket)
+        if command == 'pause':
+            process_socket('pause\n', socket)
+        elif command == 'next':
+            process_socket('next\n', socket)
+        elif command == 'prev':
+            process_socket('prev\n', socket)
+        elif command == 'stop':
+            process_socket('stop\n', socket)
+        elif command == 'volup':
+            process_socket('volup 1\n', socket)
+        elif command == 'voldn':
+            process_socket('voldown 1\n', socket)
+
+    def status(self):
+        if 'vlc' not in Popen(['ps', '-C', 'vlc'],
+            stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
+            sys.exit()
+
+        s = urlopen('http://localhost:8080/requests/status.xml').read() \
+            .decode('utf-8')
+        if '<state>stopped</state>' in s:
+            self.playing = False
+        else:
+            self.playing = True
+        if 'name=\'artist\'>' in s:
+            self.artist = s.split('name=\'artist\'>')[1].split('</info>')[0]
+        else:
+            self.artist = 'N/A'
+        if 'name=\'title\'>' in s:
+            self.title = s.split('name=\'title\'>')[1].split('</info>')[0]
+        else:
+            self.title = 'N/A'
+
+
 class ui:
     def __init__(self, screen, data):
         self.quit = False
@@ -590,6 +635,8 @@ if __name__ == '__main__':
         p = moc()
     elif 'mplayer' in os.popen('ps -C mplayer').read():
         p = mplayer()
+    elif 'vlc' in os.popen('ps -C vlc').read():
+        p = vlc()
     else:
         print('No supported player found.')
         sys.exit()
