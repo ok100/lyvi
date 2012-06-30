@@ -329,6 +329,47 @@ class moc:
             self.title = 'N/A'
 
 
+class mplayer:
+    def command(self, command):
+        fifo = os.environ['HOME'] + '/.mplayer/fifo'
+
+        if command == 'play':
+            process_fifo('pause\n', fifo)
+        elif command == 'pause':
+            process_fifo('pause\n', fifo)
+        elif command == 'next':
+            process_fifo('pt_step 1\n', fifo)
+        elif command == 'prev':
+            process_fifo('pt_step -1\n', fifo)
+        elif command == 'stop':
+            process_fifo('stop\n', fifo)
+        elif command == 'volup':
+            process_fifo('volume +1\n', fifo)
+        elif command == 'voldn':
+            process_fifo('volume -1\n', fifo)
+
+    def status(self):
+        log = os.environ['HOME'] + '/.mplayer/log'
+        if 'mplayer' not in Popen(['ps', '-C', 'mplayer'],
+            stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
+            if os.path.exists(log):
+                os.remove(log)
+            sys.exit()
+
+        self.playing = True
+        f = open(log)
+        s = f.read()
+        f.close()
+        if 'VALUE0' in s:
+            self.title = s.split('VALUE0=')[-1].splitlines()[0]
+        else:
+            self.title = 'N/A'
+        if 'VALUE1' in s:
+            self.artist = s.split('VALUE1=')[-1].splitlines()[0]
+        else:
+            self.artist = 'N/A'
+
+
 class ui:
     def __init__(self, screen, data):
         self.quit = False
@@ -547,6 +588,8 @@ if __name__ == '__main__':
         p = mpd()
     elif os.path.exists(os.environ['HOME'] + '/.moc/pid'):
         p = moc()
+    elif 'mplayer' in os.popen('ps -C mplayer').read():
+        p = mplayer()
     else:
         print('No supported player found.')
         sys.exit()

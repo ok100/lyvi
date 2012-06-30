@@ -19,6 +19,7 @@ A simple command-line lyrics viewer for various audio players.
 - [shell-fm](http://nex.scrapping.cc/shell-fm/)
 - [pianobar](http://6xq.net/projects/pianobar/)
 - [MOC](http://moc.daper.net/)
+- [MPlayer](http://www.mplayerhq.hu/)
 
 **Features:**
 
@@ -113,6 +114,25 @@ mkfifo ~/.config/pianobar/ctl
 
 - Works out of box.
 
+
+#### MPlayer
+
+NOTE: Previous/Next/Stop and volume keys will not work if you're using MPlayer front-end
+
+- Add this line to `~/.mplayer/config`:
+
+```
+input=file=/home/YOURUSERNAME/.mplayer/fifo
+```
+
+- If you're using MPlayer with a front-end (e.g. SMPlayer, UMPlayer...), configure it to save MPlayer log to `/home/YOURUSERNAME/.mplayer/log` file. For SMPlayer/UMPlayer, this option is located at Options -> Preferences -> Advanced -> Logs -> Autosave MPlayer log to file
+
+- For standalone MPlayer, you need to run it with the following command-line switches:
+
+```
+mplayer -quiet -msglevel all=0 -identify <file> > ~/.mplayer/log
+```
+
 Usage
 -----
 Simple:
@@ -133,12 +153,12 @@ a          | Toggle between lyrics, artist info and guitar tab
 
 ### Player control keys
 
-Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD | MOC
------------|--------------------------------------|------|----------|----------|-----|----
-z          | Previous track                       | Yes  | No       | No       | Yes | Yes
-x          | Play                                 | Yes  | No       | Yes      | Yes | Yes
-c          | Play/Pause                           | Yes  | Yes      | Yes      | Yes | Yes
-v          | Stop                                 | Yes  | Yes      | Yes      | Yes | Yes
-b          | Next track                           | Yes  | Yes      | Yes      | Yes | Yes
-=          | Increase volume                      | Yes  | Yes      | Yes      | Yes | Yes
--          | Decrease volume                      | Yes  | Yes      | Yes      | Yes | Yes
+Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD | MOC | MPlayer
+-----------|--------------------------------------|------|----------|----------|-----|-----|--------
+z          | Previous track                       | Yes  | No       | No       | Yes | Yes | Yes
+x          | Play                                 | Yes  | No       | Yes      | Yes | Yes | Yes
+c          | Play/Pause                           | Yes  | Yes      | Yes      | Yes | Yes | Yes
+v          | Stop                                 | Yes  | Yes      | Yes      | Yes | Yes | Yes
+b          | Next track                           | Yes  | Yes      | Yes      | Yes | Yes | Yes
+=          | Increase volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes
+-          | Decrease volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes
