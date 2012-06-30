@@ -634,7 +634,7 @@ if __name__ == '__main__':
         p = moc()
     elif 'mplayer' in os.popen('ps -C mplayer').read():
         p = mplayer()
-    if os.path.exists('/tmp/vlc.sock'):
+    elif os.path.exists('/tmp/vlc.sock'):
         p = vlc()
     else:
         print('No supported player found.')
