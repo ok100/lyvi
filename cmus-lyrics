@@ -367,6 +367,8 @@ class ui:
         self.get_size()
         self.statusbar.erase()
         self.statusbar.addstr(0, self.cols - len(pos_perc) - 1, pos_perc)
+        self.statusbar.addstr(0, self.cols - len(self.settings['view']) - 10,
+                              self.settings['view'])
         self.statusbar.refresh()
 
     def update(self):
