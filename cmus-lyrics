@@ -358,7 +358,7 @@ class mplayer:
 
         self.playing = True
         f = open(log)
-        s = f.read()
+        s = f.read().split('AUDIO_ID')[-1]
         f.close()
         if 'VALUE0' in s:
             self.title = s.split('VALUE0=')[-1].splitlines()[0]
