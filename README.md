@@ -54,19 +54,22 @@ Configuration file is located at `~/.config/cmus-lyrics/rc` in the following for
 key = value
 ```
 
-Key        | Default value | Description
------------|---------------|-----------------------------------------------------------------
-lang       | en            | Preferred language for metadata
-view       | lyrics        | Default view. Possible values are: lyrics, artistbio, guitartabs
-key_quit   | q             | "Quit" key
-key_toggle | a             | "Toggle between views" key
-key_play   | x             | "Play" key
-key_pause  | c             | "Pause" key
-key_next   | b             | "Next song" key
-key_prev   | z             | "Previous song" key
-key_stop   | v             | "Stop" key
-key_volup  | =             | "Volume up" key
-key_voldn  | -             | "Volume down" key
+Key          | Default value | Description
+-------------|---------------|--------------------------------------------------------------------------------
+lang         | en            | Preferred language for metadata
+view         | lyrics        | Default view. Possible values are: lyrics, artistbio, guitartabs
+key_quit     | q             | "Quit" key
+key_toggle   | a             | "Toggle between views" key
+key_play     | x             | "Play" key
+key_pause    | c             | "Pause" key
+key_next     | b             | "Next song" key
+key_prev     | z             | "Previous song" key
+key_stop     | v             | "Stop" key
+key_volup    | =             | "Volume up" key
+key_voldn    | -             | "Volume down" key
+color_title  | 15            | Title color. Possible values are: 0-255, -1 for default terminal color
+color_text   | -1            | Text color. Possible values are: 0-255, -1 for default terminal color
+color_status | -1            | Statusbar text color. Possible values are: 0-255, -1 for default terminal color
 
 ### Player configuration
 

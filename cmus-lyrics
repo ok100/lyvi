@@ -435,6 +435,11 @@ class ui:
         self.settings = data['settings']
         self.player = data['player']
 
+        # init colors
+        curses.init_pair(1, int(self.settings['color_title']), -1)
+        curses.init_pair(2, int(self.settings['color_text']), -1)
+        curses.init_pair(3, int(self.settings['color_status']), -1)
+
     def get_size(self):
         self.rows, self.cols = self.screen.getmaxyx()
 
@@ -451,9 +456,10 @@ class ui:
 
         self.get_size()
         self.statusbar.erase()
-        self.statusbar.addstr(0, self.cols - len(pos_perc) - 1, pos_perc)
+        self.statusbar.addstr(0, self.cols - len(pos_perc) - 1, pos_perc,
+                              curses.color_pair(3))
         self.statusbar.addstr(0, self.cols - len(self.settings['view']) - 10,
-                              self.settings['view'])
+                              self.settings['view'], curses.color_pair(3))
         self.statusbar.refresh()
 
     def update(self):
@@ -478,8 +484,10 @@ class ui:
 
         # main window
         self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
-        self.pad.addstr(0, 1, safe_encode(header_wrap), curses.A_BOLD)
-        self.pad.addstr(header_wrap_lines + 1, 1, safe_encode(text_wrap))
+        self.pad.addstr(0, 1, safe_encode(header_wrap),
+                        curses.color_pair(1) | curses.A_BOLD)
+        self.pad.addstr(header_wrap_lines + 1, 1, safe_encode(text_wrap),
+                        curses.color_pair(2))
         self.pad.refresh(0, 0, 0, 0, self.rows - 2, self.cols)
 
         # statusbar
@@ -574,7 +582,10 @@ def main(stdscr):
                 'key_prev': 'z',
                 'key_stop': 'v',
                 'key_volup': '=',
-                'key_voldn': '-'}
+                'key_voldn': '-',
+                'color_title': 15,
+                'color_text': -1,
+                'color_status': -1}
 
     settings.update(parse_config(config_file))
 
