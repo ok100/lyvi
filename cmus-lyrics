@@ -583,7 +583,7 @@ def main(stdscr):
                 'key_stop': 'v',
                 'key_volup': '=',
                 'key_voldn': '-',
-                'color_title': 15,
+                'color_title': 7,
                 'color_text': -1,
                 'color_status': -1}
 
