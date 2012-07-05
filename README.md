@@ -54,6 +54,7 @@ Configuration file is located at `~/.config/cmus-lyrics/rc` in the following for
 key = value
 ```
 
+```
 Key          | Default value | Description
 -------------|---------------|--------------------------------------------------------------------------------
 lang         | en            | Preferred language for metadata
@@ -70,6 +71,7 @@ key_voldn    | -             | "Volume down" key
 color_title  | 7             | Title color. Possible values are: 0-255, -1 for default terminal color
 color_text   | -1            | Text color. Possible values are: 0-255, -1 for default terminal color
 color_status | -1            | Statusbar text color. Possible values are: 0-255, -1 for default terminal color
+```
 
 ### Player configuration
 
@@ -150,6 +152,7 @@ Simple:
 
 ### Basic keys
 
+```
 Key        | Function                             
 -----------|--------------------------------------------------
 Up/k       | Scroll up                            
@@ -159,9 +162,11 @@ Right/PgDn | Page down
 g/Home     | Scroll top                           
 G/End      | Scroll bottom                        
 a          | Toggle between lyrics, artist info and guitar tab
+```
 
 ### Player control keys
 
+```
 Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD | MOC | MPlayer | VLC 
 -----------|--------------------------------------|------|----------|----------|-----|-----|---------|----
 z          | Previous track                       | Yes  | No       | No       | Yes | Yes | Yes     | Yes 
@@ -171,3 +176,4 @@ v          | Stop                                 | Yes  | Yes      | Yes      |
 b          | Next track                           | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes 
 =          | Increase volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes 
 -          | Decrease volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes 
+```
