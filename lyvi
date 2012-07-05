@@ -93,9 +93,9 @@ def metadata_get(type, artist, title, lang):
         m = 'Missing tags.'
     else:
         try:
-            cache_dir = os.environ['XDG_CACHE_HOME'] + '/cmus-lyrics'
+            cache_dir = os.environ['XDG_CACHE_HOME'] + '/lyvi'
         except KeyError:
-            cache_dir = os.environ['HOME'] + '/.cache/cmus-lyrics'
+            cache_dir = os.environ['HOME'] + '/.cache/lyvi'
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
@@ -567,9 +567,9 @@ class ui:
 
 def main(stdscr):
     try:
-        config_file = os.environ['XDG_CONFIG_HOME'] + '/cmus-lyrics/rc'
+        config_file = os.environ['XDG_CONFIG_HOME'] + '/lyvi/rc'
     except KeyError:
-        config_file = os.environ['HOME'] + '/.config/cmus-lyrics/rc'
+        config_file = os.environ['HOME'] + '/.config/lyvi/rc'
 
     # default settings
     settings = {'lang': 'en',

@@ -1,5 +1,5 @@
-cmus-lyrics
-===========
+lyvi
+====
 
 Introduction
 ------------
@@ -48,7 +48,7 @@ For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packag
 Configuration
 -------------
 
-Configuration file is located at `~/.config/cmus-lyrics/rc` in the following form:
+Configuration file is located at `~/.config/lyvi/rc` in the following form:
 
 ```
 key = value
@@ -91,14 +91,14 @@ unix = /home/YOURUSERNAME/.shell-fm/socket
 
 #### pianobar
 
-- Copy [eventcmd](https://raw.github.com/ok100/cmus-lyrics/master/scripts/pianobar/eventcmd) script from `scripts/pianobar/` to `~/.config/pianobar/` and make it executable:
+- Copy [eventcmd](https://raw.github.com/ok100/lyvi/master/scripts/pianobar/eventcmd) script from `scripts/pianobar/` to `~/.config/pianobar/` and make it executable:
 
 ```
 $ cp scripts/pianobar/eventcmd ~/.config/pianobar/
 $ chmod +x ~/.config/pianobar/eventcmd
 ```
 
-If you already have custom eventcmd script, add songstart event like in the [example script](https://raw.github.com/ok100/cmus-lyrics/master/scripts/pianobar/eventcmd).
+If you already have custom eventcmd script, add songstart event like in the [example script](https://raw.github.com/ok100/lyvi/master/scripts/pianobar/eventcmd).
 
 - Add this line to `~/.config/pianobar/config`:
 
@@ -148,7 +148,7 @@ Usage
 -----
 Simple:
 
-	$ cmus-lyrics
+	$ lyvi
 
 ### Basic keys
 
