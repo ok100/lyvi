@@ -139,9 +139,9 @@ class cmus:
         elif command == 'stop':
             os.system('cmus-remote -s')
         elif command == 'volup':
-            os.system('cmus-remote -v +5')
+            os.system('cmus-remote -v +5%')
         elif command == 'voldn':
-            os.system('cmus-remote -v -5')
+            os.system('cmus-remote -v -5%')
 
     def status(self):
         if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
