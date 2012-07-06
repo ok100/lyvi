@@ -146,9 +146,16 @@ mplayer -quiet -msglevel all=0 -identify <file> > ~/.mplayer/log
 
 Usage
 -----
-Simple:
 
-	$ lyvi
+```
+$ lyvi <command>
+```
+
+```
+Option  | Description
+--------|-------------------------------------------------------------------------------------------------------
+command | (Optional) Send a command to player. Possible values are: play, pause, next, prev, stop, volup, voldn.
+```
 
 ### Basic keys
 

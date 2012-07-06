@@ -651,4 +651,7 @@ if __name__ == '__main__':
         print('No supported player found.')
         sys.exit()
 
-    curses.wrapper(main)
+    if len(sys.argv) > 1:
+        p.command(sys.argv[1])
+    else:
+        curses.wrapper(main)
