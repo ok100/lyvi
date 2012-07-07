@@ -13,13 +13,9 @@ import textwrap
 import curses
 import socket
 from time import sleep
+from urllib.request import urlopen
 from threading import Thread, Lock
 from subprocess import Popen, PIPE
-
-try:
-    from urllib2 import urlopen
-except ImportError:
-    from urllib.request import urlopen
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -40,16 +36,6 @@ def parse_config(file):
         f.close()
 
     return settings
-
-
-def safe_encode(string):
-    try:
-        if isinstance(string, unicode):
-            string = string.encode('utf-8')
-    except NameError:
-        pass
-
-    return string
 
 
 def wrap(text, cols):
@@ -76,7 +62,7 @@ def wrapwords(text, cols):
 def process_socket(command, file):
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.connect(file)
-    s.send(command.encode('utf-8'))
+    s.send(command.encode())
     s.close()
 
 
@@ -103,7 +89,7 @@ def metadata_get(type, artist, title, lang):
                    '-v', '0', '-w', 'stdout', '--callback', 'cat <path>',
                    '-l', lang, '-c', cache_dir],
                   stdout=PIPE, stderr=PIPE) \
-            .communicate()[0].decode('utf-8').strip()
+            .communicate()[0].decode().strip()
 
         if m == '':
             m = 'No %s found.' % type
@@ -148,7 +134,7 @@ class cmus:
             sys.exit()
 
         s = Popen(['cmus-remote', '-Q'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8')
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
 
         if 'status stopped' in s:
             self.playing = False
@@ -233,7 +219,7 @@ class pianobar:
         np = self.config_dir + 'nowplaying'
         if 'pianobar' not in Popen(['ps', '-C', 'pianobar'],
                                    stdout=PIPE, stderr=PIPE) \
-                             .communicate()[0].decode('utf-8'):
+                             .communicate()[0].decode():
             if os.path.exists(np):
                 os.remove(np)
             sys.exit()
@@ -270,11 +256,11 @@ class mpd:
     def status(self):
         if 'mpd' not in Popen(['ps', '-C', 'mpd'],
                               stdout=PIPE, stderr=PIPE) \
-                        .communicate()[0].decode('utf-8'):
+                        .communicate()[0].decode():
             sys.exit()
 
         s = Popen(['mpc', 'current', '-f', '%artist%\\%title%'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8')
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
 
         try:
             self.artist = s.split('\\')[0]
@@ -314,7 +300,7 @@ class moc:
             sys.exit()
 
         s = Popen(['mocp', '-i'], stdout=PIPE, stderr=PIPE) \
-            .communicate()[0].decode('utf-8')
+            .communicate()[0].decode()
 
         if 'State: PLAY' in s or 'State: PAUSE' in s:
             self.playing = True
@@ -356,7 +342,7 @@ class mplayer:
     def status(self):
         log = os.environ['HOME'] + '/.mplayer/log'
         if 'mplayer' not in Popen(['ps', '-C', 'mplayer'],
-            stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8'):
+            stdout=PIPE, stderr=PIPE).communicate()[0].decode():
             if os.path.exists(log):
                 os.remove(log)
             sys.exit()
@@ -399,7 +385,7 @@ class vlc:
             sys.exit()
 
         s = urlopen('http://localhost:8080/requests/status.xml').read() \
-            .decode('utf-8')
+            .decode()
         if '<state>stopped</state>' in s:
             self.playing = False
         else:
@@ -484,9 +470,9 @@ class ui:
 
         # main window
         self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
-        self.pad.addstr(0, 1, safe_encode(header_wrap),
+        self.pad.addstr(0, 1, header_wrap,
                         curses.color_pair(1) | curses.A_BOLD)
-        self.pad.addstr(header_wrap_lines + 1, 1, safe_encode(text_wrap),
+        self.pad.addstr(header_wrap_lines + 1, 1, text_wrap,
                         curses.color_pair(2))
         self.pad.refresh(0, 0, 0, 0, self.rows - 2, self.cols)
 

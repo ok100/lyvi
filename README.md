@@ -40,7 +40,7 @@ Installation
 
 **Requirements:**
 
-- Python
+- Python 3
 - [glyr](https://github.com/sahib/glyr)
 
 For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=60572)
