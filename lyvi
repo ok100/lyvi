@@ -98,18 +98,15 @@ def metadata_get(type, artist, title, lang):
 
 
 def get_and_update(artist, title, data):
-    lyrics = metadata_get('lyrics', artist, title, data['lang'])
-    artistbio = metadata_get('artistbio', artist, title, data['lang'])
-    guitartabs = metadata_get('guitartabs', artist, title, data['lang'])
-    data['lock'].acquire()
-    try:
-        if data['ui'].artist + data['ui'].title == artist + title:
-            data['ui'].lyrics = lyrics
-            data['ui'].artistbio = artistbio
-            data['ui'].guitartabs = guitartabs
-            data['ui'].update_content()
-    finally:
-        data['lock'].release()
+    for type in ['lyrics', 'artistbio', 'guitartabs']:
+        m = metadata_get(type, artist, title, data['lang'])
+        data['lock'].acquire()
+        try:
+            if data['ui'].artist + data['ui'].title == artist + title:
+                setattr(data['ui'], type, m)
+                data['ui'].update_content()
+        finally:
+            data['lock'].release()
 
 
 class cmus:
