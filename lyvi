@@ -107,7 +107,7 @@ def get_and_update(artist, title, data):
             data['ui'].lyrics = lyrics
             data['ui'].artistbio = artistbio
             data['ui'].guitartabs = guitartabs
-            data['ui'].update()
+            data['ui'].update_content()
     finally:
         data['lock'].release()
 
@@ -401,154 +401,128 @@ class vlc:
 
 
 class ui:
-    def __init__(self, screen, data):
-        self.quit = False
-        self.screen = screen
-
-        self.get_size()
-        curses.noecho()
-        curses.cbreak()
-        curses.curs_set(0)
-        curses.use_default_colors()
-        self.screen.keypad(1)
-
-        self.artist = ''
-        self.title = ''
-        self.lyrics = ''
-        self.artistbio = ''
-        self.guitartabs = ''
-
+    def __init__(self, data):
+        self.screen = data['screen']
         self.settings = data['settings']
         self.player = data['player']
+        self.quit = False
+        self.artist = ''
+        curses.curs_set(0)
 
         # init colors
+        curses.use_default_colors()
         curses.init_pair(1, int(self.settings['color_title']), -1)
         curses.init_pair(2, int(self.settings['color_text']), -1)
         curses.init_pair(3, int(self.settings['color_status']), -1)
 
-    def get_size(self):
-        self.rows, self.cols = self.screen.getmaxyx()
-
-    def update_statusbar(self):
-        if self.pad_lines <= self.rows - 1:
-            pos_perc = 'All'
-        elif self.pos_y == 0:
-            pos_perc = 'Top'
-        elif self.pos_y > self.pad_lines - self.rows:
-            pos_perc = 'Bot'
-        else:
-            pos_perc = str(int((100 / float(self.pad_lines - self.rows)) \
-                               * self.pos_y - 1)) + '%'
-
-        self.get_size()
-        self.statusbar.erase()
-        self.statusbar.addstr(0, self.cols - len(pos_perc) - 1, pos_perc,
-                              curses.color_pair(3))
-        self.statusbar.addstr(0, self.cols - len(self.settings['view']) - 10,
-                              self.settings['view'], curses.color_pair(3))
-        self.statusbar.refresh()
-
-    def update(self):
-        self.get_size()
+    def update_content(self):
         self.pos_y = 0
+        self.y, self.x = self.screen.getmaxyx()
         if self.settings['view'] == 'lyrics':
             self.header = self.artist + ' - ' + self.title
             self.text = self.lyrics
-            text_wrap = wrap(self.text, self.cols - 2)
+            text_wrap = wrap(self.text, self.x - 2)
         elif self.settings['view'] == 'artistbio':
             self.header = self.artist
             self.text = self.artistbio
-            text_wrap = wrapwords(self.text, self.cols - 2)
+            text_wrap = wrapwords(self.text, self.x - 2)
         elif self.settings['view'] == 'guitartabs':
             self.header = self.artist + ' - ' + self.title
             self.text = self.guitartabs
-            text_wrap = wrap(self.text, self.cols - 2)
-        header_wrap = wrap(self.header, self.cols - 2)
-        header_wrap_lines = len(header_wrap.splitlines())
-        text_wrap_lines = len(text_wrap.splitlines())
-        self.pad_lines = header_wrap_lines + 1 + text_wrap_lines
+            text_wrap = wrap(self.text, self.x - 2)
+        header_wrap = wrap(self.header, self.x - 2)
+        self.pad_lines = len(header_wrap.splitlines()) + \
+                         len(text_wrap.splitlines()) + 1
 
         # main window
-        self.pad = curses.newpad(self.pad_lines + self.rows, self.cols)
+        self.pad = curses.newpad(self.pad_lines + self.y, self.x)
         self.pad.addstr(0, 1, header_wrap,
                         curses.color_pair(1) | curses.A_BOLD)
-        self.pad.addstr(header_wrap_lines + 1, 1, text_wrap,
+        self.pad.addstr(len(header_wrap.splitlines()) + 1, 1, text_wrap,
                         curses.color_pair(2))
-        self.pad.refresh(0, 0, 0, 0, self.rows - 2, self.cols)
 
         # statusbar
-        self.statusbar = curses.newwin(1, self.cols, self.rows - 1, 0)
-        self.statusbar.resize(1, self.cols)
-        self.update_statusbar()
+        self.statusbar = curses.newpad(1, self.x)
+
+        self.refresh()
+
+    def refresh(self):
+        self.pad.noutrefresh(self.pos_y, 0, 0, 0, self.y - 2, self.x)
+
+        self.statusbar.erase()
+        if self.pad_lines <= self.y - 1:
+            pos_perc = 'All'
+        elif self.pos_y == 0:
+            pos_perc = 'Top'
+        elif self.pos_y > self.pad_lines - self.y:
+            pos_perc = 'Bot'
+        else:
+            pos_perc = str(int((100 / float(self.pad_lines - self.y)) \
+                               * self.pos_y - 1)) + '%'
+        self.statusbar.addstr(0, self.x - len(pos_perc) - 1, pos_perc,
+                              curses.color_pair(3))
+        self.statusbar.addstr(0, self.x - len(self.settings['view']) - 10,
+                              self.settings['view'], curses.color_pair(3))
+        self.statusbar.noutrefresh(0, 0, self.y - 1, 0, self.y, self.x)
+
+        curses.doupdate()
 
     def control(self):
+        commands = {ord(self.settings['key_play']): 'play',
+                    ord(self.settings['key_pause']): 'pause',
+                    ord(self.settings['key_next']): 'next',
+                    ord(self.settings['key_prev']): 'prev',
+                    ord(self.settings['key_stop']): 'stop',
+                    ord(self.settings['key_volup']): 'volup',
+                    ord(self.settings['key_voldn']): 'voldn'}
         while True:
             key = self.screen.getch()
 
             if key == ord(self.settings['key_quit']):
                 self.quit = True
 
+            elif key == curses.KEY_RESIZE:
+                self.update_content()
+
+            elif key == ord(self.settings['key_toggle']):
+                if self.settings['view'] == 'lyrics':
+                    self.settings['view'] = 'artistbio'
+                elif self.settings['view'] == 'artistbio':
+                    self.settings['view'] = 'guitartabs'
+                elif self.settings['view'] == 'guitartabs':
+                    self.settings['view'] = 'lyrics'
+                self.update_content()
+
+            elif key in commands:
+                self.player.command(commands[key])
+
             else:
                 if key == curses.KEY_DOWN or key == ord('j'):
-                    if self.pos_y < self.pad_lines - self.rows + 1:
+                    if self.pos_y < self.pad_lines - self.y + 1:
                         self.pos_y += 1
 
                 elif key == curses.KEY_NPAGE or key == curses.KEY_RIGHT:
-                    if self.pos_y < self.pad_lines - self.rows + 1:
-                        self.pos_y += self.rows - 1
+                    if self.pos_y < self.pad_lines - self.y + 1:
+                        self.pos_y += self.y - 1
 
                 elif key == curses.KEY_END or key == ord('G'):
-                    if self.pos_y < self.pad_lines - self.rows + 1:
-                        self.pos_y = self.pad_lines - self.rows + 1
+                    if self.pos_y < self.pad_lines - self.y + 1:
+                        self.pos_y = self.pad_lines - self.y + 1
 
                 elif key == curses.KEY_UP or key == ord('k'):
                     if self.pos_y > 0:
                         self.pos_y -= 1
 
                 elif key == curses.KEY_PPAGE or key == curses.KEY_LEFT:
-                    if self.pos_y - self.rows > 0:
-                        self.pos_y -= self.rows - 1
+                    if self.pos_y - self.y > 0:
+                        self.pos_y -= self.y - 1
                     else:
                         self.pos_y = 0
 
                 elif key == curses.KEY_HOME or key == ord('g'):
                     self.pos_y = 0
 
-                elif key == curses.KEY_RESIZE:
-                    self.update()
-
-                elif key == ord(self.settings['key_toggle']):
-                    if self.settings['view'] == 'lyrics':
-                        self.settings['view'] = 'artistbio'
-                    elif self.settings['view'] == 'artistbio':
-                        self.settings['view'] = 'guitartabs'
-                    elif self.settings['view'] == 'guitartabs':
-                        self.settings['view'] = 'lyrics'
-                    self.update()
-
-                elif key == ord(self.settings['key_play']):
-                    self.player.command('play')
-
-                elif key == ord(self.settings['key_pause']):
-                    self.player.command('pause')
-
-                elif key == ord(self.settings['key_next']):
-                    self.player.command('next')
-
-                elif key == ord(self.settings['key_prev']):
-                    self.player.command('prev')
-
-                elif key == ord(self.settings['key_stop']):
-                    self.player.command('stop')
-
-                elif key == ord(self.settings['key_volup']):
-                    self.player.command('volup')
-
-                elif key == ord(self.settings['key_voldn']):
-                    self.player.command('voldn')
-
-                self.pad.refresh(self.pos_y, 0, 0, 0, self.rows - 2, self.cols)
-                self.update_statusbar()
+                self.refresh()
 
 
 def main(stdscr):
@@ -575,7 +549,7 @@ def main(stdscr):
 
     settings.update(parse_config(config_file))
 
-    u = ui(stdscr, {'player': p, 'settings': settings})
+    u = ui({'screen': stdscr, 'player': p, 'settings': settings})
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
@@ -599,7 +573,7 @@ def main(stdscr):
                     u.lyrics = 'Downloading lyrics...'
                     u.artistbio = 'Downloading artist info...'
                     u.guitartabs = 'Downloading guitar tab...'
-                    u.update()
+                    u.update_content()
                 finally:
                     lock.release()
 
@@ -613,7 +587,7 @@ def main(stdscr):
             u.lyrics = 'Not playing'
             u.artistbio = 'Not playing'
             u.guitartabs = 'Not playing'
-            u.update()
+            u.update_content()
 
         sleep(1)
 
