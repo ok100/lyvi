@@ -397,6 +397,49 @@ class vlc:
             self.title = 'N/A'
 
 
+class audacious:
+    def command(self, command):
+        if command == 'play':
+            os.system('audtool --playback-playpause')
+        elif command == 'pause':
+            os.system('audtool --playback-playpause')
+        elif command == 'next':
+            os.system('audtool --playlist-advance')
+        elif command == 'prev':
+            os.system('audtool --playlist-reverse')
+        elif command == 'stop':
+            os.system('audtool --playback-stop')
+        elif command == 'volup':
+            os.system('audtool --set-volume +5')
+        elif command == 'voldn':
+            os.system('audtool --set-volume -5')
+
+    def status(self):
+        try:
+            lock = os.environ['XDG_CONFIG_HOME'] + '/audacious/lock'
+        except KeyError:
+            lock = os.environ['HOME'] + '/.config/audacious/lock'
+        if not os.path.exists(lock):
+            sys.exit()
+
+        s = Popen(['audtool', '--playback-status'],
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
+        if 'stopped' in s:
+            self.playing = False
+        else:
+            self.playing = True
+        self.artist = Popen(['audtool', 'current-song-tuple-data', 'artist'],
+                            stdout=PIPE, stderr=PIPE) \
+                            .communicate()[0].decode().strip()
+        if self.artist == '':
+            self.artist = 'N/A'
+        self.title = Popen(['audtool', 'current-song-tuple-data', 'title'],
+                            stdout=PIPE, stderr=PIPE) \
+                            .communicate()[0].decode().strip()
+        if self.title == '':
+            self.title = 'N/A'
+
+
 class ui:
     def __init__(self, data):
         self.screen = data['screen']
@@ -603,6 +646,8 @@ if __name__ == '__main__':
         p = mplayer()
     elif os.path.exists('/tmp/vlc.sock'):
         p = vlc()
+    elif 'audacious' in os.popen('ps -C audacious').read():
+        p = audacious()
     else:
         print('No supported player found.')
         sys.exit()
