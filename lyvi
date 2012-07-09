@@ -472,6 +472,7 @@ class ui:
                     ord(self.settings['key_stop']): 'stop',
                     ord(self.settings['key_volup']): 'volup',
                     ord(self.settings['key_voldn']): 'voldn'}
+        views = ['lyrics', 'artistbio', 'guitartabs']
         while True:
             key = self.screen.getch()
 
@@ -482,12 +483,10 @@ class ui:
                 self.update_content()
 
             elif key == ord(self.settings['key_toggle']):
-                if self.settings['view'] == 'lyrics':
-                    self.settings['view'] = 'artistbio'
-                elif self.settings['view'] == 'artistbio':
-                    self.settings['view'] = 'guitartabs'
-                elif self.settings['view'] == 'guitartabs':
-                    self.settings['view'] = 'lyrics'
+                i = views.index(self.settings['view']) + 1
+                if i >= len(views):
+                    i = 0
+                self.settings['view'] = views[i]
                 self.update_content()
 
             elif key in commands:
