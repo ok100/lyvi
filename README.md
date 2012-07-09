@@ -22,6 +22,7 @@ A simple command-line lyrics viewer for various audio players.
 - [MPlayer](http://www.mplayerhq.hu/)
 - [VLC Media Player](http://www.videolan.org/vlc/)
 - [Audacious](http://audacious-media-player.org/)
+- [DeaDBeeF](http://deadbeef.sourceforge.net/)
 
 **Features:**
 
@@ -149,6 +150,10 @@ mplayer -quiet -msglevel all=0 -identify <file> > ~/.mplayer/log
 
 - Works out of box.
 
+#### DeaDBeeF
+
+- Works out of box.
+
 Usage
 -----
 
@@ -179,13 +184,13 @@ a          | Toggle between lyrics, artist info and guitar tab
 ### Player control keys
 
 ```
-Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD | MOC | MPlayer | VLC | Audacious
------------|--------------------------------------|------|----------|----------|-----|-----|---------|-----|----------
-z          | Previous track                       | Yes  | No       | No       | Yes | Yes | Yes     | Yes | Yes
-x          | Play                                 | Yes  | No       | Yes      | Yes | Yes | Yes     | Yes | Yes
-c          | Play/Pause                           | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes
-v          | Stop                                 | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes
-b          | Next track                           | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes
-=          | Increase volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes
--          | Decrease volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes
+Key        | Function                             | Cmus | Shell-fm | Pianobar | MPD | MOC | MPlayer | VLC | Audacious | DeaDBeeF
+-----------|--------------------------------------|------|----------|----------|-----|-----|---------|-----|-----------|---------
+z          | Previous track                       | Yes  | No       | No       | Yes | Yes | Yes     | Yes | Yes       | Yes
+x          | Play                                 | Yes  | No       | Yes      | Yes | Yes | Yes     | Yes | Yes       | Yes
+c          | Play/Pause                           | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes       | Yes
+v          | Stop                                 | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes       | Yes
+b          | Next track                           | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes       | Yes
+=          | Increase volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes       | No
+-          | Decrease volume                      | Yes  | Yes      | Yes      | Yes | Yes | Yes     | Yes | Yes       | No
 ```

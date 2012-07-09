@@ -440,6 +440,43 @@ class audacious:
             self.title = 'N/A'
 
 
+class deadbeef:
+    def command(self, command):
+        if command == 'play':
+            os.system('deadbeef --play 2>/dev/null')
+        elif command == 'pause':
+            os.system('deadbeef --toggle-pause 2>/dev/null')
+        elif command == 'next':
+            os.system('deadbeef --next 2>/dev/null')
+        elif command == 'prev':
+            os.system('deadbeef --prev 2>/dev/null')
+        elif command == 'stop':
+            os.system('deadbeef --stop 2>/dev/null')
+
+    def status(self):
+        if 'deadbeef-main' not in Popen(['ps', '-C', 'deadbeef-main'],
+                                        stdout=PIPE, stderr=PIPE) \
+                                  .communicate()[0].decode():
+            sys.exit()
+
+        s = Popen(['deadbeef', '--nowplaying', '%a%|%t%'],
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
+        file = Popen(['deadbeef', '--nowplaying', '%f%'],
+                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
+
+        if s == 'nothing':
+            self.playing = False
+            self.artist = 'N/A'
+            self.title = 'N/A'
+        else:
+            self.playing = True
+            self.artist, self.title = s.split('|')
+            if self.artist == 'Unknown artist':
+                self.artist = 'N/A'
+            if self.title == file.rsplit('.', 1)[0]:
+                self.title = 'N/A'
+
+
 class ui:
     def __init__(self, data):
         self.screen = data['screen']
@@ -648,6 +685,8 @@ if __name__ == '__main__':
         p = vlc()
     elif 'audacious' in os.popen('ps -C audacious').read():
         p = audacious()
+    elif 'deadbeef-main' in os.popen('ps -C deadbeef-main').read():
+        p = deadbeef()
     else:
         print('No supported player found.')
         sys.exit()
