@@ -12,6 +12,7 @@ import locale
 import textwrap
 import curses
 import socket
+import plyr
 from time import sleep
 from urllib.request import urlopen
 from threading import Thread, Lock
@@ -85,13 +86,12 @@ def metadata_get(type, artist, title, lang):
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
-        m = Popen(['glyrc', type, '-a', artist, '-t', title,
-                   '-v', '0', '-w', 'stdout', '--callback', 'cat <path>',
-                   '-l', lang, '-c', cache_dir],
-                  stdout=PIPE, stderr=PIPE) \
-            .communicate()[0].decode().strip()
-
-        if m == '':
+        db = plyr.Database(cache_dir)
+        query = plyr.Query(artist=artist, title=title,
+                           get_type=type, database=db, language=lang.encode())
+        try:
+            m = query.commit()[0].data.decode()
+        except IndexError:
             m = 'No %s found.' % type
 
     return m
