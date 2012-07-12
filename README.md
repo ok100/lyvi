@@ -37,6 +37,8 @@ A simple command-line lyrics viewer for various audio players.
 
 [stormdragon2976](http://stormdragon.us/?p=251)
 
+[![Flattr this](http://api.flattr.com/button/flattr-badge-large.png "Flattr this")](http://flattr.com/thing/736234/Lyvi)
+
 Installation
 ------------
 
@@ -44,6 +46,7 @@ Installation
 
 - Python 3
 - [glyr](https://github.com/sahib/glyr)
+- [python-glyr](https://github.com/sahib/python-glyr)
 
 For Arch Linux users. there is an [AUR package](https://aur.archlinux.org/packages.php?ID=60572)
 
