@@ -33,9 +33,6 @@ A simple command-line lyrics viewer for various audio players.
 - Automatically update when song changes
 - Player control with configurable keybindings
 
-<a href="http://flattr.com/thing/736234/Lyvi" target="_blank">
-<img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0" /></a>
-
 **User reviews:**
 
 [stormdragon2976](http://stormdragon.us/?p=251)
