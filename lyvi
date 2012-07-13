@@ -477,6 +477,44 @@ class deadbeef:
                 self.title = 'N/A'
 
 
+class qmmp:
+    def command(self, command):
+        if command == 'play':
+            os.system('qmmp -t')
+        elif command == 'pause':
+            os.system('qmmp -t')
+        elif command == 'next':
+            os.system('qmmp --next')
+        elif command == 'prev':
+            os.system('qmmp --previous')
+        elif command == 'stop':
+            os.system('qmmp -s')
+        elif command == 'volup':
+            os.system('qmmp --volume-inc')
+        elif command == 'voldn':
+            os.system('qmmp --volume-dec')
+
+    def status(self):
+        if not os.path.exists('/tmp/qmmp.sock.1000'):
+            sys.exit()
+
+        s = Popen(['qmmp', '--status'], stdout=PIPE, stderr=PIPE) \
+            .communicate()[0].decode().strip()
+
+        if s == '[stopped]':
+            self.playing = False
+            self.artist = 'N/A'
+            self.title = 'N/A'
+        else:
+            self.playing = True
+            self.artist = s.split('ARTIST = ')[1].splitlines()[0]
+            self.title = s.split('TITLE = ')[1].splitlines()[0]
+            if self.artist == '':
+                self.artist = 'N/A'
+            if self.title == '':
+                self.title = 'N/A'
+
+
 class ui:
     def __init__(self, data):
         self.screen = data['screen']
@@ -687,6 +725,8 @@ if __name__ == '__main__':
         p = audacious()
     elif 'deadbeef-main' in os.popen('ps -C deadbeef-main').read():
         p = deadbeef()
+    elif os.path.exists('/tmp/qmmp.sock.1000'):
+        p = qmmp()
     else:
         print('No supported player found.')
         sys.exit()
