@@ -88,7 +88,7 @@ def metadata_get(type, artist, title, lang):
 
         db = plyr.Database(cache_dir)
         query = plyr.Query(artist=artist, title=title,
-                           get_type=type, database=db, language=lang.encode())
+                           get_type=type, database=db, language=lang)
         try:
             m = query.commit()[0].data.decode()
         except IndexError:
