@@ -8,15 +8,17 @@
 
 import os
 import sys
+import shlex
 import locale
-import textwrap
 import curses
 import socket
-import plyr
+import textwrap
 from time import sleep
 from urllib.request import urlopen
 from threading import Thread, Lock
 from subprocess import Popen, PIPE
+
+import plyr
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -63,14 +65,27 @@ def wrapwords(text, cols):
 def process_socket(command, file):
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.connect(file)
-    s.send(command.encode())
+    s.send((command + '\n').encode())
     s.close()
 
 
 def process_fifo(command, file):
     f = open(file, 'w')
-    f.write(command)
+    f.write(command + '\n')
     f.flush()
+
+
+def get_output(command):
+    p = Popen(shlex.split(command), stdout=PIPE, stderr=PIPE)
+
+    return p.communicate()[0].decode().strip()
+
+
+def running(process):
+    if process in get_output('ps -C %s' % process):
+        return True
+    else:
+        return False
 
 
 def metadata_get(type, artist, title, lang):
@@ -110,413 +125,299 @@ def get_and_update(artist, title, data):
             data['lock'].release()
 
 
-class cmus:
-    def command(self, command):
-        if command == 'play':
-            os.system('cmus-remote -p')
-        elif command == 'pause':
-            os.system('cmus-remote -u')
-        elif command == 'next':
-            os.system('cmus-remote -n')
-        elif command == 'prev':
-            os.system('cmus-remote -r')
-        elif command == 'stop':
-            os.system('cmus-remote -s')
-        elif command == 'volup':
-            os.system('cmus-remote -v +5%')
-        elif command == 'voldn':
-            os.system('cmus-remote -v -5%')
-
+class DummyPlayer:
     def status(self):
-        if not os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
+        if self.run['type'] == 'file':
+            runs = os.path.exists(self.run['name'])
+        elif self.run['type'] == 'process':
+            runs = running(self.run['name'])
+        if not runs:
+            if self.np['type'] == 'file' or self.np['type'] == 'log':
+                if os.path.exists(self.np['name']):
+                    os.remove(self.np['name'])
             sys.exit()
 
-        s = Popen(['cmus-remote', '-Q'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
+        if self.np['type'] == 'tuple_file':
+            try:
+                f = open(self.np['name'])
+            except IOError:
+                self.playing = False
+                self.artist = 'N/A'
+                self.title = 'N/A'
+            else:
+                self.playing = True
+                self.artist, self.title = f.read().strip().split('|')
+                f.close()
 
-        if 'status stopped' in s:
-            self.playing = False
-        else:
-            self.playing = True
+        elif self.np['type'] == 'tuple_command':
+                self.playing = True
+                s = get_output(self.np['name'])
+                self.artist, self.title = s.strip().split('\\')
 
-        if 'tag artist' in s:
-            self.artist = s.split('tag artist ')[1].splitlines()[0]
         else:
+            if self.np['type'] == 'command':
+                s = get_output(self.np['name'])
+            elif self.np['type'] == 'log':
+                f = open(self.np['name'])
+                s = f.read().split(self.np['str']['beg'])[-1]
+                f.close()
+            elif self.np['type'] == 'url':
+                p = urlopen(self.np['name'])
+                s = p.read().decode()
+                p.close()
+
+            if self.np['str']['stopped'] in s:
+                self.playing = False
+                self.artist = 'N/A'
+                self.title = 'N/A'
+
+            else:
+                self.playing = True
+                if self.np['str']['artist_beg'] in s:
+                    self.artist = s.split(self.np['str']['artist_beg'])[1] \
+                                  .split(self.np['str']['artist_end'])[0]
+                else:
+                    self.artist = 'N/A'
+                if self.np['str']['title_beg'] in s:
+                    self.title = s.split(self.np['str']['title_beg'])[1] \
+                                 .split(self.np['str']['title_end'])[0]
+                else:
+                    self.title = 'N/A'
+                if 'file_beg' in self.np['str']:
+                    file = s.split(self.np['str']['file_beg'])[1] \
+                           .split(self.np['str']['file_end'])[0]
+                    if self.title == file.rsplit('.', 1)[0]:
+                        self.title = 'N/A'
+
+        missing_tag = ['', 'Unknown artist']
+        if self.artist in missing_tag:
             self.artist = 'N/A'
-
-        if 'tag title' in s:
-            self.title = s.split('tag title ')[1].splitlines()[0]
-        else:
+        if self.title in missing_tag:
             self.title = 'N/A'
 
-
-class shellfm:
     def command(self, command):
-        socket = os.environ['HOME'] + '/.shell-fm/socket'
-
-        if command == 'pause':
-            process_socket('pause\n', socket)
-        elif command == 'next':
-            process_socket('skip\n', socket)
-        elif command == 'stop':
-            process_socket('stop\n', socket)
-        elif command == 'volup':
-            process_socket('volume +5\n', socket)
-        elif command == 'voldn':
-            process_socket('volume -5\n', socket)
-
-    def status(self):
-        if not os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
-            sys.exit()
-
-        try:
-            np = open(os.environ['HOME'] + '/.shell-fm/nowplaying')
-        except IOError:
-            self.playing = False
-            self.artist = 'N/A'
-            self.title = 'N/A'
-        else:
-            self.playing = True
-            self.artist, self.title = np.read().split('|')
-            np.close()
+        if command in self.ctl['commands']:
+            if self.ctl['type'] == 'socket':
+                process_socket(self.ctl['commands'][command], self.ctl['name'])
+            if self.ctl['type'] == 'fifo':
+                process_fifo(self.ctl['commands'][command], self.ctl['name'])
+            if self.ctl['type'] == 'command':
+                os.system(self.ctl['commands'][command])
 
 
-class pianobar:
+class Cmus(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'file',
+                    'name': os.environ['HOME'] + '/.cmus/socket'}
+        self.np = {'type': 'command',
+                   'name': 'cmus-remote -Q',
+                   'str': {'artist_beg': 'tag artist ',
+                           'artist_end': '\n',
+                           'title_beg': 'tag title ',
+                           'title_end': '\n',
+                           'stopped': 'status stopped'}}
+        self.ctl = {'type': 'command',
+                    'commands': {'play': 'cmus-remote -p',
+                                 'pause': 'cmus-remote -u',
+                                 'next': 'cmus-remote -n',
+                                 'prev': 'cmus-remote -r',
+                                 'stop': 'cmus-remote -s',
+                                 'volup': 'cmus-remote -v +5%',
+                                 'voldn': 'cmus-remote -v -5%'}}
+
+
+class Shellfm(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'file',
+                    'name': os.environ['HOME'] + '/.shell-fm/session'}
+        self.np = {'type': 'tuple_file',
+                   'name': os.environ['HOME'] + '/.shell-fm/nowplaying'}
+        self.ctl = {'type': 'socket',
+                    'name': os.environ['HOME'] + '/.shell-fm/socket',
+                    'commands': {'pause': 'pause',
+                                 'next': 'skip',
+                                 'stop': 'stop',
+                                 'volup': 'volume +5',
+                                 'voldn': 'volume -5'}}
+
+
+class Pianobar(DummyPlayer):
     def __init__(self):
         try:
-            self.config_dir = os.environ['XDG_CONFIG_HOME'] + '/pianobar/'
+            config_dir = os.environ['XDG_CONFIG_HOME'] + '/pianobar/'
         except KeyError:
-            self.config_dir = os.environ['HOME'] + '/.config/pianobar/'
+            config_dir = os.environ['HOME'] + '/.config/pianobar/'
 
         # set default keys
-        self.settings = {'key_pause': 'p',
-                         'key_next': 'n',
-                         'key_stop': 'q',
-                         'key_volup': ')',
-                         'key_voldn': '('}
+        settings = {'key_pause': 'p',
+                    'key_next': 'n',
+                    'key_stop': 'q',
+                    'key_volup': ')',
+                    'key_voldn': '('}
+        settings.update(parse_config(config_dir + 'config'))
 
-        self.settings.update(parse_config(self.config_dir + 'config'))
+        self.run = {'type': 'process',
+                    'name': 'pianobar'}
+        self.np = {'type': 'tuple_file',
+                   'name': config_dir + 'nowplaying'}
+        self.ctl = {'type': 'fifo',
+                    'name': config_dir + 'ctl',
+                    'commands': {'play': settings['key_pause'],
+                                 'pause': settings['key_pause'],
+                                 'next': settings['key_next'],
+                                 'stop': settings['key_stop'],
+                                 'volup': settings['key_volup'],
+                                 'voldn': settings['key_voldn']}}
 
-    def command(self, command):
-        fifo = self.config_dir + 'ctl'
 
-        if command == 'play':
-            process_fifo(self.settings['key_pause'] + '\n', fifo)
-        elif command == 'pause':
-            process_fifo(self.settings['key_pause'] + '\n', fifo)
-        elif command == 'next':
-            process_fifo(self.settings['key_next'] + '\n', fifo)
-        elif command == 'stop':
-            process_fifo(self.settings['key_stop'] + '\n', fifo)
-        elif command == 'volup':
-            process_fifo(self.settings['key_volup'] + '\n', fifo)
-        elif command == 'voldn':
-            process_fifo(self.settings['key_voldn'] + '\n', fifo)
+class Mpd(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'process',
+                    'name': 'mpd'}
+        self.np = {'type': 'tuple_command',
+                   'name': 'mpc current -f "%artist%\\%title%"'}
+        self.ctl = {'type': 'command',
+                    'commands': {'play': 'mpc play > /dev/null',
+                                 'pause': 'mpc pause > /dev/null',
+                                 'next': 'mpc next > /dev/null',
+                                 'prev': 'mpc prev > /dev/null',
+                                 'stop': 'mpc stop > /dev/null',
+                                 'volup': 'mpc volume +5 > /dev/null',
+                                 'voldn': 'mpc volume -5 > /dev/null'}}
 
-    def status(self):
-        np = self.config_dir + 'nowplaying'
-        if 'pianobar' not in Popen(['ps', '-C', 'pianobar'],
-                                   stdout=PIPE, stderr=PIPE) \
-                             .communicate()[0].decode():
-            if os.path.exists(np):
-                os.remove(np)
-            sys.exit()
 
+class Moc(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'file',
+                    'name': os.environ['HOME'] + '/.moc/pid'}
+        self.np = {'type': 'command',
+                    'name': 'mocp -i',
+                    'str': {'artist_beg': 'Artist: ',
+                            'artist_end': '\n',
+                            'title_beg': 'SongTitle: ',
+                            'title_end': '\n',
+                            'stopped': 'State: STOP'}}
+        self.ctl = {'type': 'command',
+                    'commands': {'play': 'mocp -U 2> /dev/null',
+                                 'pause': 'mocp -P 2> /dev/null',
+                                 'next': 'mocp -f 2> /dev/null',
+                                 'prev': 'mocp -r 2> /dev/null',
+                                 'stop': 'mocp -s 2> /dev/null',
+                                 'volup': 'mocp --volume +5 2> /dev/null',
+                                 'voldn': 'mocp --volume -5 2> /dev/null'}}
+
+
+class Mplayer(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'process',
+                    'name': 'mplayer'}
+        self.np = {'type': 'log',
+                   'name': os.environ['HOME'] + '/.mplayer/log',
+                   'str': {'beg': 'AUDIO_ID',
+                           'artist_beg': 'VALUE1=',
+                           'artist_end': '\n',
+                           'title_beg': 'VALUE0=',
+                           'title_end': '\n',
+                           'stopped': '||||'}}
+        self.ctl = {'type': 'fifo',
+                    'name': os.environ['HOME'] + '/.mplayer/fifo',
+                    'commands': {'play': 'pause',
+                                 'pause': 'pause',
+                                 'next': 'pt_step 1',
+                                 'prev': 'pt_step -1',
+                                 'stop': 'stop',
+                                 'volup': 'volume +1',
+                                 'voldn': 'volume -1'}}
+
+
+class Vlc(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'file',
+                    'name': '/tmp/vlc.sock'}
+        self.np = {'type': 'url',
+                   'name': 'http://localhost:8080/requests/status.xml',
+                   'str': {'artist_beg': 'name=\'artist\'>',
+                           'artist_end': '</info>',
+                           'title_beg': 'name=\'title\'>',
+                           'title_end': '</info>',
+                           'stopped': '<state>stopped</state>'}}
+        self.ctl = {'type': 'socket',
+                    'name': '/tmp/vlc.sock',
+                    'commands': {'play': 'pause',
+                                 'pause': 'pause',
+                                 'next': 'next',
+                                 'prev': 'prev',
+                                 'stop': 'stop',
+                                 'volup': 'volup 1',
+                                 'voldn': 'voldown 1'}}
+
+
+class Audacious(DummyPlayer):
+    def __init__(self):
         try:
-            f = open(np)
-        except IOError:
-            self.playing = False
-            self.artist = 'N/A'
-            self.title = 'N/A'
-        else:
-            self.playing = True
-            self.artist, self.title = f.read().split('|')
-            f.close()
-
-
-class mpd:
-    def command(self, command):
-        if command == 'play':
-            os.system('mpc play > /dev/null')
-        elif command == 'pause':
-            os.system('mpc pause > /dev/null')
-        elif command == 'next':
-            os.system('mpc next > /dev/null')
-        elif command == 'prev':
-            os.system('mpc prev > /dev/null')
-        elif command == 'stop':
-            os.system('mpc stop > /dev/null')
-        elif command == 'volup':
-            os.system('mpc volume +5 > /dev/null')
-        elif command == 'voldn':
-            os.system('mpc volume -5 > /dev/null')
-
-    def status(self):
-        if 'mpd' not in Popen(['ps', '-C', 'mpd'],
-                              stdout=PIPE, stderr=PIPE) \
-                        .communicate()[0].decode():
-            sys.exit()
-
-        s = Popen(['mpc', 'current', '-f', '%artist%\\%title%'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
-
-        try:
-            self.artist = s.split('\\')[0]
-            if self.artist == '':
-                self.artist = 'N/A'
-
-            self.title = s.split('\\')[1].strip()
-            if self.title == '':
-                self.title = 'N/A'
-        except IndexError:
-            self.artist = 'N/A'
-            self.title = 'N/A'
-            self.playing = False
-        else:
-            self.playing = True
-
-
-class moc:
-    def command(self, command):
-        if command == 'play':
-            os.system('mocp -U 2> /dev/null')
-        elif command == 'pause':
-            os.system('mocp -P 2> /dev/null')
-        elif command == 'next':
-            os.system('mocp -f 2> /dev/null')
-        elif command == 'prev':
-            os.system('mocp -r 2> /dev/null')
-        elif command == 'stop':
-            os.system('mocp -s 2> /dev/null')
-        elif command == 'volup':
-            os.system('mocp --volume +5 2> /dev/null')
-        elif command == 'voldn':
-            os.system('mocp --volume -5 2> /dev/null')
-
-    def status(self):
-        if not os.path.exists(os.environ['HOME'] + '/.moc/pid'):
-            sys.exit()
-
-        s = Popen(['mocp', '-i'], stdout=PIPE, stderr=PIPE) \
-            .communicate()[0].decode()
-
-        if 'State: PLAY' in s or 'State: PAUSE' in s:
-            self.playing = True
-
-            if 'Artist: \n' not in s:
-                self.artist = s.split('Artist: ')[1].splitlines()[0]
-            else:
-                self.artist = 'N/A'
-
-            if 'SongTitle: \n' not in s:
-                self.title = s.split('SongTitle: ')[1].splitlines()[0]
-            else:
-                self.title = 'N/A'
-        else:
-            self.playing = False
-            self.artist = 'N/A'
-            self.title = 'N/A'
-
-
-class mplayer:
-    def command(self, command):
-        fifo = os.environ['HOME'] + '/.mplayer/fifo'
-
-        if command == 'play':
-            process_fifo('pause\n', fifo)
-        elif command == 'pause':
-            process_fifo('pause\n', fifo)
-        elif command == 'next':
-            process_fifo('pt_step 1\n', fifo)
-        elif command == 'prev':
-            process_fifo('pt_step -1\n', fifo)
-        elif command == 'stop':
-            process_fifo('stop\n', fifo)
-        elif command == 'volup':
-            process_fifo('volume +1\n', fifo)
-        elif command == 'voldn':
-            process_fifo('volume -1\n', fifo)
-
-    def status(self):
-        log = os.environ['HOME'] + '/.mplayer/log'
-        if 'mplayer' not in Popen(['ps', '-C', 'mplayer'],
-            stdout=PIPE, stderr=PIPE).communicate()[0].decode():
-            if os.path.exists(log):
-                os.remove(log)
-            sys.exit()
-
-        self.playing = True
-        f = open(log)
-        s = f.read().split('AUDIO_ID')[-1]
-        f.close()
-        if 'VALUE0' in s:
-            self.title = s.split('VALUE0=')[-1].splitlines()[0]
-        else:
-            self.title = 'N/A'
-        if 'VALUE1' in s:
-            self.artist = s.split('VALUE1=')[-1].splitlines()[0]
-        else:
-            self.artist = 'N/A'
-
-
-class vlc:
-    def command(self, command):
-        socket = '/tmp/vlc.sock'
-
-        if command == 'play':
-            process_socket('pause\n', socket)
-        if command == 'pause':
-            process_socket('pause\n', socket)
-        elif command == 'next':
-            process_socket('next\n', socket)
-        elif command == 'prev':
-            process_socket('prev\n', socket)
-        elif command == 'stop':
-            process_socket('stop\n', socket)
-        elif command == 'volup':
-            process_socket('volup 1\n', socket)
-        elif command == 'voldn':
-            process_socket('voldown 1\n', socket)
-
-    def status(self):
-        if not os.path.exists('/tmp/vlc.sock'):
-            sys.exit()
-
-        s = urlopen('http://localhost:8080/requests/status.xml').read() \
-            .decode()
-        if '<state>stopped</state>' in s:
-            self.playing = False
-        else:
-            self.playing = True
-        if 'name=\'artist\'>' in s:
-            self.artist = s.split('name=\'artist\'>')[1].split('</info>')[0]
-        else:
-            self.artist = 'N/A'
-        if 'name=\'title\'>' in s:
-            self.title = s.split('name=\'title\'>')[1].split('</info>')[0]
-        else:
-            self.title = 'N/A'
-
-
-class audacious:
-    def command(self, command):
-        if command == 'play':
-            os.system('audtool --playback-playpause')
-        elif command == 'pause':
-            os.system('audtool --playback-playpause')
-        elif command == 'next':
-            os.system('audtool --playlist-advance')
-        elif command == 'prev':
-            os.system('audtool --playlist-reverse')
-        elif command == 'stop':
-            os.system('audtool --playback-stop')
-        elif command == 'volup':
-            os.system('audtool --set-volume +5')
-        elif command == 'voldn':
-            os.system('audtool --set-volume -5')
-
-    def status(self):
-        try:
-            lock = os.environ['XDG_CONFIG_HOME'] + '/audacious/lock'
+            config_dir = os.environ['XDG_CONFIG_HOME'] + '/audacious/'
         except KeyError:
-            lock = os.environ['HOME'] + '/.config/audacious/lock'
-        if not os.path.exists(lock):
-            sys.exit()
+            config_dir = os.environ['HOME'] + '/.config/audacious/'
 
-        s = Popen(['audtool', '--playback-status'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
-        if 'stopped' in s:
-            self.playing = False
-        else:
-            self.playing = True
-        self.artist = Popen(['audtool', 'current-song-tuple-data', 'artist'],
-                            stdout=PIPE, stderr=PIPE) \
-                            .communicate()[0].decode().strip()
-        if self.artist == '':
-            self.artist = 'N/A'
-        self.title = Popen(['audtool', 'current-song-tuple-data', 'title'],
-                            stdout=PIPE, stderr=PIPE) \
-                            .communicate()[0].decode().strip()
-        if self.title == '':
-            self.title = 'N/A'
+        self.run = {'type': 'file',
+                    'name': config_dir + 'lock'}
+        self.np = {'type': 'tuple_file',
+                   'name': config_dir + 'nowplaying'}
+        self.ctl = {'type': 'command',
+                    'commands': {'play': 'audtool --playback-playpause',
+                                 'pause': 'audtool --playback-playpause',
+                                 'next': 'audtool --playlist-advance',
+                                 'prev': 'audtool --playlist-reverse',
+                                 'stop': 'audtool --playback-stop',
+                                 'volup': 'audtool --set-volume +5',
+                                 'voldn': 'audtool --set-volume -5'}}
 
 
-class deadbeef:
-    def command(self, command):
-        if command == 'play':
-            os.system('deadbeef --play 2>/dev/null')
-        elif command == 'pause':
-            os.system('deadbeef --toggle-pause 2>/dev/null')
-        elif command == 'next':
-            os.system('deadbeef --next 2>/dev/null')
-        elif command == 'prev':
-            os.system('deadbeef --prev 2>/dev/null')
-        elif command == 'stop':
-            os.system('deadbeef --stop 2>/dev/null')
-
-    def status(self):
-        if 'deadbeef-main' not in Popen(['ps', '-C', 'deadbeef-main'],
-                                        stdout=PIPE, stderr=PIPE) \
-                                  .communicate()[0].decode():
-            sys.exit()
-
-        s = Popen(['deadbeef', '--nowplaying', '%a%|%t%'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
-        file = Popen(['deadbeef', '--nowplaying', '%f%'],
-                  stdout=PIPE, stderr=PIPE).communicate()[0].decode()
-
-        if s == 'nothing':
-            self.playing = False
-            self.artist = 'N/A'
-            self.title = 'N/A'
-        else:
-            self.playing = True
-            self.artist, self.title = s.split('|')
-            if self.artist == 'Unknown artist':
-                self.artist = 'N/A'
-            if self.title == file.rsplit('.', 1)[0]:
-                self.title = 'N/A'
+class Deadbeef(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'process',
+                    'name': 'deadbeef-main'}
+        self.np = {'type': 'command',
+                   'name': 'deadbeef --nowplaying \
+                            "artist %a%|title %t%|file %f%|"',
+                   'str': {'artist_beg': 'artist ',
+                           'artist_end': '|',
+                           'title_beg': 'title ',
+                           'title_end': '|',
+                           'file_beg': 'file ',
+                           'file_end': '|',
+                           'stopped': 'nothing'}}
+        self.ctl = {'type': 'command',
+                    'commands': {'play': 'deadbeef --play 2> /dev/null',
+                                 'pause': 'deadbeef --toggle-pause \
+                                           2> /dev/null',
+                                 'next': 'deadbeef --next 2> /dev/null',
+                                 'prev': 'deadbeef --prev 2> /dev/null',
+                                 'stop': 'deadbeef --stop 2> /dev/null'}}
 
 
-class qmmp:
-    def command(self, command):
-        if command == 'play':
-            os.system('qmmp -t')
-        elif command == 'pause':
-            os.system('qmmp -t')
-        elif command == 'next':
-            os.system('qmmp --next')
-        elif command == 'prev':
-            os.system('qmmp --previous')
-        elif command == 'stop':
-            os.system('qmmp -s')
-        elif command == 'volup':
-            os.system('qmmp --volume-inc')
-        elif command == 'voldn':
-            os.system('qmmp --volume-dec')
-
-    def status(self):
-        if not os.path.exists('/tmp/qmmp.sock.1000'):
-            sys.exit()
-
-        s = Popen(['qmmp', '--status'], stdout=PIPE, stderr=PIPE) \
-            .communicate()[0].decode().strip()
-
-        if s == '[stopped]':
-            self.playing = False
-            self.artist = 'N/A'
-            self.title = 'N/A'
-        else:
-            self.playing = True
-            self.artist = s.split('ARTIST = ')[1].splitlines()[0]
-            self.title = s.split('TITLE = ')[1].splitlines()[0]
-            if self.artist == '':
-                self.artist = 'N/A'
-            if self.title == '':
-                self.title = 'N/A'
+class Qmmp(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'file',
+                    'name': '/tmp/qmmp.sock.1000'}
+        self.np = {'type': 'command',
+                   'name': 'qmmp --status',
+                   'str': {'artist_beg': 'ARTIST = ',
+                           'artist_end': '\n',
+                           'title_beg': 'TITLE = ',
+                           'title_end': '\n',
+                           'stopped': '[stopped]'}}
+        self.ctl = {'type': 'command',
+                    'commands': {'play': 'qmmp -t',
+                                 'pause': 'qmmp -t',
+                                 'next': 'qmmp --next',
+                                 'prev': 'qmmp --previous',
+                                 'stop': 'qmmp -s',
+                                 'volup': 'qmmp --volume-inc',
+                                 'voldn': 'qmmp --volume-dec'}}
 
 
-class ui:
+class Ui:
     def __init__(self, data):
         self.screen = data['screen']
         self.settings = data['settings']
@@ -664,7 +565,7 @@ def main(stdscr):
 
     settings.update(parse_config(config_file))
 
-    u = ui({'screen': stdscr, 'player': p, 'settings': settings})
+    u = Ui({'screen': stdscr, 'player': p, 'settings': settings})
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
@@ -709,25 +610,25 @@ def main(stdscr):
 
 if __name__ == '__main__':
     if os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
-        p = cmus()
+        p = Cmus()
     elif os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
-        p = shellfm()
-    elif 'pianobar' in os.popen('ps -C pianobar').read():
-        p = pianobar()
-    elif 'mpd' in os.popen('ps -C mpd').read():
-        p = mpd()
+        p = Shellfm()
+    elif running('pianobar'):
+        p = Pianobar()
+    elif running('mpd'):
+        p = Mpd()
     elif os.path.exists(os.environ['HOME'] + '/.moc/pid'):
-        p = moc()
-    elif 'mplayer' in os.popen('ps -C mplayer').read():
-        p = mplayer()
+        p = Moc()
+    elif running('mplayer'):
+        p = Mplayer()
     elif os.path.exists('/tmp/vlc.sock'):
-        p = vlc()
-    elif 'audacious' in os.popen('ps -C audacious').read():
-        p = audacious()
-    elif 'deadbeef-main' in os.popen('ps -C deadbeef-main').read():
-        p = deadbeef()
+        p = Vlc()
+    elif running('audacious'):
+        p = Audacious()
+    elif running('deadbeef-main'):
+        p = Deadbeef()
     elif os.path.exists('/tmp/qmmp.sock.1000'):
-        p = qmmp()
+        p = Qmmp()
     else:
         print('No supported player found.')
         sys.exit()
