@@ -132,27 +132,33 @@ class DummyPlayer:
         elif self.run['type'] == 'process':
             runs = running(self.run['name'])
         if not runs:
-            if self.np['type'] == 'file' or self.np['type'] == 'log':
+            if self.np['type'] == 'np_file' or self.np['type'] == 'log':
                 if os.path.exists(self.np['name']):
                     os.remove(self.np['name'])
             sys.exit()
 
-        if self.np['type'] == 'tuple_file':
-            try:
-                f = open(self.np['name'])
-            except IOError:
-                self.playing = False
-                self.artist = 'N/A'
-                self.title = 'N/A'
-            else:
-                self.playing = True
-                self.artist, self.title = f.read().strip().split('|')
-                f.close()
-
-        elif self.np['type'] == 'tuple_command':
-                self.playing = True
+        if self.np['type'] == 'np_file' or self.np['type'] == 'np_command':
+            if self.np['type'] == 'np_file':
+                try:
+                    f = open(self.np['name'])
+                    s = f.read()
+                    f.close()
+                except IOError:
+                    pass
+            elif self.np['type'] == 'np_command':
                 s = get_output(self.np['name'])
-                self.artist, self.title = s.strip().split('\\')
+
+            self.playing = True
+            s = s.strip().split('\\')
+            if len(s) < 2:
+                self.playing = False
+            else:
+                self.artist = s[0]
+                self.title = s[1]
+                if len(s) > 2:
+                    file = s[2].rsplit('.', 1)[0]
+                    if file == self.title:
+                        self.title = 'N/A'
 
         else:
             if self.np['type'] == 'command':
@@ -168,9 +174,6 @@ class DummyPlayer:
 
             if self.np['str']['stopped'] in s:
                 self.playing = False
-                self.artist = 'N/A'
-                self.title = 'N/A'
-
             else:
                 self.playing = True
                 if self.np['str']['artist_beg'] in s:
@@ -183,25 +186,24 @@ class DummyPlayer:
                                  .split(self.np['str']['title_end'])[0]
                 else:
                     self.title = 'N/A'
-                if 'file_beg' in self.np['str']:
-                    file = s.split(self.np['str']['file_beg'])[1] \
-                           .split(self.np['str']['file_end'])[0]
-                    if self.title == file.rsplit('.', 1)[0]:
-                        self.title = 'N/A'
 
-        missing_tag = ['', 'Unknown artist']
-        if self.artist in missing_tag:
+        if self.playing == False:
             self.artist = 'N/A'
-        if self.title in missing_tag:
             self.title = 'N/A'
+        else:
+            missing_tag = ['', 'Unknown artist']
+            if self.artist in missing_tag:
+                self.artist = 'N/A'
+            if self.title in missing_tag:
+                self.title = 'N/A'
 
     def command(self, command):
         if command in self.ctl['commands']:
             if self.ctl['type'] == 'socket':
                 process_socket(self.ctl['commands'][command], self.ctl['name'])
-            if self.ctl['type'] == 'fifo':
+            elif self.ctl['type'] == 'fifo':
                 process_fifo(self.ctl['commands'][command], self.ctl['name'])
-            if self.ctl['type'] == 'command':
+            elif self.ctl['type'] == 'command':
                 os.system(self.ctl['commands'][command])
 
 
@@ -230,7 +232,7 @@ class Shellfm(DummyPlayer):
     def __init__(self):
         self.run = {'type': 'file',
                     'name': os.environ['HOME'] + '/.shell-fm/session'}
-        self.np = {'type': 'tuple_file',
+        self.np = {'type': 'np_file',
                    'name': os.environ['HOME'] + '/.shell-fm/nowplaying'}
         self.ctl = {'type': 'socket',
                     'name': os.environ['HOME'] + '/.shell-fm/socket',
@@ -258,7 +260,7 @@ class Pianobar(DummyPlayer):
 
         self.run = {'type': 'process',
                     'name': 'pianobar'}
-        self.np = {'type': 'tuple_file',
+        self.np = {'type': 'np_file',
                    'name': config_dir + 'nowplaying'}
         self.ctl = {'type': 'fifo',
                     'name': config_dir + 'ctl',
@@ -274,7 +276,7 @@ class Mpd(DummyPlayer):
     def __init__(self):
         self.run = {'type': 'process',
                     'name': 'mpd'}
-        self.np = {'type': 'tuple_command',
+        self.np = {'type': 'np_command',
                    'name': 'mpc current -f "%artist%\\%title%"'}
         self.ctl = {'type': 'command',
                     'commands': {'play': 'mpc play > /dev/null',
@@ -361,7 +363,7 @@ class Audacious(DummyPlayer):
 
         self.run = {'type': 'file',
                     'name': config_dir + 'lock'}
-        self.np = {'type': 'tuple_file',
+        self.np = {'type': 'np_file',
                    'name': config_dir + 'nowplaying'}
         self.ctl = {'type': 'command',
                     'commands': {'play': 'audtool --playback-playpause',
@@ -377,16 +379,8 @@ class Deadbeef(DummyPlayer):
     def __init__(self):
         self.run = {'type': 'process',
                     'name': 'deadbeef-main'}
-        self.np = {'type': 'command',
-                   'name': 'deadbeef --nowplaying \
-                            "artist %a%|title %t%|file %f%|"',
-                   'str': {'artist_beg': 'artist ',
-                           'artist_end': '|',
-                           'title_beg': 'title ',
-                           'title_end': '|',
-                           'file_beg': 'file ',
-                           'file_end': '|',
-                           'stopped': 'nothing'}}
+        self.np = {'type': 'np_command',
+                   'name': 'deadbeef --nowplaying "%a%\\%t%\\%f%"'}
         self.ctl = {'type': 'command',
                     'commands': {'play': 'deadbeef --play 2> /dev/null',
                                  'pause': 'deadbeef --toggle-pause \
