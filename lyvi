@@ -144,7 +144,7 @@ class DummyPlayer:
                     s = f.read()
                     f.close()
                 except IOError:
-                    pass
+                    s = ''
             elif self.np['type'] == 'np_command':
                 s = get_output(self.np['name'])
 
