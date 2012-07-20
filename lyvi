@@ -20,6 +20,9 @@ from subprocess import Popen, PIPE
 
 import plyr
 
+VERSION = '0.1'
+GLYR_VERSION = plyr.version().split()[1]
+
 locale.setlocale(locale.LC_ALL, '')
 
 
@@ -603,6 +606,10 @@ def main(stdscr):
 
 
 if __name__ == '__main__':
+    if '-v' in sys.argv:
+        print('Lyvi %s (libglyr %s)' % (VERSION, GLYR_VERSION))
+        sys.exit()
+
     if os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
         p = Cmus()
     elif os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
@@ -627,7 +634,7 @@ if __name__ == '__main__':
         print('No supported player found.')
         sys.exit()
 
-    if len(sys.argv) > 1:
+    try:
         p.command(sys.argv[1])
-    else:
+    except IndexError:
         curses.wrapper(main)
