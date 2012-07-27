@@ -579,7 +579,7 @@ def main(stdscr):
                 'key_voldn': '-',
                 'color_title': 7,
                 'color_text': -1,
-                'color_status': -1
+                'color_status': -1,
                 'color_buttons': -1}
 
     settings.update(parse_config(config_file))
