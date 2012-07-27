@@ -422,6 +422,9 @@ class Ui:
         self.quit = False
         self.artist = ''
         curses.curs_set(0)
+        mousemask = curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION
+        curses.mousemask(mousemask)
+        curses.mouseinterval(0)
 
         # init colors
         curses.use_default_colors()
@@ -493,13 +496,18 @@ class Ui:
         while True:
             key = self.screen.getch()
 
+            x = y = bstate = None
+            if key == curses.KEY_MOUSE:
+                id, x, y, z, bstate = curses.getmouse()
+
             if key == ord(self.settings['key_quit']):
                 self.quit = True
 
             elif key == curses.KEY_RESIZE:
                 self.update_content()
 
-            elif key == ord(self.settings['key_toggle']):
+            elif (key == ord(self.settings['key_toggle']))\
+                or (bstate == curses.BUTTON1_PRESSED and y == self.y - 1):
                 i = views.index(self.settings['view']) + 1
                 if i >= len(views):
                     i = 0
@@ -510,7 +518,8 @@ class Ui:
                 self.player.command(commands[key])
 
             else:
-                if key == curses.KEY_DOWN or key == ord('j'):
+                if key == curses.KEY_DOWN or key == ord('j')\
+                    or bstate == curses.BUTTON2_PRESSED:
                     if self.pos_y < self.pad_lines - self.y + 1:
                         self.pos_y += 1
 
@@ -519,17 +528,16 @@ class Ui:
                         self.pos_y += self.y - 1
 
                 elif key == curses.KEY_END or key == ord('G'):
-                    if self.pos_y < self.pad_lines - self.y + 1:
-                        self.pos_y = self.pad_lines - self.y + 1
+                    self.pos_y = self.pad_lines - self.y + 1
 
-                elif key == curses.KEY_UP or key == ord('k'):
+                elif key == curses.KEY_UP or key == ord('k')\
+                    or bstate == curses.BUTTON4_PRESSED:
                     if self.pos_y > 0:
                         self.pos_y -= 1
 
                 elif key == curses.KEY_PPAGE or key == curses.KEY_LEFT:
-                    if self.pos_y - self.y > 0:
-                        self.pos_y -= self.y - 1
-                    else:
+                    self.pos_y -= self.y - 1
+                    if self.pos_y < 0:
                         self.pos_y = 0
 
                 elif key == curses.KEY_HOME or key == ord('g'):
