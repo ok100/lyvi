@@ -431,6 +431,7 @@ class Ui:
         curses.init_pair(1, int(self.settings['color_title']), -1)
         curses.init_pair(2, int(self.settings['color_text']), -1)
         curses.init_pair(3, int(self.settings['color_status']), -1)
+        curses.init_pair(4, int(self.settings['color_buttons']), -1)
 
     def update_content(self):
         self.pos_y = 0
@@ -476,6 +477,7 @@ class Ui:
         else:
             pos_perc = str(int((100 / float(self.pad_lines - self.y)) \
                                * self.pos_y - 1)) + '%'
+        self.statusbar.addstr(0, 1, '|< >|| >|', curses.color_pair(4))
         self.statusbar.addstr(0, self.x - len(pos_perc) - 1, pos_perc,
                               curses.color_pair(3))
         self.statusbar.addstr(0, self.x - len(self.settings['view']) - 10,
@@ -506,8 +508,19 @@ class Ui:
             elif key == curses.KEY_RESIZE:
                 self.update_content()
 
+            elif bstate == curses.BUTTON1_PRESSED\
+                and y == self.y - 1 and 1 <= x <= 2:
+                self.player.command('prev')
+            elif bstate == curses.BUTTON1_PRESSED\
+                and y == self.y - 1 and 4 <= x <= 6:
+                self.player.command('pause')
+            elif bstate == curses.BUTTON1_PRESSED\
+                and y == self.y - 1 and 8 <= x <= 9:
+                self.player.command('next')
+
             elif (key == ord(self.settings['key_toggle']))\
-                or (bstate == curses.BUTTON1_PRESSED and y == self.y - 1):
+                or bstate == curses.BUTTON1_PRESSED and y == self.y - 1\
+                and self.x - len(self.settings['view']) - 10 <= x < self.x - 10:
                 i = views.index(self.settings['view']) + 1
                 if i >= len(views):
                     i = 0
@@ -566,7 +579,8 @@ def main(stdscr):
                 'key_voldn': '-',
                 'color_title': 7,
                 'color_text': -1,
-                'color_status': -1}
+                'color_status': -1
+                'color_buttons': -1}
 
     settings.update(parse_config(config_file))
 
