@@ -14,6 +14,7 @@ import curses
 import socket
 import textwrap
 from time import sleep
+from getpass import getuser
 from urllib.request import urlopen
 from threading import Thread, Lock
 from subprocess import Popen, PIPE
@@ -418,6 +419,30 @@ class Qmmp(DummyPlayer):
                                  'voldn': 'qmmp --volume-dec'}}
 
 
+class Guayadeque(DummyPlayer):
+    def __init__(self):
+        self.run = {'type': 'file',
+                    'name': '%s/.guayadeque/.guayadeque-%s' %
+                            (os.environ['HOME'], getuser())}
+        cmd_base = 'dbus-send --print-reply --type=method_call\
+                    --dest=org.mpris.guayadeque /Player\
+                    org.freedesktop.MediaPlayer.'
+        str_base = '"\n         variant             string "'
+        self.np = {'type': 'command',
+                   'name': cmd_base + 'GetMetadata',
+                   'str': {'artist_beg': 'artist' + str_base,
+                           'artist_end': '"\n',
+                           'title_beg': 'title' + str_base,
+                           'title_end': '"\n',
+                           'stopped': '||||'}}
+        self.ctl = {'type': 'command',
+                    'commands': {'play': cmd_base + 'Play &> /dev/null',
+                                 'pause': cmd_base + 'Play &> /dev/null',
+                                 'next': cmd_base + 'Next &> /dev/null',
+                                 'prev': cmd_base + 'Prev &> /dev/null',
+                                 'stop': cmd_base + 'Stop &> /dev/null'}}
+
+
 class Ui:
     def __init__(self, data):
         self.screen = data['screen']
@@ -673,6 +698,9 @@ if __name__ == '__main__':
         p = Deadbeef()
     elif os.path.exists('/tmp/qmmp.sock.1000'):
         p = Qmmp()
+    elif os.path.exists('%s/.guayadeque/.guayadeque-%s' %
+                        (os.environ['HOME'], getuser())):
+        p = Guayadeque()
     else:
         print('No supported player found.')
         sys.exit()
