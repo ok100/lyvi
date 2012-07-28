@@ -130,7 +130,9 @@ def get_and_update(artist, title, data):
 
 class DummyPlayer:
     def status(self):
-        if self.run['type'] == 'file':
+        if self.run == None:
+            runs = True
+        elif self.run['type'] == 'file':
             runs = os.path.exists(self.run['name'])
         elif self.run['type'] == 'process':
             runs = running(self.run['name'])
@@ -276,19 +278,21 @@ class Pianobar(DummyPlayer):
 
 
 class Mpd(DummyPlayer):
-    def __init__(self):
+    def __init__(self, host, port):
+        local = ['localhost', '127.0.0.1']
+        mpc = 'mpc -h %s -p %s' % (host, port)
         self.run = {'type': 'process',
-                    'name': 'mpd'}
+                    'name': 'mpd'} if host in local else None
         self.np = {'type': 'np_command',
-                   'name': 'mpc current -f "%artist%\\%title%"'}
+                   'name': mpc + ' current -f "%artist%\\%title%"'}
         self.ctl = {'type': 'command',
-                    'commands': {'play': 'mpc play > /dev/null',
-                                 'pause': 'mpc pause > /dev/null',
-                                 'next': 'mpc next > /dev/null',
-                                 'prev': 'mpc prev > /dev/null',
-                                 'stop': 'mpc stop > /dev/null',
-                                 'volup': 'mpc volume +5 > /dev/null',
-                                 'voldn': 'mpc volume -5 > /dev/null'}}
+                    'commands': {'play': '%s play > /dev/null' % mpc,
+                                 'pause': '%s pause > /dev/null' % mpc,
+                                 'next': '%s next > /dev/null' % mpc,
+                                 'prev': '%s prev > /dev/null' % mpc,
+                                 'stop': '%s stop > /dev/null' % mpc,
+                                 'volup': '%s volume +5 > /dev/null' % mpc,
+                                 'voldn': '%s volume -5 > /dev/null' % mpc}}
 
 
 class Moc(DummyPlayer):
@@ -477,7 +481,7 @@ class Ui:
         else:
             pos_perc = str(int((100 / float(self.pad_lines - self.y)) \
                                * self.pos_y - 1)) + '%'
-        self.statusbar.addstr(0, 1, '|< >|| >|', curses.color_pair(4))
+        self.statusbar.addstr(0, 1, '|<  >>  ||  >|', curses.color_pair(4))
         self.statusbar.addstr(0, self.x - len(pos_perc) - 1, pos_perc,
                               curses.color_pair(3))
         self.statusbar.addstr(0, self.x - len(self.settings['view']) - 10,
@@ -485,6 +489,33 @@ class Ui:
         self.statusbar.noutrefresh(0, 0, self.y - 1, 0, self.y, self.x)
 
         curses.doupdate()
+
+    def toggle_views(self):
+        views = ['lyrics', 'artistbio', 'guitartabs']
+        i = views.index(self.settings['view']) + 1
+        if i >= len(views):
+            i = 0
+        self.settings['view'] = views[i]
+        self.update_content()
+
+    def scroll(self, i):
+        if i == 'top':
+            self.pos_y = 0
+        elif i == 'bot':
+            self.pos_y = self.pad_lines - self.y + 1
+        elif i == 'npage':
+            self.pos_y += self.y - 1
+        elif i == 'ppage':
+            self.pos_y -= self.y - 1
+        else:
+            self.pos_y += i
+
+        if self.pos_y < 0:
+            self.pos_y = 0
+        elif self.pos_y > self.pad_lines - self.y + 1:
+            self.pos_y = self.pad_lines - self.y + 1
+
+        self.refresh()
 
     def control(self):
         commands = {ord(self.settings['key_play']): 'play',
@@ -494,7 +525,6 @@ class Ui:
                     ord(self.settings['key_stop']): 'stop',
                     ord(self.settings['key_volup']): 'volup',
                     ord(self.settings['key_voldn']): 'voldn'}
-        views = ['lyrics', 'artistbio', 'guitartabs']
         while True:
             key = self.screen.getch()
 
@@ -508,82 +538,45 @@ class Ui:
             elif key == curses.KEY_RESIZE:
                 self.update_content()
 
-            elif bstate == curses.BUTTON1_PRESSED\
-                and y == self.y - 1 and 1 <= x <= 2:
-                self.player.command('prev')
-            elif bstate == curses.BUTTON1_PRESSED\
-                and y == self.y - 1 and 4 <= x <= 6:
-                self.player.command('pause')
-            elif bstate == curses.BUTTON1_PRESSED\
-                and y == self.y - 1 and 8 <= x <= 9:
-                self.player.command('next')
+            elif bstate == curses.BUTTON1_PRESSED:
+                if y == self.y - 1:
+                    if 1 <= x <= 2:
+                        self.player.command('prev')
+                    elif 5 <= x <= 6:
+                        self.player.command('play')
+                    elif 9 <= x <= 10:
+                        self.player.command('pause')
+                    elif 13 <= x <= 14:
+                        self.player.command('next')
+                    elif self.x - len(self.settings['view']) - 10 <= x\
+                        and x < self.x - 10:
+                        self.toggle_views()
 
-            elif (key == ord(self.settings['key_toggle']))\
-                or bstate == curses.BUTTON1_PRESSED and y == self.y - 1\
-                and self.x - len(self.settings['view']) - 10 <= x < self.x - 10:
-                i = views.index(self.settings['view']) + 1
-                if i >= len(views):
-                    i = 0
-                self.settings['view'] = views[i]
-                self.update_content()
+            elif key == ord(self.settings['key_toggle']):
+                self.toggle_views()
 
             elif key in commands:
                 self.player.command(commands[key])
 
-            else:
-                if key == curses.KEY_DOWN or key == ord('j')\
-                    or bstate == curses.BUTTON2_PRESSED:
-                    if self.pos_y < self.pad_lines - self.y + 1:
-                        self.pos_y += 1
-
-                elif key == curses.KEY_NPAGE or key == curses.KEY_RIGHT:
-                    if self.pos_y < self.pad_lines - self.y + 1:
-                        self.pos_y += self.y - 1
-
-                elif key == curses.KEY_END or key == ord('G'):
-                    self.pos_y = self.pad_lines - self.y + 1
-
-                elif key == curses.KEY_UP or key == ord('k')\
-                    or bstate == curses.BUTTON4_PRESSED:
-                    if self.pos_y > 0:
-                        self.pos_y -= 1
-
-                elif key == curses.KEY_PPAGE or key == curses.KEY_LEFT:
-                    self.pos_y -= self.y - 1
-                    if self.pos_y < 0:
-                        self.pos_y = 0
-
-                elif key == curses.KEY_HOME or key == ord('g'):
-                    self.pos_y = 0
-
-                self.refresh()
+            elif key == curses.KEY_DOWN or key == ord('j'):
+                self.scroll(1)
+            elif key == curses.KEY_UP or key == ord('k'):
+                self.scroll(-1)
+            elif bstate == curses.BUTTON2_PRESSED:
+                self.scroll(3)
+            elif bstate == curses.BUTTON4_PRESSED:
+                self.scroll(-3)
+            elif key == curses.KEY_NPAGE or key == curses.KEY_RIGHT:
+                self.scroll('npage')
+            elif key == curses.KEY_PPAGE or key == curses.KEY_LEFT:
+                self.scroll('ppage')
+            elif key == curses.KEY_END or key == ord('G'):
+                self.scroll('bot')
+            elif key == curses.KEY_HOME or key == ord('g'):
+                self.scroll('top')
 
 
-def main(stdscr):
-    try:
-        config_file = os.environ['XDG_CONFIG_HOME'] + '/lyvi/rc'
-    except KeyError:
-        config_file = os.environ['HOME'] + '/.config/lyvi/rc'
-
-    # default settings
-    settings = {'lang': 'en',
-                'view': 'lyrics',
-                'key_quit': 'q',
-                'key_toggle': 'a',
-                'key_play': 'x',
-                'key_pause': 'c',
-                'key_next': 'b',
-                'key_prev': 'z',
-                'key_stop': 'v',
-                'key_volup': '=',
-                'key_voldn': '-',
-                'color_title': 7,
-                'color_text': -1,
-                'color_status': -1,
-                'color_buttons': -1}
-
-    settings.update(parse_config(config_file))
-
+def main(stdscr, settings):
     u = Ui({'screen': stdscr, 'player': p, 'settings': settings})
 
     ui_control = Thread(target=u.control)
@@ -632,14 +625,42 @@ if __name__ == '__main__':
         print('Lyvi %s (libglyr %s)' % (VERSION, GLYR_VERSION))
         sys.exit()
 
+    try:
+        config_file = os.environ['XDG_CONFIG_HOME'] + '/lyvi/rc'
+    except KeyError:
+        config_file = os.environ['HOME'] + '/.config/lyvi/rc'
+
+    # default settings
+    settings = {'lang': 'en',
+                'view': 'lyrics',
+                'key_quit': 'q',
+                'key_toggle': 'a',
+                'key_play': 'x',
+                'key_pause': 'c',
+                'key_next': 'b',
+                'key_prev': 'z',
+                'key_stop': 'v',
+                'key_volup': '=',
+                'key_voldn': '-',
+                'color_title': 7,
+                'color_text': -1,
+                'color_status': -1,
+                'color_buttons': -1,
+                'mpd_host': 'localhost',
+                'mpd_port': 6600}
+
+    settings.update(parse_config(config_file))
+
+    local = ['localhost', '127.0.0.1']
+
     if os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
         p = Cmus()
     elif os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
         p = Shellfm()
     elif running('pianobar'):
         p = Pianobar()
-    elif running('mpd'):
-        p = Mpd()
+    elif running('mpd') or settings['mpd_host'] not in local:
+        p = Mpd(settings['mpd_host'], settings['mpd_port'])
     elif os.path.exists(os.environ['HOME'] + '/.moc/pid'):
         p = Moc()
     elif running('mplayer'):
@@ -659,4 +680,4 @@ if __name__ == '__main__':
     try:
         p.command(sys.argv[1])
     except IndexError:
-        curses.wrapper(main)
+        curses.wrapper(main, settings)
