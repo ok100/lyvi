@@ -443,6 +443,26 @@ class Guayadeque(DummyPlayer):
                                  'stop': cmd_base + 'Stop &> /dev/null'}}
 
 
+class Gmusicbrowser(DummyPlayer):
+    def __init__(self):
+        try:
+            config_dir = os.environ['XDG_CONFIG_HOME'] + '/gmusicbrowser/'
+        except KeyError:
+            config_dir = os.environ['HOME'] + '/.config/gmusicbrowser/'
+
+        self.run = {'type': 'file',
+                    'name': config_dir + 'gmusicbrowser.fifo'}
+        self.np = {'type': 'np_file',
+                    'name': config_dir + 'nowplaying'}
+        self.ctl = {'type': 'fifo',
+                    'name': self.run['name'],
+                    'commands': {'play': 'PlayPause',
+                                 'pause': 'PlayPause',
+                                 'next': 'NextSong',
+                                 'prev': 'PrevSong',
+                                 'stop': 'Stop'}}
+
+
 class Ui:
     def __init__(self, data):
         self.screen = data['screen']
@@ -688,6 +708,8 @@ if __name__ == '__main__':
         p = Mpd(settings['mpd_host'], settings['mpd_port'])
     elif os.path.exists(os.environ['HOME'] + '/.moc/pid'):
         p = Moc()
+    elif running('gmusicbrowser'):
+        p = Gmusicbrowser()
     elif running('mplayer'):
         p = Mplayer()
     elif os.path.exists('/tmp/vlc.sock'):
