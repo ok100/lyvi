@@ -125,10 +125,14 @@ def metadata_get(type, artist, title, lang):
 def get_and_update(artist, title, data, file):
     for type in ['lyrics', 'artistbio', 'guitartabs']:
         m = metadata_get(type, artist, title, data['lang'])
-        if type == 'lyrics' and file and m != 'No lyrics found':
+
+        # Optionally save lyric to a file
+        if type == 'lyrics' and file and m != 'No lyrics found'\
+            and m != 'Missing tags.':
             f = open(file.rsplit('.')[0] + '.lyric', 'w')
             f.write(m)
             f.close()
+
         data['lock'].acquire()
         try:
             if data['ui'].artist + data['ui'].title == artist + title:
@@ -140,6 +144,7 @@ def get_and_update(artist, title, data, file):
 
 class DummyPlayer:
     def status(self):
+        self.file = None
         if self.run == None:
             runs = True
         elif self.run['type'] == 'file':
@@ -172,8 +177,19 @@ class DummyPlayer:
                 self.title = s[1]
                 if len(s) > 2:
                     self.file = s[2]
-                    file = s[2].rsplit('.', 1)[0]
-                    if file == self.title:
+
+                    # mpd workaround
+                    if self.__class__.__name__ == 'Mpd':
+                        f = open(os.environ['HOME'] + '/.mpdconf')
+                        for line in f.read().splitlines():
+                            if 'music_directory' in line:
+                                music_dir = line.split('"')[1]
+                        if not music_dir.endswith('/'):
+                            music_dir += '/'
+                        self.file = music_dir + self.file
+
+                    # deadbeef workaround
+                    if self.title == self.file.rsplit('.', 1)[0]:
                         self.title = 'N/A'
 
         else:
@@ -202,6 +218,17 @@ class DummyPlayer:
                                  .split(self.np['str']['title_end'])[0]
                 else:
                     self.title = 'N/A'
+
+                if self.np['str']['file_beg'] in s:
+                    self.file = s.split(self.np['str']['file_beg'])[1] \
+                                 .split(self.np['str']['file_end'])[0]
+
+                    # guayadeque workaround
+                    if self.__class__.__name__ == 'Guayadeque':
+                        if self.file.startswith('file://'):
+                            self.file = self.file.split('file://')[1]
+                        else:
+                            self.file = None
 
         if self.playing == False:
             self.artist = 'N/A'
@@ -233,6 +260,8 @@ class Cmus(DummyPlayer):
                            'artist_end': '\n',
                            'title_beg': 'tag title ',
                            'title_end': '\n',
+                           'file_beg': 'file ',
+                           'file_end': '\n',
                            'stopped': 'status stopped'}}
         self.ctl = {'type': 'command',
                     'commands': {'play': 'cmus-remote -p',
@@ -294,8 +323,9 @@ class Mpd(DummyPlayer):
         mpc = 'mpc -h %s -p %s' % (host, port)
         self.run = {'type': 'process',
                     'name': 'mpd'} if host in local else None
-        self.np = {'type': 'np_command',
-                   'name': mpc + ' current -f "%artist%\\%title%"'}
+        self.np = {'type': 'np_command'}
+        self.np['name'] = mpc + ' current -f "%artist%\\%title%\\%file%"'\
+            if host in local else mpc + ' current -f "%artist%\\%title%"'
         self.ctl = {'type': 'command',
                     'commands': {'play': '%s play > /dev/null' % mpc,
                                  'pause': '%s pause > /dev/null' % mpc,
@@ -316,6 +346,8 @@ class Moc(DummyPlayer):
                             'artist_end': '\n',
                             'title_beg': 'SongTitle: ',
                             'title_end': '\n',
+                            'file_beg': 'File: ',
+                            'file_end': '\n',
                             'stopped': 'State: STOP'}}
         self.ctl = {'type': 'command',
                     'commands': {'play': 'mocp -U 2> /dev/null',
@@ -338,6 +370,8 @@ class Mplayer(DummyPlayer):
                            'artist_end': '\n',
                            'title_beg': 'VALUE0=',
                            'title_end': '\n',
+                           'file_beg': '||||',
+                           'file_end': '||||',
                            'stopped': '||||'}}
         self.ctl = {'type': 'fifo',
                     'name': os.environ['HOME'] + '/.mplayer/fifo',
@@ -360,6 +394,8 @@ class Vlc(DummyPlayer):
                            'artist_end': '</info>',
                            'title_beg': 'name=\'title\'>',
                            'title_end': '</info>',
+                           'file_beg': '||||',
+                           'file_end': '||||',
                            'stopped': '<state>stopped</state>'}}
         self.ctl = {'type': 'socket',
                     'name': '/tmp/vlc.sock',
@@ -418,6 +454,8 @@ class Qmmp(DummyPlayer):
                            'artist_end': '\n',
                            'title_beg': 'TITLE = ',
                            'title_end': '\n',
+                           'file_beg': '||||',
+                           'file_end': '||||',
                            'stopped': '[stopped]'}}
         self.ctl = {'type': 'command',
                     'commands': {'play': 'qmmp -t',
@@ -444,6 +482,8 @@ class Guayadeque(DummyPlayer):
                            'artist_end': '"\n',
                            'title_beg': 'title' + str_base,
                            'title_end': '"\n',
+                           'file_beg': 'location' + str_base,
+                           'file_end': '"\n',
                            'stopped': '||||'}}
         self.ctl = {'type': 'command',
                     'commands': {'play': cmd_base + 'Play &> /dev/null',
@@ -715,7 +755,7 @@ if __name__ == '__main__':
 
     if os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
         p = Cmus()
-    elif os.path.exists(os.environ['HOME'] + '/.shell-fm/session'):
+    elif running('shell-fm'):
         p = Shellfm()
     elif running('pianobar'):
         p = Pianobar()
