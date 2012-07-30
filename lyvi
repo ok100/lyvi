@@ -117,9 +117,13 @@ def metadata_get(type, artist, title, lang):
     return m
 
 
-def get_and_update(artist, title, data):
+def get_and_update(artist, title, data, file):
     for type in ['lyrics', 'artistbio', 'guitartabs']:
         m = metadata_get(type, artist, title, data['lang'])
+        if type == 'lyrics' and file and m != 'No lyrics found':
+            f = open(file.rsplit('.')[0] + '.lyric', 'w')
+            f.write(m)
+            f.close()
         data['lock'].acquire()
         try:
             if data['ui'].artist + data['ui'].title == artist + title:
@@ -162,6 +166,7 @@ class DummyPlayer:
                 self.artist = s[0]
                 self.title = s[1]
                 if len(s) > 2:
+                    self.file = s[2]
                     file = s[2].rsplit('.', 1)[0]
                     if file == self.title:
                         self.title = 'N/A'
@@ -650,8 +655,12 @@ def main(stdscr, settings):
                 finally:
                     lock.release()
 
+                if settings['save_lyrics'] == True:
+                    lyric_file = p.file
+                else:
+                    lyric_file = None
                 worker = Thread(target=get_and_update,
-                                args=(p.artist, p.title, data))
+                                args=(p.artist, p.title, data, lyric_file))
                 worker.daemon = True
                 worker.start()
         else:
@@ -692,7 +701,8 @@ if __name__ == '__main__':
                 'color_status': -1,
                 'color_buttons': -1,
                 'mpd_host': 'localhost',
-                'mpd_port': 6600}
+                'mpd_port': 6600,
+                'save_lyrics': False}
 
     settings.update(parse_config(config_file))
 
