@@ -122,7 +122,7 @@ def metadata_get(type, artist, title, lang):
 
 
 def get_and_update(artist, title, data, file):
-    for type in ['lyrics', 'artistbio', 'guitartabs']:
+    for type in ['artistbio', 'lyrics', 'guitartabs']:
         m = metadata_get(type, artist, title, data['lang'])
 
         # Optionally save lyric to a file
