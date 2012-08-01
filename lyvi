@@ -760,19 +760,18 @@ if __name__ == '__main__':
                'audacious': Audacious,
                'deadbeef-main': Deadbeef,
                'qmmp': Qmmp,
-               'guayadeque': Guayadeque,
-               'mpd': Mpd}
+               'guayadeque': Guayadeque}
 
     for player in players:
-        if player == 'mpd' and settings['mpd_host'] not in local:
-            p = players[player](settings['mpd_host'], settings['mpd_port'])
-            break
-        elif running(player):
+        if running(player):
             p = players[player]()
             break
     else:
-        print('No supported player found.')
-        sys.exit()
+        if running('mpd') or settings['mpd_host'] not in local:
+            p = Mpd(settings['mpd_host'], settings['mpd_port'])
+        else:
+            print('No supported player found.')
+            sys.exit()
 
     try:
         p.command(sys.argv[1])
