@@ -36,13 +36,12 @@ def parse_config(file):
     else:
         for l in f.read().splitlines():
             if not l.strip().startswith('#') and '=' in l:
-                key, value = l.split('=', 1)
-                value = value.strip()
+                key, value = [x.strip() for x in l.split('=', 1)]
                 if value == 'True':
                     value = True
                 elif value == 'False':
                     value = False
-                settings[key.strip()] = value
+                settings[key] = value
             else:
                 continue
         f.close()
@@ -748,36 +747,29 @@ if __name__ == '__main__':
                 'mpd_host': 'localhost',
                 'mpd_port': 6600,
                 'save_lyrics': False}
-
     settings.update(parse_config(config_file))
 
     local = ['localhost', '127.0.0.1']
+    players = {'cmus': Cmus,
+               'shell-fm': Shellfm,
+               'pianobar': Pianobar,
+               'mocp': Moc,
+               'gmusicbrowser': Gmusicbrowser,
+               'mplayer': Mplayer,
+               'vlc': Vlc,
+               'audacious': Audacious,
+               'deadbeef-main': Deadbeef,
+               'qmmp': Qmmp,
+               'guayadeque': Guayadeque,
+               'mpd': Mpd}
 
-    if os.path.exists(os.environ['HOME'] + '/.cmus/socket'):
-        p = Cmus()
-    elif running('shell-fm'):
-        p = Shellfm()
-    elif running('pianobar'):
-        p = Pianobar()
-    elif running('mpd') or settings['mpd_host'] not in local:
-        p = Mpd(settings['mpd_host'], settings['mpd_port'])
-    elif os.path.exists(os.environ['HOME'] + '/.moc/pid'):
-        p = Moc()
-    elif running('gmusicbrowser'):
-        p = Gmusicbrowser()
-    elif running('mplayer'):
-        p = Mplayer()
-    elif os.path.exists('/tmp/vlc.sock'):
-        p = Vlc()
-    elif running('audacious'):
-        p = Audacious()
-    elif running('deadbeef-main'):
-        p = Deadbeef()
-    elif os.path.exists('/tmp/qmmp.sock.1000'):
-        p = Qmmp()
-    elif os.path.exists('%s/.guayadeque/.guayadeque-%s' %
-                        (os.environ['HOME'], getuser())):
-        p = Guayadeque()
+    for player in players:
+        if player == 'mpd' and settings['mpd_host'] not in local:
+            p = players[player](settings['mpd_host'], settings['mpd_port'])
+            break
+        elif running(player):
+            p = players[player]()
+            break
     else:
         print('No supported player found.')
         sys.exit()
