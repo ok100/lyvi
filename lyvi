@@ -53,8 +53,8 @@ def wrap(text, cols):
     wt = ''
     for l in text.splitlines():
         while len(l) > cols:
-            wt += l[:cols - 2] + '->' + '\n '
-            l = l[cols - 2:]
+            wt += l[:cols - 1] + '→' + '\n '
+            l = l[cols - 1:]
         wt += l + '\n '
 
     return wt[:-2]
