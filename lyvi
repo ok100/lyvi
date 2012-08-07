@@ -171,7 +171,7 @@ def get_and_update(artist, title, data, file, settings):
 
 
 class DummyPlayer:
-    def status(self):
+    def status(self, settings):
         self.file = None
         if self.run == None:
             runs = True
@@ -183,6 +183,8 @@ class DummyPlayer:
             if self.np['type'] == 'np_file' or self.np['type'] == 'log':
                 if os.path.exists(self.np['name']):
                     os.remove(self.np['name'])
+            if settings['bg_artistphoto']:
+                bg_unset()
             sys.exit()
 
         if self.np['type'] == 'np_file' or self.np['type'] == 'np_command':
@@ -713,7 +715,7 @@ def main(stdscr, settings):
         if u.quit == True:
             break
 
-        p.status()
+        p.status(settings)
 
         if p.playing == True:
             if p.artist != u.artist or p.title != u.title:
