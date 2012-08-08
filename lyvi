@@ -49,7 +49,7 @@ SETTINGS = {'lang': 'en',
             'mpd_port': 6600,
             'save_lyrics': False,
             'bg': False,
-            'bg_opacity': 40}
+            'bg_opacity': 85}
 
 
 def parse_config(file):
@@ -121,7 +121,8 @@ def running(process):
 
 
 def bg_set(file, opacity):
-    os.system('mogrify -modulate %s %s %s' % (opacity, file, file))
+    os.system('convert -fill black -colorize %s%% %s %s'
+        % (opacity, file, file))
     os.system('printf "\e]20;%s;100x100+50+50:op=keep-aspect\a"' % file)
 
 
