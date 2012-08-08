@@ -21,10 +21,35 @@ from subprocess import Popen, PIPE
 
 import plyr
 
+locale.setlocale(locale.LC_ALL, '')
+
 VERSION = '0.1'
 GLYR_VERSION = plyr.version().split()[1]
-
-locale.setlocale(locale.LC_ALL, '')
+HOME = os.environ['HOME']
+CFG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ \
+    else os.environ['HOME'] + '/.config'
+CACHE_HOME = os.environ['XDG_CACHE_HOME'] if 'XDG_CACHE_HOME' in os.environ \
+    else os.environ['HOME'] + '/.cache'
+SETTINGS = {'lang': 'en',
+            'view': 'lyrics',
+            'key_quit': 'q',
+            'key_toggle': 'a',
+            'key_play': 'x',
+            'key_pause': 'c',
+            'key_next': 'b',
+            'key_prev': 'z',
+            'key_stop': 'v',
+            'key_volup': '=',
+            'key_voldn': '-',
+            'color_title': 7,
+            'color_text': -1,
+            'color_status': -1,
+            'color_buttons': -1,
+            'mpd_host': 'localhost',
+            'mpd_port': 6600,
+            'save_lyrics': False,
+            'bg_artistphoto': False,
+            'bg_opacity': 40}
 
 
 def parse_config(file):
@@ -90,15 +115,14 @@ def get_output(command):
 
 
 def running(process):
-    if process in get_output('ps -C %s' % process):
-        return True
-    else:
-        return False
+    res = True if process in get_output('ps -C %s' % process) else False
+
+    return res
 
 
 def bg_set(file, opacity):
     os.system('mogrify -modulate %s %s %s' % (opacity, file, file))
-    os.system('printf "\e]20;%s\a"' % file)
+    os.system('printf "\e]20;%s;100x100+50+50:op=keep-aspect\a"' % file)
 
 
 def bg_unset():
@@ -110,20 +134,18 @@ def bg_unset():
 \x00\x00\x02\x01\x4C\x00\x3B')
     f.close()
     os.system('printf "\e]20;/tmp/lyvi_blank.gif\a"')
-    os.remove('/tmp/lyvi_artistphoto.jpg')
-    os.remove('/tmp/lyvi_blank.gif')
+    for file in ['/tmp/lyvi_bg.jpg', '/tmp/lyvi_blank.gif']:
+        if os.path.exists(file):
+            os.remove(file)
 
 
 def metadata_get(type, artist, title, lang):
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
         or ((type == 'artistbio' or type == 'artistphoto') and artist == 'N/A')
         or (type == 'guitartabs' and (artist == 'N/A' or title == 'N/A'))):
-        return 'Missing tags.'
+        return 'Missing tags'
     else:
-        try:
-            cache_dir = os.environ['XDG_CACHE_HOME'] + '/lyvi'
-        except KeyError:
-            cache_dir = os.environ['HOME'] + '/.cache/lyvi'
+        cache_dir = CACHE_HOME + '/lyvi'
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
@@ -133,26 +155,27 @@ def metadata_get(type, artist, title, lang):
         query.useragent = 'lyvi/%s' % VERSION
 
         if type == 'artistphoto':
-            img = open('/tmp/lyvi_artistphoto.jpg', 'wb')
+            img = open('/tmp/lyvi_bg.jpg', 'wb')
             img.write(query.commit()[0].data)
             img.close()
         else:
             try:
                 m = query.commit()[0].data.decode()
             except IndexError:
-                m = 'No %s found.' % type
+                m = 'No %s found' % type
+
             return m
 
 
-def get_and_update(artist, title, data, file, settings):
+def get_and_update(artist, title, data):
     types = ['artistbio', 'lyrics', 'guitartabs']
-    if settings['bg_artistphoto']:
-        types.append('artistphoto')
+    if SETTINGS['bg_artistphoto']:
+        types.insert(0, 'artistphoto')
     for type in types:
-        m = metadata_get(type, artist, title, data['lang'])
+        m = metadata_get(type, artist, title, SETTINGS['lang'])
 
         if type == 'artistphoto':
-            bg_set('/tmp/lyvi_artistphoto.jpg', settings['bg_opacity'])
+            bg_set('/tmp/lyvi_bg.jpg', SETTINGS['bg_opacity'])
         else:
             data['lock'].acquire()
             try:
@@ -163,29 +186,22 @@ def get_and_update(artist, title, data, file, settings):
                 data['lock'].release()
 
             # Optionally save lyric to a file
-            if type == 'lyrics' and file and m != 'No lyrics found'\
-                and m != 'Missing tags.':
-                f = open(file.rsplit('.')[0] + '.lyric', 'w')
+            if SETTINGS['save_lyrics'] and type == 'lyrics' \
+                and m != 'No lyrics found' and m != 'Missing tags':
+                f = open(p.file.rsplit('.')[0] + '.lyric', 'w')
                 f.write(m)
                 f.close()
 
 
 class DummyPlayer:
-    def status(self, settings):
+    def status(self):
         self.file = None
         if self.run == None:
-            runs = True
+            self.running = True
         elif self.run['type'] == 'file':
-            runs = os.path.exists(self.run['name'])
+            self.running = os.path.exists(self.run['name'])
         elif self.run['type'] == 'process':
-            runs = running(self.run['name'])
-        if not runs:
-            if self.np['type'] == 'np_file' or self.np['type'] == 'log':
-                if os.path.exists(self.np['name']):
-                    os.remove(self.np['name'])
-            if settings['bg_artistphoto']:
-                bg_unset()
-            sys.exit()
+            self.running = running(self.run['name'])
 
         if self.np['type'] == 'np_file' or self.np['type'] == 'np_command':
             if self.np['type'] == 'np_file':
@@ -210,7 +226,7 @@ class DummyPlayer:
 
                     # mpd workaround
                     if self.__class__.__name__ == 'Mpd':
-                        f = open(os.environ['HOME'] + '/.mpdconf')
+                        f = open(HOME + '/.mpdconf')
                         for line in f.read().splitlines():
                             if 'music_directory' in line:
                                 music_dir = line.split('"')[1]
@@ -283,7 +299,7 @@ class DummyPlayer:
 class Cmus(DummyPlayer):
     def __init__(self):
         self.run = {'type': 'file',
-                    'name': os.environ['HOME'] + '/.cmus/socket'}
+                    'name': HOME + '/.cmus/socket'}
         self.np = {'type': 'command',
                    'name': 'cmus-remote -Q',
                    'str': {'artist_beg': 'tag artist ',
@@ -306,11 +322,11 @@ class Cmus(DummyPlayer):
 class Shellfm(DummyPlayer):
     def __init__(self):
         self.run = {'type': 'file',
-                    'name': os.environ['HOME'] + '/.shell-fm/session'}
+                    'name': HOME + '/.shell-fm/session'}
         self.np = {'type': 'np_file',
-                   'name': os.environ['HOME'] + '/.shell-fm/nowplaying'}
+                   'name': HOME + '/.shell-fm/nowplaying'}
         self.ctl = {'type': 'socket',
-                    'name': os.environ['HOME'] + '/.shell-fm/socket',
+                    'name': HOME + '/.shell-fm/socket',
                     'commands': {'pause': 'pause',
                                  'next': 'skip',
                                  'stop': 'stop',
@@ -320,10 +336,7 @@ class Shellfm(DummyPlayer):
 
 class Pianobar(DummyPlayer):
     def __init__(self):
-        try:
-            config_dir = os.environ['XDG_CONFIG_HOME'] + '/pianobar/'
-        except KeyError:
-            config_dir = os.environ['HOME'] + '/.config/pianobar/'
+        config_dir = CFG_HOME + '/pianobar/'
 
         # set default keys
         settings = {'key_pause': 'p',
@@ -369,7 +382,7 @@ class Mpd(DummyPlayer):
 class Moc(DummyPlayer):
     def __init__(self):
         self.run = {'type': 'file',
-                    'name': os.environ['HOME'] + '/.moc/pid'}
+                    'name': HOME + '/.moc/pid'}
         self.np = {'type': 'command',
                     'name': 'mocp -i',
                     'str': {'artist_beg': 'Artist: ',
@@ -394,7 +407,7 @@ class Mplayer(DummyPlayer):
         self.run = {'type': 'process',
                     'name': 'mplayer'}
         self.np = {'type': 'log',
-                   'name': os.environ['HOME'] + '/.mplayer/log',
+                   'name': HOME + '/.mplayer/log',
                    'str': {'beg': 'AUDIO_ID',
                            'artist_beg': 'VALUE1=',
                            'artist_end': '\n',
@@ -404,7 +417,7 @@ class Mplayer(DummyPlayer):
                            'file_end': '||||',
                            'stopped': '||||'}}
         self.ctl = {'type': 'fifo',
-                    'name': os.environ['HOME'] + '/.mplayer/fifo',
+                    'name': HOME + '/.mplayer/fifo',
                     'commands': {'play': 'pause',
                                  'pause': 'pause',
                                  'next': 'pt_step 1',
@@ -440,10 +453,7 @@ class Vlc(DummyPlayer):
 
 class Audacious(DummyPlayer):
     def __init__(self):
-        try:
-            config_dir = os.environ['XDG_CONFIG_HOME'] + '/audacious/'
-        except KeyError:
-            config_dir = os.environ['HOME'] + '/.config/audacious/'
+        config_dir = CFG_HOME + '/audacious/'
 
         self.run = {'type': 'file',
                     'name': config_dir + 'lock'}
@@ -501,7 +511,7 @@ class Guayadeque(DummyPlayer):
     def __init__(self):
         self.run = {'type': 'file',
                     'name': '%s/.guayadeque/.guayadeque-%s' %
-                            (os.environ['HOME'], getuser())}
+                            (HOME, getuser())}
         cmd_base = 'dbus-send --print-reply --type=method_call\
                     --dest=org.mpris.guayadeque /Player\
                     org.freedesktop.MediaPlayer.'
@@ -525,10 +535,7 @@ class Guayadeque(DummyPlayer):
 
 class Gmusicbrowser(DummyPlayer):
     def __init__(self):
-        try:
-            config_dir = os.environ['XDG_CONFIG_HOME'] + '/gmusicbrowser/'
-        except KeyError:
-            config_dir = os.environ['HOME'] + '/.config/gmusicbrowser/'
+        config_dir = CFG_HOME + '/gmusicbrowser/'
 
         self.run = {'type': 'file',
                     'name': config_dir + 'gmusicbrowser.fifo'}
@@ -544,10 +551,9 @@ class Gmusicbrowser(DummyPlayer):
 
 
 class Ui:
-    def __init__(self, data):
-        self.screen = data['screen']
-        self.settings = data['settings']
-        self.player = data['player']
+    def __init__(self, screen):
+        self.screen = screen
+        self.settings = SETTINGS
         self.quit = False
         self.artist = ''
         curses.curs_set(0)
@@ -666,13 +672,13 @@ class Ui:
             elif bstate == curses.BUTTON1_PRESSED:
                 if y == self.y - 1:
                     if 1 <= x <= 2:
-                        self.player.command('prev')
+                        p.command('prev')
                     elif 5 <= x <= 6:
-                        self.player.command('play')
+                        p.command('play')
                     elif 9 <= x <= 10:
-                        self.player.command('pause')
+                        p.command('pause')
                     elif 13 <= x <= 14:
-                        self.player.command('next')
+                        p.command('next')
                     elif self.x - len(self.settings['view']) - 10 <= x\
                         and x < self.x - 10:
                         self.toggle_views()
@@ -681,7 +687,7 @@ class Ui:
                 self.toggle_views()
 
             elif key in commands:
-                self.player.command(commands[key])
+                p.command(commands[key])
 
             elif key == curses.KEY_DOWN or key == ord('j'):
                 self.scroll(1)
@@ -701,23 +707,25 @@ class Ui:
                 self.scroll('top')
 
 
-def main(stdscr, settings):
-    u = Ui({'screen': stdscr, 'player': p, 'settings': settings})
+def main(stdscr):
+    u = Ui(stdscr)
 
     ui_control = Thread(target=u.control)
     ui_control.daemon = True
     ui_control.start()
 
     lock = Lock()
-    data = {'ui': u, 'lock': lock, 'lang': settings['lang']}
+    data = {'ui': u, 'lock': lock}
 
     while True:
-        if u.quit == True:
+        p.status()
+        if u.quit == True or not p.running:
+            if not p.running:
+                if os.path.exists(p.np['name']):
+                    os.remove(p.np['name'])
             break
 
-        p.status(settings)
-
-        if p.playing == True:
+        elif p.playing == True:
             if p.artist != u.artist or p.title != u.title:
                 lock.acquire()
                 try:
@@ -730,13 +738,8 @@ def main(stdscr, settings):
                 finally:
                     lock.release()
 
-                if settings['save_lyrics'] == True:
-                    lyric_file = p.file
-                else:
-                    lyric_file = None
                 worker = Thread(target=get_and_update,
-                                args=(p.artist, p.title, data,
-                                      lyric_file, settings))
+                                args=(p.artist, p.title, data))
                 worker.daemon = True
                 worker.start()
         else:
@@ -749,44 +752,17 @@ def main(stdscr, settings):
 
         sleep(1)
 
-    if settings['bg_artistphoto']:
+    if SETTINGS['bg_artistphoto']:
         bg_unset()
 
+
+SETTINGS.update(parse_config(CFG_HOME + '/lyvi/rc'))
 
 if __name__ == '__main__':
     if '-v' in sys.argv:
         print('Lyvi %s (libglyr %s)' % (VERSION, GLYR_VERSION))
         sys.exit()
 
-    try:
-        config_file = os.environ['XDG_CONFIG_HOME'] + '/lyvi/rc'
-    except KeyError:
-        config_file = os.environ['HOME'] + '/.config/lyvi/rc'
-
-    # default settings
-    settings = {'lang': 'en',
-                'view': 'lyrics',
-                'key_quit': 'q',
-                'key_toggle': 'a',
-                'key_play': 'x',
-                'key_pause': 'c',
-                'key_next': 'b',
-                'key_prev': 'z',
-                'key_stop': 'v',
-                'key_volup': '=',
-                'key_voldn': '-',
-                'color_title': 7,
-                'color_text': -1,
-                'color_status': -1,
-                'color_buttons': -1,
-                'mpd_host': 'localhost',
-                'mpd_port': 6600,
-                'save_lyrics': False,
-                'bg_artistphoto': False,
-                'bg_opacity': 40}
-    settings.update(parse_config(config_file))
-
-    local = ['localhost', '127.0.0.1']
     players = {'cmus': Cmus,
                'shell-fm': Shellfm,
                'pianobar': Pianobar,
@@ -804,13 +780,14 @@ if __name__ == '__main__':
             p = players[player]()
             break
     else:
-        if running('mpd') or settings['mpd_host'] not in local:
-            p = Mpd(settings['mpd_host'], settings['mpd_port'])
+        local = ['localhost', '127.0.0.1']
+        if running('mpd') or SETTINGS['mpd_host'] not in local:
+            p = Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
         else:
             print('No supported player found.')
             sys.exit()
 
-    try:
+    if len(sys.argv) > 1:
         p.command(sys.argv[1])
-    except IndexError:
-        curses.wrapper(main, settings)
+    else:
+        curses.wrapper(main)
