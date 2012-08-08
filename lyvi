@@ -48,7 +48,7 @@ SETTINGS = {'lang': 'en',
             'mpd_host': 'localhost',
             'mpd_port': 6600,
             'save_lyrics': False,
-            'bg_artistphoto': False,
+            'bg': False,
             'bg_opacity': 40}
 
 
@@ -139,58 +139,72 @@ def bg_unset():
             os.remove(file)
 
 
-def metadata_get(type, artist, title, lang):
-    if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
-        or ((type == 'artistbio' or type == 'artistphoto') and artist == 'N/A')
-        or (type == 'guitartabs' and (artist == 'N/A' or title == 'N/A'))):
-        return 'Missing tags'
-    else:
+def glyr_query(type, artist, title, lang):
         cache_dir = CACHE_HOME + '/lyvi'
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
         db = plyr.Database(cache_dir)
-        query = plyr.Query(artist=artist, title=title,
-                           get_type=type, database=db, language=lang)
+        query = plyr.Query(artist=artist, title=title, get_type=type,
+                           database=db, language=lang)
         query.useragent = 'lyvi/%s' % VERSION
 
-        if type == 'artistphoto':
-            img = open('/tmp/lyvi_bg.jpg', 'wb')
-            img.write(query.commit()[0].data)
-            img.close()
-        else:
-            try:
-                m = query.commit()[0].data.decode()
-            except IndexError:
-                m = 'No %s found' % type
+        return query.commit()
 
-            return m
+
+def metadata_get(type, artist, title, lang):
+    if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
+        or ((type == 'artistbio' or type == 'backdrops') and artist == 'N/A')
+        or (type == 'guitartabs' and (artist == 'N/A' or title == 'N/A'))):
+        return 'Missing tags'
+
+    elif type == 'backdrops':
+        img = None
+        try:
+            img = glyr_query(type, artist, title, lang)[0].data
+        except IndexError:
+            try:
+                img = glyr_query('artistphoto', artist, title, lang)[0].data
+            except IndexError:
+                pass
+        if img:
+            f = open('/tmp/lyvi_bg.jpg', 'wb')
+            f.write(img)
+            f.close()
+            bg_set('/tmp/lyvi_bg.jpg', SETTINGS['bg_opacity'])
+        else:
+            bg_unset()
+
+    else:
+        try:
+            m = glyr_query(type, artist, title, lang)[0].data.decode()
+        except IndexError:
+            m = 'No %s found' % type
+
+        return m
 
 
 def get_and_update(artist, title, data):
     types = ['artistbio', 'lyrics', 'guitartabs']
-    if SETTINGS['bg_artistphoto']:
-        types.insert(0, 'artistphoto')
+    if SETTINGS['bg']:
+        types.insert(0, 'backdrops')
     for type in types:
         m = metadata_get(type, artist, title, SETTINGS['lang'])
 
-        if type == 'artistphoto':
-            bg_set('/tmp/lyvi_bg.jpg', SETTINGS['bg_opacity'])
-        else:
-            data['lock'].acquire()
-            try:
-                if data['ui'].artist + data['ui'].title == artist + title:
-                    setattr(data['ui'], type, m)
-                    data['ui'].update_content()
-            finally:
-                data['lock'].release()
+        data['lock'].acquire()
+        try:
+            if data['ui'].artist + data['ui'].title == artist + title:
+                setattr(data['ui'], type, m)
+                data['ui'].update_content()
+        finally:
+            data['lock'].release()
 
-            # Optionally save lyric to a file
-            if SETTINGS['save_lyrics'] and type == 'lyrics' \
-                and m != 'No lyrics found' and m != 'Missing tags':
-                f = open(p.file.rsplit('.')[0] + '.lyric', 'w')
-                f.write(m)
-                f.close()
+        # Optionally save lyric to a file
+        if SETTINGS['save_lyrics'] and type == 'lyrics' \
+            and m != 'No lyrics found' and m != 'Missing tags':
+            f = open(p.file.rsplit('.')[0] + '.lyric', 'w')
+            f.write(m)
+            f.close()
 
 
 class DummyPlayer:
@@ -752,7 +766,7 @@ def main(stdscr):
 
         sleep(1)
 
-    if SETTINGS['bg_artistphoto']:
+    if SETTINGS['bg']:
         bg_unset()
 
 
