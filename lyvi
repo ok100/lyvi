@@ -132,24 +132,6 @@ def running(process):
     return res
 
 
-def bg_setlocal():
-    bg_path = SETTINGS['bg_path'].replace('<artist>', p.artist) \
-              .replace('<artistinitial>', p.artist[0])
-    imgs = []
-    for root, subfolders, files in os.walk(bg_path):
-        for file in files:
-            if file.endswith('jpg') or file.endswith('jpeg') \
-                or file.endswith('png'):
-                imgs.append(os.path.abspath(os.path.join(root, file)))
-    if imgs:
-        tmp_img = '/tmp/lyvi_bg.' + imgs[0].split('.')[-1]
-        copy2(imgs[0], '/tmp')
-        os.rename('/tmp/' + imgs[0].split('/')[-1], tmp_img)
-        bg_set(tmp_img, SETTINGS['bg_opacity'])
-    else:
-        bg_unset()
-
-
 def bg_set(file, opacity):
     os.system('convert -fill black -colorize %s%% %s %s'
         % (opacity, file, file))
@@ -168,6 +150,24 @@ def bg_unset():
     for file in ['/tmp/lyvi_bg.jpg', '/tmp/lyvi_blank.gif']:
         if os.path.exists(file):
             os.remove(file)
+
+
+def bg_setlocal():
+    bg_path = SETTINGS['bg_path'].replace('<artist>', p.artist) \
+              .replace('<artistinitial>', p.artist[0])
+    imgs = []
+    for root, subfolders, files in os.walk(bg_path):
+        for file in files:
+            if file.endswith('jpg') or file.endswith('jpeg') \
+                or file.endswith('png'):
+                imgs.append(os.path.abspath(os.path.join(root, file)))
+    if imgs:
+        tmp_img = '/tmp/lyvi_bg.' + imgs[0].split('.')[-1]
+        copy2(imgs[0], '/tmp')
+        os.rename('/tmp/' + imgs[0].split('/')[-1], tmp_img)
+        bg_set(tmp_img, SETTINGS['bg_opacity'])
+    else:
+        bg_unset()
 
 
 def glyr_query(type, artist, title, lang):
@@ -215,13 +215,10 @@ def metadata_get(type, artist, title, lang):
         return m
 
 
-def get_and_update(artist, title, data):
-    types = ['artistbio', 'lyrics', 'guitartabs']
-    if SETTINGS['bg']:
+def get_and_update(artist, title, data, types):
+    if 'backdrops' in types:
         if SETTINGS['bg_path']:
             bg_setlocal()
-        else:
-            types.insert(0, 'backdrops')
     for type in types:
         m = metadata_get(type, artist, title, SETTINGS['lang'])
 
@@ -775,19 +772,28 @@ def main(stdscr):
 
         elif p.playing == True:
             if p.artist != u.artist or p.title != u.title:
+                needsupdate = ['lyrics', 'guitartabs']
+                if p.artist != u.artist:
+                    needsupdate.insert(1, 'artistbio')
+                    if SETTINGS['bg']:
+                        needsupdate.insert(0, 'backdrops')
+
                 lock.acquire()
                 try:
                     u.artist = p.artist
                     u.title = p.title
-                    u.lyrics = 'Downloading lyrics...'
-                    u.artistbio = 'Downloading artist info...'
-                    u.guitartabs = 'Downloading guitar tab...'
+                    if 'lyrics' in needsupdate:
+                        u.lyrics = 'Downloading lyrics...'
+                    if 'artistbio' in needsupdate:
+                        u.artistbio = 'Downloading artist info...'
+                    if 'guitartabs' in needsupdate:
+                        u.guitartabs = 'Downloading guitar tab...'
                     u.update_content()
                 finally:
                     lock.release()
 
                 worker = Thread(target=get_and_update,
-                                args=(p.artist, p.title, data))
+                                args=(p.artist, p.title, data, needsupdate))
                 worker.daemon = True
                 worker.start()
         else:
