@@ -680,16 +680,21 @@ class Ui:
         elif i == 'bot':
             self.pos_y = self.pad_lines - self.y + 1
         elif i == 'npage':
-            self.pos_y += self.y - 1
+            if self.pos_y + self.y - 1 <= self.pad_lines - 1:
+                self.pos_y += self.y - 1
         elif i == 'ppage':
             self.pos_y -= self.y - 1
+            if self.pos_y < 0:
+                self.pos_y = 0
         else:
-            self.pos_y += i
-
-        if self.pos_y < 0:
-            self.pos_y = 0
-        elif self.pos_y > self.pad_lines - self.y + 1:
-            self.pos_y = self.pad_lines - self.y + 1
+            if i < 0:
+                self.pos_y += i
+                if self.pos_y < 0:
+                    self.pos_y = 0
+            elif self.pos_y < self.pad_lines - self.y + 1:
+                self.pos_y += i
+                if self.pos_y > self.pad_lines - self.y + 1:
+                    self.pos_y = self.pad_lines - self.y + 1
 
         self.refresh()
 
