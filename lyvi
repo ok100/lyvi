@@ -210,7 +210,7 @@ def metadata_get(type, artist, title, lang):
         try:
             m = glyr_query(type, artist, title, lang)[0].data.decode('utf-8')
         except IndexError:
-            m = 'No %s found' % type
+            m = None
 
         return m
 
@@ -232,7 +232,7 @@ def get_and_update(artist, title, data, types):
 
         # Optionally save lyric to a file
         if SETTINGS['save_lyrics'] and p.file and type == 'lyrics' \
-            and m not in ['No lyrics found', 'Missing tags']:
+            and m and m != 'Missing tags':
             f = codecs.open(p.file.rsplit('.')[0] + '.lyric', 'w', 'utf-8')
             f.write(m)
             f.close()
@@ -618,15 +618,18 @@ class Ui:
         self.y, self.x = self.screen.getmaxyx()
         if self.settings['view'] == 'lyrics':
             self.header = self.artist + ' - ' + self.title
-            self.text = self.lyrics
+            self.text = self.lyrics if self.lyrics \
+                else 'No lyrics found'
             text_wrap = wrap(self.text, self.x - 2)
         elif self.settings['view'] == 'artistbio':
             self.header = self.artist
-            self.text = self.artistbio
+            self.text = self.artistbio if self.artistbio \
+                else 'No artist info found'
             text_wrap = wrapwords(self.text, self.x - 2)
         elif self.settings['view'] == 'guitartabs':
             self.header = self.artist + ' - ' + self.title
-            self.text = self.guitartabs
+            self.text = self.guitartabs if self.guitartabs \
+                else 'No guitar tabs found'
             text_wrap = wrap(self.text, self.x - 2)
         header_wrap = wrap(self.header, self.x - 2)
         self.pad_lines = len(header_wrap.splitlines()) + \
@@ -782,17 +785,22 @@ def main(stdscr):
                     needsupdate.insert(1, 'artistbio')
                     if SETTINGS['bg']:
                         needsupdate.insert(0, 'backdrops')
+                elif u.artistbio == 'Searching artist info...':
+                        needsupdate.insert(1, 'artistbio')
+                if u.settings['view'] in needsupdate:
+                    needsupdate.insert(1 if 'backdrops' in needsupdate else 0,
+                        needsupdate.pop(needsupdate.index(u.settings['view'])))
 
                 lock.acquire()
                 try:
                     u.artist = p.artist
                     u.title = p.title
                     if 'lyrics' in needsupdate:
-                        u.lyrics = 'Downloading lyrics...'
+                        u.lyrics = 'Searching lyrics...'
                     if 'artistbio' in needsupdate:
-                        u.artistbio = 'Downloading artist info...'
+                        u.artistbio = 'Searching artist info...'
                     if 'guitartabs' in needsupdate:
-                        u.guitartabs = 'Downloading guitar tab...'
+                        u.guitartabs = 'Searching guitar tab...'
                     u.update_content()
                 finally:
                     lock.release()
