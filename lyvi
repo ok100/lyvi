@@ -134,7 +134,7 @@ def running(process):
 
 def bg_set(file, opacity):
     os.system('convert -fill black -colorize %s%% %s %s'
-        % (opacity, file, file))
+              % (opacity, file, file))
     os.system('printf "\e]20;%s;100x100+50+50:op=keep-aspect\a"' % file)
 
 
@@ -154,7 +154,7 @@ def bg_unset():
 
 def bg_setlocal():
     bg_path = SETTINGS['bg_path'].replace('<artist>', p.artist) \
-              .replace('<artistinitial>', p.artist[0])
+        .replace('<artistinitial>', p.artist[0])
     imgs = []
     for root, subfolders, files in os.walk(bg_path):
         for file in files:
@@ -658,7 +658,7 @@ class Ui:
         elif self.pos_y > self.pad_lines - self.y:
             pos_perc = 'Bot'
         else:
-            pos_perc = str(int((100 / float(self.pad_lines - self.y)) \
+            pos_perc = str(int((100 / float(self.pad_lines - self.y))
                                * self.pos_y - 1)) + '%'
         self.statusbar.addstr(0, 1, '|<  >>  ||  >|', curses.color_pair(4))
         self.statusbar.addstr(0, self.x - len(pos_perc) - 1, pos_perc,
@@ -810,6 +810,8 @@ def main(stdscr):
                 worker.daemon = True
                 worker.start()
         else:
+            if SETTINGS['bg']:
+                bg_unset()
             u.artist = p.artist
             u.title = p.title
             u.lyrics = 'Not playing'
