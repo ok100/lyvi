@@ -233,7 +233,7 @@ def get_and_update(artist, title, data, types):
         # Optionally save lyric to a file
         if SETTINGS['save_lyrics'] and p.file and type == 'lyrics' \
             and m and m != 'Missing tags':
-            f = codecs.open(p.file.rsplit('.')[0] + '.lyric', 'w', 'utf-8')
+            f = codecs.open(p.file.rsplit('.', 1)[0] + '.lyric', 'w', 'utf-8')
             f.write(m)
             f.close()
 
