@@ -23,7 +23,8 @@ from threading import Thread, Lock
 from subprocess import Popen, PIPE
 
 try:
-    from urllib.request import urlopen
+    from urllib import request
+    urlopen = request.urlopen
 except ImportError:
     from urllib2 import urlopen
 
@@ -31,13 +32,13 @@ import plyr
 
 locale.setlocale(locale.LC_ALL, '')
 
-VERSION = '1.0.0'
+VERSION = '1.0.0-git'
 GLYR_VERSION = plyr.version().split()[1]
 HOME = os.environ['HOME']
 CFG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ \
-    else os.environ['HOME'] + '/.config'
+    else HOME + '/.config'
 CACHE_HOME = os.environ['XDG_CACHE_HOME'] if 'XDG_CACHE_HOME' in os.environ \
-    else os.environ['HOME'] + '/.cache'
+    else HOME + '/.cache'
 SETTINGS = {'lang': 'en',
             'view': 'lyrics',
             'key_quit': 'q',
@@ -241,7 +242,7 @@ def get_and_update(artist, title, data, types):
 class DummyPlayer:
     def status(self):
         self.file = None
-        if self.run == None:
+        if not self.run:
             self.running = True
         elif self.run['type'] == 'file':
             self.running = os.path.exists(self.run['name'])
@@ -321,7 +322,7 @@ class DummyPlayer:
                         else:
                             self.file = None
 
-        if self.playing == False:
+        if not self.playing:
             self.artist = 'N/A'
             self.title = 'N/A'
         else:
@@ -407,12 +408,12 @@ class Pianobar(DummyPlayer):
 
 class Mpd(DummyPlayer):
     def __init__(self, host, port):
-        local = ['localhost', '127.0.0.1']
+        local = ('localhost', '127.0.0.1')
         mpc = 'mpc -h %s -p %s' % (host, port)
         self.run = {'type': 'process',
                     'name': 'mpd'} if host in local else None
         self.np = {'type': 'np_command'}
-        self.np['name'] = mpc + ' current -f "%artist%\\%title%\\%file%"'\
+        self.np['name'] = mpc + ' current -f "%artist%\\%title%\\%file%"' \
             if host in local else mpc + ' current -f "%artist%\\%title%"'
         self.ctl = {'type': 'command',
                     'commands': {'play': '%s play > /dev/null' % mpc,
@@ -557,8 +558,8 @@ class Guayadeque(DummyPlayer):
         self.run = {'type': 'file',
                     'name': '%s/.guayadeque/.guayadeque-%s' %
                             (HOME, getuser())}
-        cmd_base = 'dbus-send --print-reply --type=method_call\
-                    --dest=org.mpris.guayadeque /Player\
+        cmd_base = 'dbus-send --print-reply --type=method_call \
+                    --dest=org.mpris.guayadeque /Player \
                     org.freedesktop.MediaPlayer.'
         str_base = '"\n         variant             string "'
         self.np = {'type': 'command',
@@ -732,7 +733,7 @@ class Ui:
                         p.command('pause')
                     elif 13 <= x <= 14:
                         p.command('next')
-                    elif self.x - len(self.settings['view']) - 10 <= x\
+                    elif self.x - len(self.settings['view']) - 10 <= x \
                         and x < self.x - 10:
                         self.toggle_views()
 
@@ -772,13 +773,13 @@ def main(stdscr):
 
     while True:
         p.status()
-        if u.quit == True or not p.running:
+        if u.quit or not p.running:
             if not p.running:
                 if os.path.exists(p.np['name']):
                     os.remove(p.np['name'])
             break
 
-        elif p.playing == True:
+        elif p.playing:
             if p.artist != u.artist or p.title != u.title:
                 needsupdate = ['lyrics', 'guitartabs']
                 if p.artist != u.artist:
@@ -849,7 +850,7 @@ if __name__ == '__main__':
             p = players[player]()
             break
     else:
-        local = ['localhost', '127.0.0.1']
+        local = ('localhost', '127.0.0.1')
         if running('mpd') or SETTINGS['mpd_host'] not in local:
             p = Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
         else:
@@ -857,6 +858,9 @@ if __name__ == '__main__':
             sys.exit()
 
     if len(sys.argv) > 1:
-        p.command(sys.argv[1])
+        if sys.argv[1] in p.ctl['commands']:
+            p.command(sys.argv[1])
+        else:
+            print('Unknown command: %s' % sys.argv[1])
     else:
         curses.wrapper(main)
