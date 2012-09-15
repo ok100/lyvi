@@ -10,17 +10,16 @@ from __future__ import unicode_literals
 
 import os
 import sys
-import shlex
 import locale
 import curses
 import socket
 import codecs
 import textwrap
+import subprocess
 from time import sleep
 from shutil import copy2
 from getpass import getuser
 from threading import Thread, Lock
-from subprocess import Popen, PIPE
 
 try:
     from urllib import request
@@ -122,15 +121,14 @@ def process_fifo(command, file):
 
 
 def get_output(command):
-    p = Popen(shlex.split(command), stdout=PIPE, stderr=PIPE)
-
-    return p.communicate()[0].decode('utf-8').strip()
+    try:
+        return subprocess.check_output(command.split()).decode('utf-8').strip()
+    except subprocess.CalledProcessError:
+        return ''
 
 
 def running(process):
-    res = True if process in get_output('ps -C %s' % process) else False
-
-    return res
+    return True if process in get_output('ps -C %s' % process) else False
 
 
 def bg_set(file, opacity):
