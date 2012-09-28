@@ -36,27 +36,30 @@ GLYR_VERSION = plyr.version().split()[1]
 HOME = os.environ['HOME']
 CFG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ else HOME + '/.config'
 DATA_HOME = os.environ['XDG_DATA_HOME'] if 'XDG_DATA_HOME' in os.environ else HOME + '/.local/share'
-SETTINGS = {'lang': 'en',
-            'view': 'lyrics',
-            'key_quit': 'q',
-            'key_toggle': 'a',
-            'key_play': 'x',
-            'key_pause': 'c',
-            'key_next': 'b',
-            'key_prev': 'z',
-            'key_stop': 'v',
-            'key_volup': '=',
-            'key_voldn': '-',
-            'color_title': 7,
-            'color_text': -1,
-            'color_status': -1,
-            'color_buttons': -1,
-            'mpd_host': 'localhost',
-            'mpd_port': 6600,
-            'save_lyrics': False,
-            'bg': False,
-            'bg_opacity': 85,
-            'bg_path': None}
+SETTINGS = {
+    'lang': 'en',
+    'view': 'lyrics',
+    'key_quit': 'q',
+    'key_toggle': 'a',
+    'key_play': 'x',
+    'key_pause': 'c',
+    'key_next': 'b',
+    'key_prev': 'z',
+    'key_stop': 'v',
+    'key_volup': '=',
+    'key_voldn': '-',
+    'color_title': 7,
+    'color_text': -1,
+    'color_status': -1,
+    'color_buttons': -1,
+    'mpd_host': 'localhost',
+    'mpd_port': 6600,
+    'mpd_config_file': HOME + '/.mpdconf',
+    'save_lyrics': False,
+    'bg': False,
+    'bg_opacity': 85,
+    'bg_path': None,
+}
 
 
 def parse_config(file):
@@ -265,7 +268,7 @@ class DummyPlayer:
 
                     # mpd workaround
                     if self.__class__.__name__ == 'Mpd':
-                        f = open(HOME + '/.mpdconf')
+                        f = open(SETTINGS['mpd_config_file'])
                         for line in f.read().splitlines():
                             if 'music_directory' in line:
                                 music_dir = line.split('"')[1]
