@@ -42,6 +42,7 @@ SETTINGS = {
     'view': 'lyrics',
     'key_quit': 'q',
     'key_toggle': 'a',
+    'key_bg_toggle': 's',
     'key_play': 'x',
     'key_pause': 'c',
     'key_next': 'b',
@@ -839,6 +840,13 @@ class Ui:
         SETTINGS['view'] = views[i]
         self.update_content()
 
+    def toggle_bg(self):
+        SETTINGS['bg_type'] = 'cover' if SETTINGS['bg_type'] == 'backdrops' else 'backdrops'
+        if SETTINGS['bg_path'] and SETTINGS['bg_type'] == 'backdrops':
+            bg_setlocal()
+        else:
+            metadata_get(SETTINGS['bg_type'], self.artist, self.album, self.title, SETTINGS['lang'])
+
     def scroll(self, i):
         if i == 'top':
             self.pos_y = 0
@@ -899,6 +907,9 @@ class Ui:
 
             elif key == ord(SETTINGS['key_toggle']):
                 self.toggle_views()
+
+            elif key == ord(SETTINGS['key_bg_toggle']):
+                self.toggle_bg()
 
             elif key in commands:
                 p.command(commands[key])
