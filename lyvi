@@ -492,8 +492,8 @@ class Mpd(Player):
         } if host in local else None
         self.np = {
             'type': 'np_command',
-            'name': mpc + ' current -f %artist%\\%title%\\%album%\\%file%' if host in local
-            else mpc + ' current -f %artist%\\%title%\\%album%',
+            'name': mpc + ' current -f "%artist%\\%title%\\%album%\\%file%"' if host in local
+            else mpc + ' current -f "%artist%\\%title%\\%album%"',
         }
         self.ctl = {
             'type': 'command',
