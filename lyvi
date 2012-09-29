@@ -244,6 +244,7 @@ def get_and_update(artist, title, data, types):
     if 'backdrops' in types:
         if SETTINGS['bg_path']:
             bg_setlocal()
+            types.remove('backdrops')
     for type in types:
         m = metadata_get(type, artist, title, SETTINGS['lang'])
 
@@ -468,8 +469,8 @@ class Mpd(DummyPlayer):
         } if host in local else None
         self.np = {
             'type': 'np_command',
-            'name': mpc + ' current -f "%artist%\\%title%\\%file%"' if host in local
-            else mpc + ' current -f "%artist%\\%title%"',
+            'name': mpc + ' current -f %artist%\\%title%\\%file%' if host in local
+            else mpc + ' current -f %artist%\\%title%',
         }
         self.ctl = {
             'type': 'command',
