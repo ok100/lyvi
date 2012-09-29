@@ -57,6 +57,7 @@ SETTINGS = {
     'mpd_port': 6600,
     'mpd_config_file': HOME + '/.mpdconf',
     'save_lyrics': False,
+    'save_lyrics_format': '<filename>.lyric',
     'bg': False,
     'bg_opacity': 85,
     'bg_path': None,
@@ -258,7 +259,16 @@ def get_and_update(artist, title, data, types):
 
         # Optionally save lyric to a file
         if SETTINGS['save_lyrics'] and p.file and type == 'lyrics' and m and m != 'Missing tags':
-            f = codecs.open(p.file.rsplit('.', 1)[0] + '.lyric', 'w', 'utf-8')
+            path, filename = p.file.rsplit('/', 1)
+            replace_strings = {
+                '<filename>': filename.rsplit('.', 1)[0],
+                '<title>': title,
+                '<artist>': artist,
+            }
+            lyric_filename = SETTINGS['save_lyrics_format']
+            for string in replace_strings:
+                lyric_filename = lyric_filename.replace(string, replace_strings[string])
+            f = codecs.open('%s/%s' % (path, lyric_filename), 'w', 'utf-8')
             f.write(m)
             f.close()
 
