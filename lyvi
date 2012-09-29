@@ -241,7 +241,7 @@ def metadata_get(type, artist, title, lang):
         return m
 
 
-def get_and_update(artist, title, data, types):
+def get_and_update(artist, title, file, data, types):
     if 'backdrops' in types:
         if SETTINGS['bg_path']:
             bg_setlocal()
@@ -258,8 +258,8 @@ def get_and_update(artist, title, data, types):
             data['lock'].release()
 
         # Optionally save lyric to a file
-        if SETTINGS['save_lyrics'] and p.file and type == 'lyrics' and m and m != 'Missing tags':
-            path, filename = p.file.rsplit('/', 1)
+        if SETTINGS['save_lyrics'] and file and type == 'lyrics' and m and m != 'Missing tags':
+            path, filename = file.rsplit('/', 1)
             replace_strings = {
                 '<filename>': filename.rsplit('.', 1)[0],
                 '<title>': title,
@@ -945,7 +945,7 @@ def main(stdscr):
                     lock.release()
 
                 worker = Thread(target=get_and_update,
-                                args=(p.artist, p.title, data, needsupdate))
+                                args=(p.artist, p.title, p.file, data, needsupdate))
                 worker.daemon = True
                 worker.start()
         else:
