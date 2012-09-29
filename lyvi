@@ -61,6 +61,7 @@ SETTINGS = {
     'bg': False,
     'bg_opacity': 85,
     'bg_path': None,
+    'bg_type': 'backdrops',
 }
 
 
@@ -153,7 +154,7 @@ def process_fifo(command, file):
 
 def get_output(command):
     try:
-        return subprocess.check_output(command.split()).decode('utf-8').strip()
+        return subprocess.check_output(command, shell=True).decode('utf-8').strip()
     except subprocess.CalledProcessError:
         return ''
 
@@ -198,33 +199,32 @@ def bg_setlocal():
         bg_unset()
 
 
-def glyr_query(type, artist, title, lang):
+def glyr_query(type, artist, album, title, lang):
         cache_dir = DATA_HOME + '/lyvi'
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
         db = plyr.Database(cache_dir)
-        query = plyr.Query(artist=artist, title=title, get_type=type,
-                           database=db, language=lang)
+        query = plyr.Query(artist=artist, album=album, title=title, get_type=type, database=db, language=lang)
         query.useragent = 'lyvi/%s' % VERSION
         return query.commit()
 
 
-def metadata_get(type, artist, title, lang):
+def metadata_get(type, artist, album, title, lang):
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
-            or ((type == 'artistbio' or type == 'backdrops') and artist == 'N/A')
+            or (type == 'cover' and (artist == 'N/A' or title == 'N/A'))
+            or ((type == 'artistbio' or type == SETTINGS['bg_type']) and artist == 'N/A')
             or (type == 'guitartabs' and (artist == 'N/A' or title == 'N/A'))):
         return 'Missing tags'
 
-    elif type == 'backdrops':
-        img = None
+    if type == SETTINGS['bg_type']:
         try:
-            img = glyr_query(type, artist, title, lang)[0].data
+            img = glyr_query(type, artist, album, title, lang)[0].data
         except IndexError:
             try:
-                img = glyr_query('artistphoto', artist, title, lang)[0].data
+                img = glyr_query('artistphoto', artist, album, title, lang)[0].data
             except IndexError:
-                pass
+                img = None
         if img:
             f = open('/tmp/lyvi_bg.jpg', 'wb')
             f.write(img)
@@ -235,27 +235,26 @@ def metadata_get(type, artist, title, lang):
 
     else:
         try:
-            m = glyr_query(type, artist, title, lang)[0].data.decode('utf-8')
+            return glyr_query(type, artist, album, title, lang)[0].data.decode('utf-8')
         except IndexError:
-            m = None
-        return m
+            return None
 
 
-def get_and_update(artist, title, file, data, types):
-    if 'backdrops' in types:
+def get_and_update(artist, album, title, file, needsupdate, ui, lock):
+    if SETTINGS['bg_type'] in needsupdate:
         if SETTINGS['bg_path']:
             bg_setlocal()
-            types.remove('backdrops')
-    for type in types:
-        m = metadata_get(type, artist, title, SETTINGS['lang'])
+            needsupdate.remove(SETTINGS['bg_type'])
+    for type in needsupdate:
+        m = metadata_get(type, artist, album, title, SETTINGS['lang'])
 
-        data['lock'].acquire()
+        lock.acquire()
         try:
-            if data['ui'].artist + data['ui'].title == artist + title:
-                setattr(data['ui'], type, m)
-                data['ui'].update_content()
+            if ui.artist + ui.title == artist + title:
+                setattr(ui, type, m)
+                ui.update_content()
         finally:
-            data['lock'].release()
+            lock.release()
 
         # Optionally save lyric to a file
         if SETTINGS['save_lyrics'] and file and type == 'lyrics' and m and m != 'Missing tags':
@@ -273,7 +272,7 @@ def get_and_update(artist, title, file, data, types):
             f.close()
 
 
-class DummyPlayer:
+class Player:
     def status(self):
         self.file = None
         if not self.run:
@@ -301,8 +300,9 @@ class DummyPlayer:
             else:
                 self.artist = s[0]
                 self.title = s[1]
-                if len(s) > 2:
-                    self.file = s[2]
+                self.album = s[2]
+                if len(s) > 3:
+                    self.file = s[3]
 
                     # mpd workaround
                     if self.__class__.__name__ == 'Mpd':
@@ -326,7 +326,12 @@ class DummyPlayer:
                 s = f.read().split(self.np['str']['beg'])[-1]
                 f.close()
             elif self.np['type'] == 'url':
-                p = urlopen(self.np['name'])
+                while True:
+                    try:
+                        p = urlopen(self.np['name'])
+                        break
+                    except:
+                        continue
                 s = p.read().decode()
                 p.close()
 
@@ -337,6 +342,11 @@ class DummyPlayer:
                 if self.np['str']['artist_beg'] in s:
                     self.artist = s.split(self.np['str']['artist_beg'])[1] \
                         .split(self.np['str']['artist_end'])[0]
+                else:
+                    self.artist = 'N/A'
+                if self.np['str']['album_beg'] in s:
+                    self.album = s.split(self.np['str']['album_beg'])[1] \
+                        .split(self.np['str']['album_end'])[0]
                 else:
                     self.artist = 'N/A'
                 if self.np['str']['title_beg'] in s:
@@ -376,7 +386,7 @@ class DummyPlayer:
                 os.system(self.ctl['commands'][command])
 
 
-class Cmus(DummyPlayer):
+class Cmus(Player):
     def __init__(self):
         self.run = {
             'type': 'file',
@@ -388,6 +398,8 @@ class Cmus(DummyPlayer):
             'str': {
                 'artist_beg': 'tag artist ',
                 'artist_end': '\n',
+                'album_beg': 'tag album ',
+                'album_end': '\n',
                 'title_beg': 'tag title ',
                 'title_end': '\n',
                 'file_beg': 'file ',
@@ -409,7 +421,7 @@ class Cmus(DummyPlayer):
         }
 
 
-class Shellfm(DummyPlayer):
+class Shellfm(Player):
     def __init__(self):
         self.run = {
             'type': 'file',
@@ -432,7 +444,7 @@ class Shellfm(DummyPlayer):
         }
 
 
-class Pianobar(DummyPlayer):
+class Pianobar(Player):
     def __init__(self):
         config_dir = CFG_HOME + '/pianobar/'
 
@@ -468,7 +480,7 @@ class Pianobar(DummyPlayer):
         }
 
 
-class Mpd(DummyPlayer):
+class Mpd(Player):
     def __init__(self, host, port):
         local = ('localhost', '127.0.0.1')
         mpc = 'mpc -h %s -p %s' % (host, port)
@@ -479,8 +491,8 @@ class Mpd(DummyPlayer):
         } if host in local else None
         self.np = {
             'type': 'np_command',
-            'name': mpc + ' current -f %artist%\\%title%\\%file%' if host in local
-            else mpc + ' current -f %artist%\\%title%',
+            'name': mpc + ' current -f %artist%\\%title%\\%album%\\%file%' if host in local
+            else mpc + ' current -f %artist%\\%title%\\%album%',
         }
         self.ctl = {
             'type': 'command',
@@ -496,7 +508,7 @@ class Mpd(DummyPlayer):
         }
 
 
-class Moc(DummyPlayer):
+class Moc(Player):
     def __init__(self):
         self.run = {
             'type': 'file',
@@ -504,10 +516,12 @@ class Moc(DummyPlayer):
         }
         self.np = {
             'type': 'command',
-            'name': 'mocp -i',
+            'name': 'mocp -i 2>/dev/null',
             'str': {
                 'artist_beg': 'Artist: ',
                 'artist_end': '\n',
+                'album_beg': 'Album: ',
+                'album_end': '\n',
                 'title_beg': 'SongTitle: ',
                 'title_end': '\n',
                 'file_beg': 'File: ',
@@ -529,7 +543,7 @@ class Moc(DummyPlayer):
         }
 
 
-class Mplayer(DummyPlayer):
+class Mplayer(Player):
     def __init__(self):
         self.run = {
             'type': 'process',
@@ -542,6 +556,8 @@ class Mplayer(DummyPlayer):
                 'beg': 'AUDIO_ID',
                 'artist_beg': 'VALUE1=',
                 'artist_end': '\n',
+                'album_beg': 'VALUE3=',
+                'album_end': '\n',
                 'title_beg': 'VALUE0=',
                 'title_end': '\n',
                 'file_beg': '||||',
@@ -564,7 +580,7 @@ class Mplayer(DummyPlayer):
         }
 
 
-class Vlc(DummyPlayer):
+class Vlc(Player):
     def __init__(self):
         self.run = {
             'type': 'file',
@@ -576,6 +592,8 @@ class Vlc(DummyPlayer):
             'str': {
                 'artist_beg': 'name=\'artist\'>',
                 'artist_end': '</info>',
+                'album_beg': 'name=\'album\'>',
+                'album_end': '</info>',
                 'title_beg': 'name=\'title\'>',
                 'title_end': '</info>',
                 'file_beg': '||||',
@@ -598,7 +616,7 @@ class Vlc(DummyPlayer):
         }
 
 
-class Audacious(DummyPlayer):
+class Audacious(Player):
     def __init__(self):
         config_dir = CFG_HOME + '/audacious/'
 
@@ -624,7 +642,7 @@ class Audacious(DummyPlayer):
         }
 
 
-class Deadbeef(DummyPlayer):
+class Deadbeef(Player):
     def __init__(self):
         self.run = {
             'type': 'process',
@@ -632,7 +650,7 @@ class Deadbeef(DummyPlayer):
         }
         self.np = {
             'type': 'np_command',
-            'name': 'deadbeef --nowplaying "%a%\\%t%\\%f%"',
+            'name': 'deadbeef --nowplaying "%a%\\%t%\\%b%\\%f%" 2>/dev/null',
         }
         self.ctl = {
             'type': 'command',
@@ -646,7 +664,7 @@ class Deadbeef(DummyPlayer):
         }
 
 
-class Qmmp(DummyPlayer):
+class Qmmp(Player):
     def __init__(self):
         self.run = {
             'type': 'file',
@@ -654,10 +672,12 @@ class Qmmp(DummyPlayer):
         }
         self.np = {
             'type': 'command',
-            'name': 'qmmp --status',
+            'name': 'qmmp --status --no-start',
             'str': {
                 'artist_beg': 'ARTIST = ',
                 'artist_end': '\n',
+                'album_beg': 'ALBUM = ',
+                'album_end': '\n',
                 'title_beg': 'TITLE = ',
                 'title_end': '\n',
                 'file_beg': '||||',
@@ -679,7 +699,7 @@ class Qmmp(DummyPlayer):
         }
 
 
-class Guayadeque(DummyPlayer):
+class Guayadeque(Player):
     def __init__(self):
         cmd_base = 'dbus-send --print-reply --type=method_call --dest=org.mpris.guayadeque /Player \
                     org.freedesktop.MediaPlayer.'
@@ -695,6 +715,8 @@ class Guayadeque(DummyPlayer):
             'str': {
                 'artist_beg': 'artist' + str_base,
                 'artist_end': '"\n',
+                'album_beg': 'album' + str_base,
+                'album_end': '"\n',
                 'title_beg': 'title' + str_base,
                 'title_end': '"\n',
                 'file_beg': 'location' + str_base,
@@ -714,7 +736,7 @@ class Guayadeque(DummyPlayer):
         }
 
 
-class Gmusicbrowser(DummyPlayer):
+class Gmusicbrowser(Player):
     def __init__(self):
         config_dir = CFG_HOME + '/gmusicbrowser/'
 
@@ -742,9 +764,9 @@ class Gmusicbrowser(DummyPlayer):
 class Ui:
     def __init__(self, screen):
         self.screen = screen
-        self.settings = SETTINGS
         self.quit = False
         self.artist = ''
+        self.album = ''
         curses.curs_set(0)
         mousemask = curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION
         curses.mousemask(mousemask)
@@ -752,23 +774,23 @@ class Ui:
 
         # init colors
         curses.use_default_colors()
-        curses.init_pair(1, int(self.settings['color_title']), -1)
-        curses.init_pair(2, int(self.settings['color_text']), -1)
-        curses.init_pair(3, int(self.settings['color_status']), -1)
-        curses.init_pair(4, int(self.settings['color_buttons']), -1)
+        curses.init_pair(1, int(SETTINGS['color_title']), -1)
+        curses.init_pair(2, int(SETTINGS['color_text']), -1)
+        curses.init_pair(3, int(SETTINGS['color_status']), -1)
+        curses.init_pair(4, int(SETTINGS['color_buttons']), -1)
 
     def update_content(self):
         self.pos_y = 0
         self.y, self.x = self.screen.getmaxyx()
-        if self.settings['view'] == 'lyrics':
+        if SETTINGS['view'] == 'lyrics':
             self.header = self.artist + ' - ' + self.title
             self.text = self.lyrics if self.lyrics else 'No lyrics found'
             text_wrap = wrap(self.text, self.x - 2)
-        elif self.settings['view'] == 'artistbio':
+        elif SETTINGS['view'] == 'artistbio':
             self.header = self.artist
             self.text = self.artistbio if self.artistbio else 'No artist info found'
             text_wrap = wrapwords(self.text, self.x - 2)
-        elif self.settings['view'] == 'guitartabs':
+        elif SETTINGS['view'] == 'guitartabs':
             self.header = self.artist + ' - ' + self.title
             self.text = self.guitartabs if self.guitartabs else 'No guitar tabs found'
             text_wrap = wrap(self.text, self.x - 2)
@@ -803,18 +825,18 @@ class Ui:
         self.statusbar.addstr(0, 1, '|<  >>  ||  >|', curses.color_pair(4))
         self.statusbar.addstr(0, self.x - len(pos_perc) - 1, pos_perc,
                               curses.color_pair(3))
-        self.statusbar.addstr(0, self.x - len(self.settings['view']) - 10,
-                              self.settings['view'], curses.color_pair(3))
+        self.statusbar.addstr(0, self.x - len(SETTINGS['view']) - 10,
+                              SETTINGS['view'], curses.color_pair(3))
         self.statusbar.noutrefresh(0, 0, self.y - 1, 0, self.y, self.x)
 
         curses.doupdate()
 
     def toggle_views(self):
         views = ['lyrics', 'artistbio', 'guitartabs']
-        i = views.index(self.settings['view']) + 1
+        i = views.index(SETTINGS['view']) + 1
         if i >= len(views):
             i = 0
-        self.settings['view'] = views[i]
+        SETTINGS['view'] = views[i]
         self.update_content()
 
     def scroll(self, i):
@@ -842,13 +864,13 @@ class Ui:
         self.refresh()
 
     def control(self):
-        commands = {ord(self.settings['key_play']): 'play',
-                    ord(self.settings['key_pause']): 'pause',
-                    ord(self.settings['key_next']): 'next',
-                    ord(self.settings['key_prev']): 'prev',
-                    ord(self.settings['key_stop']): 'stop',
-                    ord(self.settings['key_volup']): 'volup',
-                    ord(self.settings['key_voldn']): 'voldn'}
+        commands = {ord(SETTINGS['key_play']): 'play',
+                    ord(SETTINGS['key_pause']): 'pause',
+                    ord(SETTINGS['key_next']): 'next',
+                    ord(SETTINGS['key_prev']): 'prev',
+                    ord(SETTINGS['key_stop']): 'stop',
+                    ord(SETTINGS['key_volup']): 'volup',
+                    ord(SETTINGS['key_voldn']): 'voldn'}
         while True:
             key = self.screen.getch()
 
@@ -856,7 +878,7 @@ class Ui:
             if key == curses.KEY_MOUSE:
                 id, x, y, z, bstate = curses.getmouse()
 
-            if key == ord(self.settings['key_quit']):
+            if key == ord(SETTINGS['key_quit']):
                 self.quit = True
 
             elif key == curses.KEY_RESIZE:
@@ -872,10 +894,10 @@ class Ui:
                         p.command('pause')
                     elif 13 <= x <= 14:
                         p.command('next')
-                    elif self.x - len(self.settings['view']) - 10 <= x and x < self.x - 10:
+                    elif self.x - len(SETTINGS['view']) - 10 <= x and x < self.x - 10:
                         self.toggle_views()
 
-            elif key == ord(self.settings['key_toggle']):
+            elif key == ord(SETTINGS['key_toggle']):
                 self.toggle_views()
 
             elif key in commands:
@@ -907,32 +929,31 @@ def main(stdscr):
     ui_control.start()
 
     lock = Lock()
-    data = {'ui': u, 'lock': lock}
 
     while True:
         p.status()
+
         if u.quit or not p.running:
-            if not p.running:
-                if os.path.exists(p.np['name']):
-                    os.remove(p.np['name'])
             break
 
-        elif p.playing:
-            if p.artist != u.artist or p.title != u.title:
+        if p.playing:
+            if p.artist != u.artist or p.album != u.album or p.title != u.title:
                 needsupdate = ['lyrics', 'guitartabs']
                 if p.artist != u.artist:
                     needsupdate.insert(1, 'artistbio')
-                    if SETTINGS['bg']:
-                        needsupdate.insert(0, 'backdrops')
+                    if SETTINGS['bg'] and (SETTINGS['bg_type'] == 'backdrops'
+                                           or (SETTINGS['bg_type'] == 'cover' and p.album != u.album)):
+                        needsupdate.insert(0, SETTINGS['bg_type'])
                 elif u.artistbio == 'Searching artist info...':
                         needsupdate.insert(1, 'artistbio')
-                if u.settings['view'] in needsupdate:
-                    needsupdate.insert(1 if 'backdrops' in needsupdate else 0,
-                                       needsupdate.pop(needsupdate.index(u.settings['view'])))
+                if SETTINGS['view'] in needsupdate:
+                    needsupdate.insert(1 if SETTINGS['bg_type'] in needsupdate else 0,
+                                       needsupdate.pop(needsupdate.index(SETTINGS['view'])))
 
                 lock.acquire()
                 try:
                     u.artist = p.artist
+                    u.album = p.album
                     u.title = p.title
                     if 'lyrics' in needsupdate:
                         u.lyrics = 'Searching lyrics...'
@@ -945,13 +966,14 @@ def main(stdscr):
                     lock.release()
 
                 worker = Thread(target=get_and_update,
-                                args=(p.artist, p.title, p.file, data, needsupdate))
+                                args=(p.artist, p.album, p.title, p.file, needsupdate, u, lock))
                 worker.daemon = True
                 worker.start()
         else:
             if SETTINGS['bg']:
                 bg_unset()
             u.artist = p.artist
+            u.album = p.album
             u.title = p.title
             u.lyrics = 'Not playing'
             u.artistbio = 'Not playing'
@@ -960,8 +982,12 @@ def main(stdscr):
 
         sleep(1)
 
+    # cleanup
     if SETTINGS['bg']:
         bg_unset()
+    if not p.running:
+        if os.path.exists(p.np['name']):
+            os.remove(p.np['name'])
 
 
 if __name__ == '__main__':
