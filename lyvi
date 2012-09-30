@@ -340,25 +340,15 @@ class Player:
                 self.playing = False
             else:
                 self.playing = True
-                if self.np['str']['artist_beg'] in s:
-                    self.artist = s.split(self.np['str']['artist_beg'])[1] \
-                        .split(self.np['str']['artist_end'])[0]
-                else:
-                    self.artist = 'N/A'
-                if self.np['str']['album_beg'] in s:
-                    self.album = s.split(self.np['str']['album_beg'])[1] \
-                        .split(self.np['str']['album_end'])[0]
-                else:
-                    self.artist = 'N/A'
-                if self.np['str']['title_beg'] in s:
-                    self.title = s.split(self.np['str']['title_beg'])[1] \
-                        .split(self.np['str']['title_end'])[0]
-                else:
-                    self.title = 'N/A'
+                self.artist = s.split(self.np['str']['artist_beg'])[1].split(self.np['str']['artist_end'])[0] \
+                    if self.np['str']['artist_beg'] in s else 'N/A'
+                self.album = s.split(self.np['str']['album_beg'])[1].split(self.np['str']['album_end'])[0] \
+                    if self.np['str']['album_beg'] in s else 'N/A'
+                self.title = s.split(self.np['str']['title_beg'])[1].split(self.np['str']['title_end'])[0] \
+                    if self.np['str']['title_beg'] in s else 'N/A'
 
                 if self.np['str']['file_beg'] in s:
-                    self.file = s.split(self.np['str']['file_beg'])[1] \
-                        .split(self.np['str']['file_end'])[0]
+                    self.file = s.split(self.np['str']['file_beg'])[1].split(self.np['str']['file_end'])[0]
 
                     # guayadeque workaround
                     if self.__class__.__name__ == 'Guayadeque':
@@ -369,6 +359,7 @@ class Player:
 
         if not self.playing:
             self.artist = 'N/A'
+            self.album = 'N/A'
             self.title = 'N/A'
         else:
             missing_tag = ['', 'Unknown artist']
