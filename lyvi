@@ -933,9 +933,6 @@ class Ui:
     def autoscroll(self):
         while True:
             sleep(SETTINGS['autoscroll_time'])
-            f = open('log', 'a')
-            f.write(str(SETTINGS['autoscroll_time']) + '\n')
-            f.close()
             if SETTINGS['autoscroll']:
                 self.pager.scroll(1)
                 self.refresh()
