@@ -204,7 +204,7 @@ def bg_setlocal():
         tmp_img = '/tmp/lyvi_bg.' + imgs[0].split('.')[-1]
         copy2(imgs[0], '/tmp')
         os.rename('/tmp/' + imgs[0].split('/')[-1], tmp_img)
-        bg_set(tmp_img, SETTINGS['bg_opacity'])
+        bg_set(tmp_img, float(SETTINGS['bg_opacity']))
     else:
         bg_unset()
 
@@ -239,7 +239,7 @@ def metadata_get(type, artist, album, title, lang):
             f = open('/tmp/lyvi_bg.jpg', 'wb')
             f.write(img)
             f.close()
-            bg_set('/tmp/lyvi_bg.jpg', SETTINGS['bg_opacity'])
+            bg_set('/tmp/lyvi_bg.jpg', float(SETTINGS['bg_opacity']))
         else:
             bg_unset()
 
@@ -870,7 +870,7 @@ class Ui:
 
         self.quit = False
         self.hidden = SETTINGS['ui_hidden']
-        self.default_opacity = SETTINGS['bg_opacity']
+        self.default_opacity = float(SETTINGS['bg_opacity'])
         self.artist = self.album = self.title = self.lyrics = self.artistbio = self.guitartabs = None
 
         self.pager = Pager(self.height - 1, self.width, 0, 0)
