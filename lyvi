@@ -90,6 +90,8 @@ def parse_config(file):
                     value = True
                 elif value == 'False':
                     value = False
+                elif value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+                    value = int(value)
                 settings[key] = value
             else:
                 continue
