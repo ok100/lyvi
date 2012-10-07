@@ -871,16 +871,15 @@ class Ui:
         curses.init_pair(4, int(SETTINGS['color_buttons']), -1)
 
         self.quit = False
-        self.hidden = SETTINGS['ui_hidden']
         self.default_opacity = float(SETTINGS['bg_opacity'])
         self.artist = self.album = self.title = self.lyrics = self.artistbio = self.guitartabs = None
 
         self.pager = Pager(self.height - 1, self.width, 0, 0)
         self.statusbar = Statusbar(1, self.width, self.height - 1, 0)
 
-        auto_scroll = Thread(target=self.autoscroll)
-        auto_scroll.daemon = True
-        auto_scroll.start()
+        self.hidden = False
+        if SETTINGS['ui_hidden']:
+            self.hide()
 
     def get_size(self):
         self.height, self.width = self.screen.getmaxyx()
@@ -951,10 +950,13 @@ class Ui:
                 self.pager.show()
                 self.statusbar.show()
                 self.hidden = False
-            if SETTINGS['bg_local']:
-                bg_setlocal()
+            if self.artist or self.album or self.title:
+                if SETTINGS['bg_local']:
+                    bg_setlocal()
+                else:
+                    metadata_get(SETTINGS['bg_type'], self.artist, self.album, self.title, SETTINGS['lang'])
             else:
-                metadata_get(SETTINGS['bg_type'], self.artist, self.album, self.title, SETTINGS['lang'])
+                bg_unset()
 
     def control(self):
         commands = {
@@ -1048,6 +1050,10 @@ def main(stdscr):
     ui_control = Thread(target=ui.control)
     ui_control.daemon = True
     ui_control.start()
+
+    auto_scroll = Thread(target=ui.autoscroll)
+    auto_scroll.daemon = True
+    auto_scroll.start()
 
     lock = Lock()
 
