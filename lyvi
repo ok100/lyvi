@@ -321,7 +321,7 @@ class Player:
                     if self.__class__.__name__ == 'Mpd':
                         f = open(SETTINGS['mpd_config_file'])
                         for line in f.read().splitlines():
-                            if 'music_directory' in line:
+                            if 'music_directory' in line and '#' not in line.split('music_directory')[0]:
                                 music_dir = line.split('"')[1]
                         if not music_dir.endswith('/'):
                             music_dir += '/'
