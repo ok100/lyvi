@@ -28,7 +28,7 @@ from urllib2 import urlopen
 import plyr
 
 
-VERSION = '1.0.0-git'
+VERSION = '1.1.0'
 GLYR_VERSION = plyr.version().split()[1]
 HOME = os.environ['HOME']
 CFG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ else HOME + '/.config'
