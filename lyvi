@@ -888,15 +888,18 @@ class Ui:
         self.height, self.width = self.screen.getmaxyx()
 
     def refresh(self):
-        if SETTINGS['view'] == 'lyrics':
-            self.pager.header = wrap(self.artist + ' - ' + self.title, self.width - 2)
-            self.pager.text = wrap(self.lyrics or 'No lyrics found', self.width - 2)
-        elif SETTINGS['view'] == 'artistbio':
-            self.pager.header = wrap(self.artist, self.width - 2)
-            self.pager.text = wrapwords(self.artistbio or 'No artist info found', self.width - 2)
-        elif SETTINGS['view'] == 'guitartabs':
-            self.pager.header = wrap(self.artist + ' - ' + self.title, self.width - 2)
-            self.pager.text = wrap(self.guitartabs or 'No guitar tabs found', self.width - 2)
+        try:
+            if SETTINGS['view'] == 'lyrics':
+                self.pager.header = wrap(self.artist + ' - ' + self.title, self.width - 2)
+                self.pager.text = wrap(self.lyrics or 'No lyrics found', self.width - 2)
+            elif SETTINGS['view'] == 'artistbio':
+                self.pager.header = wrap(self.artist, self.width - 2)
+                self.pager.text = wrapwords(self.artistbio or 'No artist info found', self.width - 2)
+            elif SETTINGS['view'] == 'guitartabs':
+                self.pager.header = wrap(self.artist + ' - ' + self.title, self.width - 2)
+                self.pager.text = wrap(self.guitartabs or 'No guitar tabs found', self.width - 2)
+        except TypeError:
+            pass
 
         # calculate position
         lines = len(self.pager.text) + len(self.pager.header) + 1
@@ -908,6 +911,7 @@ class Ui:
             self.statusbar.pos = 'Bot'
         else:
             self.statusbar.pos = str(int((100 / float(lines - self.height)) * self.pager.view[0] - 1)) + '%'
+
         if SETTINGS['autoscroll']:
             self.statusbar.pos += ' (%ss)' % SETTINGS['autoscroll_time']
 
