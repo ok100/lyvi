@@ -15,6 +15,7 @@ import argparse
 import codecs
 import curses
 import imghdr
+import logging
 import os
 import socket
 import subprocess
@@ -74,10 +75,23 @@ SETTINGS = {
 }
 
 
+class LoggingThread(Thread):
+    def run(self):
+        try:
+            super(LoggingThread, self).run()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            if args.debug:
+                logging.exception('Uncaught exception')
+            raise
+
+
 def parse_args():
     parser = argparse.ArgumentParser(prog='lyvi')
     parser.add_argument('command', nargs='?', help='send a command to player')
     parser.add_argument('-c', '--config-file', help='path to an alternate config file')
+    parser.add_argument('-d', '--debug', help='enable debug mode', action='store_true')
     parser.add_argument('-v', '--version', help='print version information', action='store_true')
     return parser.parse_args()
 
@@ -85,20 +99,19 @@ def parse_args():
 def parse_config(file):
     settings = {}
     try:
-        f = open(file, 'r')
-        for l in f.read().splitlines():
-            if not l.strip().startswith('#') and '=' in l:
-                key, value = [x.strip() for x in l.split('=', 1)]
-                if value == 'True':
-                    value = True
-                elif value == 'False':
-                    value = False
-                elif key != 'bg_color' and (value.isdigit() or (value.startswith('-') and value[1:].isdigit())):
-                    value = int(value)
-                settings[key] = value
-            else:
-                continue
-        f.close()
+        with open(file, 'r') as file:
+            for line in file.read().splitlines():
+                if not line.strip().startswith('#') and '=' in line:
+                    key, value = [x.strip() for x in line.split('=', 1)]
+                    if value == 'True':
+                        value = True
+                    elif value == 'False':
+                        value = False
+                    elif key != 'bg_color' and (value.isdigit() or (value.startswith('-') and value[1:].isdigit())):
+                        value = int(value)
+                    settings[key] = value
+                else:
+                    continue
     finally:
         return settings
 
@@ -241,9 +254,8 @@ def metadata_get(type, artist, album, title, lang):
             except IndexError:
                 img = None
         if img:
-            f = open('/tmp/lyvi_%s.jpg' % SETTINGS['bg_type'], 'wb')
-            f.write(img)
-            f.close()
+            with open('/tmp/lyvi_%s.jpg' % SETTINGS['bg_type'], 'wb') as file:
+                file.write(img)
             bg_set('/tmp/lyvi_%s.jpg' % SETTINGS['bg_type'], float(SETTINGS['bg_opacity']))
         else:
             bg_unset()
@@ -283,9 +295,8 @@ def get_and_update(artist, album, title, file, needsupdate, ui, lock):
             lyric_filename = SETTINGS['save_lyrics_format']
             for string in replace_strings:
                 lyric_filename = lyric_filename.replace(string, replace_strings[string])
-            f = codecs.open('%s/%s' % (path, lyric_filename), 'w', 'utf-8')
-            f.write(m)
-            f.close()
+            with codecs.open('%s/%s' % (path, lyric_filename), 'w', 'utf-8') as file:
+                file.write(m)
 
 
 class Player:
@@ -301,9 +312,8 @@ class Player:
         if self.np['type'] == 'np_file' or self.np['type'] == 'np_command':
             if self.np['type'] == 'np_file':
                 try:
-                    f = codecs.open(self.np['name'], 'r', 'utf-8')
-                    s = f.read()
-                    f.close()
+                    with codecs.open(self.np['name'], 'r', 'utf-8') as file:
+                        s = file.read()
                 except IOError:
                     s = ''
             elif self.np['type'] == 'np_command':
@@ -338,9 +348,8 @@ class Player:
             if self.np['type'] == 'command':
                 s = get_output(self.np['name'])
             elif self.np['type'] == 'log':
-                f = open(self.np['name'])
-                s = f.read().split(self.np['str']['beg'])[-1]
-                f.close()
+                with open(self.np['name']) as file:
+                    s = f.read().split(self.np['str']['beg'])[-1]
             elif self.np['type'] == 'url':
                 while True:
                     try:
@@ -1054,11 +1063,11 @@ class Ui:
 def main(stdscr):
     ui = Ui(stdscr)
 
-    ui_control = Thread(target=ui.control)
+    ui_control = LoggingThread(target=ui.control)
     ui_control.daemon = True
     ui_control.start()
 
-    auto_scroll = Thread(target=ui.autoscroll)
+    auto_scroll = LoggingThread(target=ui.autoscroll)
     auto_scroll.daemon = True
     auto_scroll.start()
 
@@ -1100,8 +1109,8 @@ def main(stdscr):
                 finally:
                     lock.release()
 
-                worker = Thread(target=get_and_update,
-                                args=(player.artist, player.album, player.title, player.file, needsupdate, ui, lock))
+                worker = LoggingThread(target=get_and_update,
+                                       args=(player.artist, player.album, player.title, player.file, needsupdate, ui, lock))
                 worker.daemon = True
                 worker.start()
         else:
@@ -1132,20 +1141,31 @@ if __name__ == '__main__':
         if os.path.exists(args.config_file):
             SETTINGS.update(parse_config(args.config_file))
         else:
-            sys.exit('File doesn\'t exist: %s' % args.config_file)
+            sys.exit('File not found: %s' % args.config_file)
     else:
         SETTINGS.update(parse_config(CFG_HOME + '/lyvi/rc'))
+
+    if args.debug:
+        logging.basicConfig(filename='lyvi.log', level=logging.DEBUG)
+        logging.info('Lyvi %s (libglyr %s), executed with Python %s' % (VERSION, GLYR_VERSION, sys.version.split()[0]))
 
     if args.version:
         print('Lyvi %s (libglyr %s)' % (VERSION, GLYR_VERSION))
         sys.exit()
 
-    player = search_player() or sys.exit('No supported player found.\nYou must launch your player first.')
+    try:
+        player = search_player() or sys.exit('No supported player found.\nYou must launch your player first.')
 
-    if args.command:
-        if args.command in player.ctl['commands']:
-            player.command(args.command)
+        if args.command:
+            if args.command in player.ctl['commands']:
+                player.command(args.command)
+            else:
+                sys.exit('Unknown command: %s' % args.command)
         else:
-            sys.exit('Unknown command: %s' % args.command)
-    else:
-        curses.wrapper(main)
+            curses.wrapper(main)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception:
+        if args.debug:
+            logging.exception('Uncaught exception')
+        raise
