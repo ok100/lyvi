@@ -219,7 +219,7 @@ def bg_setlocal():
             if imghdr.what(os.path.abspath(os.path.join(root, file))):
                 imgs.append(os.path.abspath(os.path.join(root, file)))
     if imgs:
-        tmp_img = '/tmp/lyvi_%s.%s' % (SETTINGS['bg_type'], imgs[0].split('.')[-1])
+        tmp_img = '/tmp/lyvi-%s-%s.%s' % (os.getpid(), SETTINGS['bg_type'], imgs[0].split('.')[-1])
         copy2(imgs[0], '/tmp')
         os.rename('/tmp/' + imgs[0].split('/')[-1], tmp_img)
         bg_set(tmp_img, float(SETTINGS['bg_opacity']))
@@ -254,9 +254,9 @@ def metadata_get(type, artist, album, title, lang):
             except IndexError:
                 img = None
         if img:
-            with open('/tmp/lyvi_%s.jpg' % SETTINGS['bg_type'], 'wb') as file:
+            with open('/tmp/lyvi-%s-%s.jpg' % (os.getpid(), SETTINGS['bg_type']), 'wb') as file:
                 file.write(img)
-            bg_set('/tmp/lyvi_%s.jpg' % SETTINGS['bg_type'], float(SETTINGS['bg_opacity']))
+            bg_set('/tmp/lyvi-%s-%s.jpg' % (os.getpid(), SETTINGS['bg_type']), float(SETTINGS['bg_opacity']))
         else:
             bg_unset()
 
