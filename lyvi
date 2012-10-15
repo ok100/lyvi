@@ -196,6 +196,9 @@ def bg_set(file, opacity):
 def bg_unset():
     # Ugly, but I can't find any way to unset urxvt background.
     # So, we will create an image with the same color as terminal bg color and set it as background.
+    if args.debug:
+        logging.info('unsetting background => color: %s' % SETTINGS['bg_color'])
+
     if not os.path.exists('/tmp/lyvi_blank.png'):
         image = Image.new('RGB', (100, 100), '#' + SETTINGS['bg_color'])
         image.save('/tmp/lyvi_blank.png')
