@@ -181,6 +181,9 @@ def running(process):
 
 
 def bg_set(file, opacity):
+    if args.debug:
+        logging.info('setting background => file: "%s" opacity: "%s"' % (file, opacity))
+
     # darken/lighten image
     image1 = Image.open(file)
     image2 = image1.point(lambda p: p * opacity)
@@ -219,6 +222,8 @@ def bg_setlocal():
             if imghdr.what(os.path.abspath(os.path.join(root, file))):
                 imgs.append(os.path.abspath(os.path.join(root, file)))
     if imgs:
+        if args.debug:
+            logging.info('found local images => %s' % imgs)
         tmp_img = '/tmp/lyvi-%s-%s.%s' % (os.getpid(), SETTINGS['bg_type'], imgs[0].split('.')[-1])
         copy2(imgs[0], '/tmp')
         os.rename('/tmp/' + imgs[0].split('/')[-1], tmp_img)
@@ -1081,6 +1086,9 @@ def main(stdscr):
 
         if player.playing:
             if player.artist != ui.artist or player.album != ui.album or player.title != ui.title:
+                if args.debug:
+                    logging.info('current song => artist: "%s" title: "%s" album: "%s" file: "%s"' %
+                                 (player.artist, player.title, player.album, player.file))
                 needsupdate = ['lyrics', 'guitartabs']
                 if player.artist != ui.artist or player.album != ui.album:
                     needsupdate.insert(1, 'artistbio')
@@ -1148,6 +1156,7 @@ if __name__ == '__main__':
     if args.debug:
         logging.basicConfig(filename='lyvi.log', level=logging.DEBUG)
         logging.info('Lyvi %s (libglyr %s), executed with Python %s' % (VERSION, GLYR_VERSION, sys.version.split()[0]))
+        logging.info('settings => %s', SETTINGS)
 
     if args.version:
         print('Lyvi %s (libglyr %s)' % (VERSION, GLYR_VERSION))
@@ -1155,9 +1164,13 @@ if __name__ == '__main__':
 
     try:
         player = search_player() or sys.exit('No supported player found.\nYou must launch your player first.')
+        if args.debug:
+            logging.info('player => %s' % player.__class__.__name__)
 
         if args.command:
             if args.command in player.ctl['commands']:
+                if args.debug:
+                    logging.info('sending command => %s' % args.command)
                 player.command(args.command)
             else:
                 sys.exit('Unknown command: %s' % args.command)
