@@ -10,22 +10,20 @@ import sys
 if sys.version > '3':
     sys.exit('Lyvi doesn\'t work with Python 3.')
 
-import Image
 import argparse
 import codecs
 import curses
-import imghdr
 import logging
 import os
 import socket
 import subprocess
 from getpass import getuser
-from shutil import copy2
 from textwrap import wrap as wrapwords
 from threading import Thread, Lock
 from time import sleep
 from urllib2 import urlopen
 
+import Image
 import plyr
 
 
@@ -42,8 +40,6 @@ SETTINGS = {
     'bg_color': '000000',
     'bg_opacity': 0.15,
     'bg_local': False,
-    'bg_path_artist': None,
-    'bg_path_cover': None,
     'bg_type': 'backdrops',
     'color_buttons': -1,
     'color_status': -1,
@@ -180,13 +176,13 @@ def running(process):
     return True if process in get_output('ps -C %s' % process) else False
 
 
-def bg_set(file, opacity):
+def bg_set(file, brightness):
     if args.debug:
-        logging.info('setting background => file: "%s" opacity: "%s"' % (file, opacity))
+        logging.info('setting background => file: "%s" brightness: "%s"' % (file, brightness))
 
-    # darken/lighten image
+    # set brightness
     image1 = Image.open(file)
-    image2 = image1.point(lambda p: p * opacity)
+    image2 = image1.point(lambda p: p * brightness)
     image2.save(file)
 
     # set urxvt background, keep aspect ratio
@@ -199,54 +195,32 @@ def bg_unset():
     if args.debug:
         logging.info('unsetting background => color: %s' % SETTINGS['bg_color'])
 
-    if not os.path.exists('/tmp/lyvi_blank.png'):
+    bg = '/tmp/lyvi-%s-blank.png' % os.getpid()
+    if not os.path.exists(bg):
         image = Image.new('RGB', (100, 100), '#' + SETTINGS['bg_color'])
-        image.save('/tmp/lyvi_blank.png')
+        image.save(bg)
 
     # set urxvt background, stretch
-    os.system('printf "\e]20;/tmp/lyvi_blank.png\a"')
+    os.system('printf "\e]20;%s\a"' % bg)
 
 
-def bg_setlocal():
-    replace_strings = {
-        '<artist>': player.artist,
-        '<artistinitial>': player.artist[0],
-        '<album>': player.album,
-    }
-    bg_path = SETTINGS['bg_path_artist'] if SETTINGS['bg_type'] == 'backdrops' else SETTINGS['bg_path_cover']
-    try:
-        for string in replace_strings:
-            bg_path = bg_path.replace(string, replace_strings[string])
-    except:
-        return
-    imgs = []
-    for root, subfolders, files in os.walk(bg_path):
-        for file in files:
-            if imghdr.what(os.path.abspath(os.path.join(root, file))):
-                imgs.append(os.path.abspath(os.path.join(root, file)))
-    if imgs:
-        if args.debug:
-            logging.info('found local images => %s' % imgs)
-        tmp_img = '/tmp/lyvi-%s-%s.%s' % (os.getpid(), SETTINGS['bg_type'], imgs[0].split('.')[-1])
-        copy2(imgs[0], '/tmp')
-        os.rename('/tmp/' + imgs[0].split('/')[-1], tmp_img)
-        bg_set(tmp_img, float(SETTINGS['bg_opacity']))
-    else:
-        bg_unset()
-
-
-def glyr_query(type, artist, album, title, lang):
-        cache_dir = DATA_HOME + '/lyvi'
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
-
-        db = plyr.Database(cache_dir)
-        query = plyr.Query(artist=artist, album=album, title=title, get_type=type, database=db, language=lang)
+def glyr_query(type, file, artist, album, title, lang):
+        query = plyr.Query(artist=artist, album=album, title=title, get_type=type, language=lang)
         query.useragent = 'lyvi/%s' % VERSION
+        if SETTINGS['bg_local'] and type in ['backdrops', 'artistphoto', 'cover'] and file:
+            if args.debug:
+                logging.info('using local bg (if present)')
+            query.musictree_path = file
+        else:
+            cache_dir = DATA_HOME + '/lyvi'
+            if not os.path.exists(cache_dir):
+                os.makedirs(cache_dir)
+            db = plyr.Database(cache_dir)
+            query.database = db
         return query.commit()
 
 
-def metadata_get(type, artist, album, title, lang):
+def metadata_get(type, file, artist, album, title, lang):
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
             or (type == 'cover' and (artist == 'N/A' or title == 'N/A'))
             or ((type == 'artistbio' or type == SETTINGS['bg_type']) and artist == 'N/A')
@@ -255,45 +229,41 @@ def metadata_get(type, artist, album, title, lang):
 
     if type == SETTINGS['bg_type']:
         try:
-            img = glyr_query(type, artist, album, title, lang)[0].data
+            img = glyr_query(type, file, artist, album, title, lang)[0].data
         except IndexError:
             try:
-                img = glyr_query('artistphoto', artist, album, title, lang)[0].data
+                img = glyr_query('artistphoto', file, artist, album, title, lang)[0].data
             except IndexError:
                 img = None
         if img:
-            with open('/tmp/lyvi-%s-%s.jpg' % (os.getpid(), SETTINGS['bg_type']), 'wb') as file:
-                file.write(img)
-            bg_set('/tmp/lyvi-%s-%s.jpg' % (os.getpid(), SETTINGS['bg_type']), float(SETTINGS['bg_opacity']))
+            file = '/tmp/lyvi-%s-%s.jpg' % (os.getpid(), SETTINGS['bg_type'])
+            with open(file, 'wb') as bg:
+                bg.write(img)
+            bg_set(file, float(SETTINGS['bg_opacity']))
         else:
             bg_unset()
 
     else:
         try:
-            return glyr_query(type, artist, album, title, lang)[0].data.decode('utf-8')
+            return glyr_query(type, file, artist, album, title, lang)[0].data.decode('utf-8')
         except IndexError:
             return
 
 
 def get_and_update(artist, album, title, file, needsupdate, ui, lock):
-    if SETTINGS['bg_type'] in needsupdate:
-        if SETTINGS['bg_local']:
-            bg_setlocal()
-            needsupdate.remove(SETTINGS['bg_type'])
-
     for type in needsupdate:
-        m = metadata_get(type, artist, album, title, SETTINGS['lang'])
+        metadata = metadata_get(type, file, artist, album, title, SETTINGS['lang'])
 
         lock.acquire()
         try:
             if ui.artist + ui.title == artist + title:
-                setattr(ui, type, m)
+                setattr(ui, type, metadata)
                 ui.refresh()
         finally:
             lock.release()
 
         # Optionally save lyric to a file
-        if SETTINGS['save_lyrics'] and file and type == 'lyrics' and m and m != 'Missing tags':
+        if SETTINGS['save_lyrics'] and file and type == 'lyrics' and metadata and metadata != 'Missing tags':
             path, filename = file.rsplit('/', 1)
             replace_strings = {
                 '<filename>': filename.rsplit('.', 1)[0],
@@ -304,7 +274,7 @@ def get_and_update(artist, album, title, file, needsupdate, ui, lock):
             for string in replace_strings:
                 lyric_filename = lyric_filename.replace(string, replace_strings[string])
             with codecs.open('%s/%s' % (path, lyric_filename), 'w', 'utf-8') as file:
-                file.write(m)
+                file.write(metadata)
 
 
 class Player:
@@ -515,7 +485,7 @@ class Mpd(Player):
         } if host in local else None
         self.np = {
             'type': 'np_command',
-            'name': mpc + ' current -f "%artist%\\%title%\\%album%\\%file%"' if host in local
+            'name': mpc + ' current -f "%artist%\\%title%\\%album%\\%file%"' if host in local or os.path.exists(host)
             else mpc + ' current -f "%artist%\\%title%\\%album%"',
         }
         self.ctl = {
@@ -892,7 +862,7 @@ class Ui:
 
         self.quit = False
         self.default_opacity = float(SETTINGS['bg_opacity'])
-        self.artist = self.album = self.title = self.lyrics = self.artistbio = self.guitartabs = None
+        self.artist = self.album = self.title = self.file = self.lyrics = self.artistbio = self.guitartabs = None
 
         self.pager = Pager(self.height - 1, self.width, 0, 0)
         self.statusbar = Statusbar(1, self.width, self.height - 1, 0)
@@ -950,10 +920,7 @@ class Ui:
     def toggle_bg(self):
         if SETTINGS['bg']:
             SETTINGS['bg_type'] = 'cover' if SETTINGS['bg_type'] == 'backdrops' else 'backdrops'
-            if SETTINGS['bg_local']:
-                bg_setlocal()
-            else:
-                metadata_get(SETTINGS['bg_type'], self.artist, self.album, self.title, SETTINGS['lang'])
+            metadata_get(SETTINGS['bg_type'], self.file, self.artist, self.album, self.title, SETTINGS['lang'])
 
     def autoscroll(self):
         while True:
@@ -975,10 +942,7 @@ class Ui:
                 self.statusbar.show()
                 self.hidden = False
             if self.artist or self.album or self.title:
-                if SETTINGS['bg_local']:
-                    bg_setlocal()
-                else:
-                    metadata_get(SETTINGS['bg_type'], self.artist, self.album, self.title, SETTINGS['lang'])
+                metadata_get(SETTINGS['bg_type'], self.file, self.artist, self.album, self.title, SETTINGS['lang'])
             else:
                 bg_unset()
 
@@ -1109,6 +1073,7 @@ def main(stdscr):
                     ui.artist = player.artist
                     ui.album = player.album
                     ui.title = player.title
+                    ui.file = player.file
                     if 'lyrics' in needsupdate:
                         ui.lyrics = 'Searching lyrics...'
                     if 'artistbio' in needsupdate:
@@ -1130,6 +1095,7 @@ def main(stdscr):
             ui.artist = player.artist
             ui.album = player.album
             ui.title = player.title
+            ui.file = player.file
             ui.lyrics = 'Not playing'
             ui.artistbio = 'Not playing'
             ui.guitartabs = 'Not playing'
@@ -1140,6 +1106,8 @@ def main(stdscr):
     # cleanup
     if SETTINGS['bg']:
         bg_unset()
+        for file in ['/tmp/' + file for file in os.listdir('/tmp') if file.startswith('lyvi-%s' % os.getpid())]:
+            os.remove(file)
     if not player.running:
         if os.path.exists(player.np['name']):
             os.remove(player.np['name'])
