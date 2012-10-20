@@ -231,9 +231,12 @@ def metadata_get(type, file, artist, album, title, lang):
         try:
             img = glyr_query(type, file, artist, album, title, lang)[0].data
         except IndexError:
-            try:
-                img = glyr_query('artistphoto', file, artist, album, title, lang)[0].data
-            except IndexError:
+            if type == 'backdrops':
+                try:
+                    img = glyr_query('artistphoto', file, artist, album, title, lang)[0].data
+                except IndexError:
+                    img = None
+            else:
                 img = None
         if img:
             file = '/tmp/lyvi-%s-%s.jpg' % (os.getpid(), SETTINGS['bg_type'])
