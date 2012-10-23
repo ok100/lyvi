@@ -273,10 +273,12 @@ def get_and_update(artist, album, title, file, needsupdate, ui, lock):
                 '<title>': title,
                 '<artist>': artist,
             }
-            lyric_filename = SETTINGS['save_lyrics_format']
+            lyric_file = '%s/%s' % (path, SETTINGS['save_lyrics_format'])
             for string in replace_strings:
-                lyric_filename = lyric_filename.replace(string, replace_strings[string])
-            with codecs.open('%s/%s' % (path, lyric_filename), 'w', 'utf-8') as file:
+                lyric_file = lyric_file.replace(string, replace_strings[string])
+            if not os.path.exists(lyric_file.rsplit('/', 1)[0]):
+                os.makedirs(lyric_file.rsplit('/', 1)[0])
+            with codecs.open(lyric_file, 'w', 'utf-8') as file:
                 file.write(metadata)
 
 
