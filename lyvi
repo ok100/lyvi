@@ -332,7 +332,7 @@ class Player:
                 s = get_output(self.np['name'])
             elif self.np['type'] == 'log':
                 with open(self.np['name']) as file:
-                    s = f.read().split(self.np['str']['beg'])[-1]
+                    s = file.read().split(self.np['str']['beg'])[-1]
             elif self.np['type'] == 'url':
                 while True:
                     try:
