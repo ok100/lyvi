@@ -75,7 +75,9 @@ class LoggingThread(Thread):
     def run(self):
         try:
             super(LoggingThread, self).run()
-        except (KeyboardInterrupt, SystemExit):
+        except KeyboardInterrupt:
+            sys.exit()
+        except SystemExit:
             raise
         except Exception:
             if args.debug:
@@ -268,12 +270,12 @@ def get_and_update(artist, album, title, file, needsupdate, ui, lock):
         # Optionally save lyric to a file
         if SETTINGS['save_lyrics'] and file and type == 'lyrics' and metadata and metadata != 'Missing tags':
             path, filename = file.rsplit('/', 1)
+            lyric_file = '%s/%s' % (path, SETTINGS['save_lyrics_format'])
             replace_strings = {
                 '<filename>': filename.rsplit('.', 1)[0],
                 '<title>': title,
                 '<artist>': artist,
             }
-            lyric_file = '%s/%s' % (path, SETTINGS['save_lyrics_format'])
             for string in replace_strings:
                 lyric_file = lyric_file.replace(string, replace_strings[string])
             if not os.path.exists(lyric_file.rsplit('/', 1)[0]):
@@ -1038,6 +1040,9 @@ class Ui:
 
 
 def main(stdscr):
+    if 'rxvt' not in os.environ['TERM']:
+        SETTINGS['bg'] = False
+
     ui = Ui(stdscr)
 
     ui_control = LoggingThread(target=ui.control)
@@ -1152,7 +1157,9 @@ if __name__ == '__main__':
                 sys.exit('Unknown command: %s' % args.command)
         else:
             curses.wrapper(main)
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
+        sys.exit()
+    except SystemExit:
         raise
     except Exception:
         if args.debug:

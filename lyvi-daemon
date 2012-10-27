@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "Daemon mode (press ctrl-c to quit)"
+while true; do
+	lyvi $* 2> /dev/null
+	sleep 5
+done
