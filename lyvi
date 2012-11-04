@@ -128,6 +128,7 @@ def search_player():
         'deadbeef-main': Deadbeef,
         'qmmp': Qmmp,
         'guayadeque': Guayadeque,
+        'mpg123': Mpg123,
     }
 
     if SETTINGS['player']:
@@ -758,6 +759,37 @@ class Gmusicbrowser(Player):
                 'next': 'NextSong',
                 'prev': 'PrevSong',
                 'stop': 'Stop',
+            },
+        }
+
+
+class Mpg123(Player):
+    def __init__(self):
+        self.run = {
+            'type': 'process',
+            'name': 'mpg123',
+        }
+        self.np = {
+            'type': 'log',
+            'name': '/tmp/mpg123.log',
+            'str': {
+                'beg': 'Playing MPEG',
+                'artist_beg': 'Artist: ',
+                'artist_end': '\n',
+                'album_beg': 'Album:  ',
+                'album_end': '\n',
+                'title_beg': 'Title:   ',
+                'title_end': 'Artist:',
+                'file_beg': '||||',
+                'file_end': '||||',
+                'stopped': '||||',
+            },
+        }
+        self.ctl = {
+            'type': 'fifo',
+            'name': None,
+            'commands': {
+                # TODO
             },
         }
 
