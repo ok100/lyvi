@@ -1,7 +1,16 @@
 #!/bin/sh
 
-echo "Daemon mode (press ctrl-c to quit)"
-while true; do
-	lyvi $* 2> /dev/null
-	sleep 5
-done
+case $1 in
+	-h|--help|-v|--version)
+		lyvi $*
+		exit 1
+	;;
+	*)
+		echo "Daemon mode (press ctrl-c to quit)"
+		while true; do
+			lyvi $* 2> /dev/null && break
+			sleep 5
+		done
+	;;
+esac
+

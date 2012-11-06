@@ -279,6 +279,16 @@ def get_and_update(artist, album, title, file, needsupdate, ui, lock):
                 file.write(metadata)
 
 
+def cleanup():
+    if SETTINGS['bg']:
+        bg_unset()
+        for file in ['/tmp/' + file for file in os.listdir('/tmp') if file.startswith('lyvi-%s' % os.getpid())]:
+            os.remove(file)
+    if not player.running:
+        if os.path.exists(player.np['name']):
+            os.remove(player.np['name'])
+
+
 class Player:
     def status(self):
         self.file = None
@@ -1085,7 +1095,8 @@ def main(stdscr):
         player.status()
 
         if ui.quit or not player.running:
-            break
+            cleanup()
+            sys.exit(0 if player.running else 1)
 
         if player.playing:
             if player.artist != ui.artist or player.album != ui.album or player.title != ui.title:
@@ -1138,15 +1149,6 @@ def main(stdscr):
             ui.refresh()
 
         sleep(1)
-
-    # cleanup
-    if SETTINGS['bg']:
-        bg_unset()
-        for file in ['/tmp/' + file for file in os.listdir('/tmp') if file.startswith('lyvi-%s' % os.getpid())]:
-            os.remove(file)
-    if not player.running:
-        if os.path.exists(player.np['name']):
-            os.remove(player.np['name'])
 
 
 if __name__ == '__main__':
