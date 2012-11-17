@@ -139,8 +139,16 @@ def search_player():
     if SETTINGS['player']:
         if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in local):
             return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
+        
+        try: #DBUS and not having X11 running can cause some troubles
+            if running_mpris(SETTINGS['player']):
+                return MPrisPlayer(SETTINGS['player'])
+        except:
+            pass
+        
         if running(SETTINGS['player']):
             return players[SETTINGS['player']]()
+            
 
     for player in players:
         if running(player):
@@ -887,9 +895,9 @@ class MPrisPlayer(Player):
         elif command == "stop":
             self.mprisplayer.Stop()
         elif command == "volup":
-            pass  #Can be implemented by getting the volume value, and then update it with +5
+            pass  #Can be implemented by getting the volume value, and then update it with +0.1
         elif command == "voldown":
-            pass  #Can be implemented by getting the volume value, and then update it with -5
+            pass  #Can be implemented by getting the volume value, and then update it with -0.1
         else:
             pass
 
