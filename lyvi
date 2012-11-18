@@ -13,7 +13,6 @@ if sys.version > '3':
 import argparse
 import codecs
 import curses
-import dbus
 import logging
 import os
 import socket
@@ -25,6 +24,7 @@ from time import sleep
 from urllib2 import urlopen
 
 import Image
+import dbus
 import plyr
 
 
@@ -131,32 +131,31 @@ def search_player():
         'guayadeque': Guayadeque,
         'mpg123': Mpg123,
     }
-
-    mpris_players = {
-        'spotify', 'pymp'
-    }
+    mpris_players = (
+        'spotify',
+        'pymp',
+    )
 
     if SETTINGS['player']:
         if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in local):
             return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
-        
-        try: #DBUS and not having X11 running can cause some troubles
+
+        try:    # DBUS and not having X11 running can cause some troubles
             if running_mpris(SETTINGS['player']):
                 return MPrisPlayer(SETTINGS['player'])
         except:
             pass
-        
+
         if running(SETTINGS['player']):
             return players[SETTINGS['player']]()
-            
-
-    for player in players:
-        if running(player):
-            return players[player]()
 
     for player in mpris_players:
         if running_mpris(player):
             return MPrisPlayer(player)
+
+    for player in players:
+        if running(player):
+            return players[player]()
 
     if running('mpd') or SETTINGS['mpd_host'] not in local:
         return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
@@ -203,7 +202,7 @@ def running_mpris(playername):
     """
     try:
         bus = dbus.SessionBus()
-        bus.get_object('org.mpris.MediaPlayer2.%s'%playername, '/org/mpris/MediaPlayer2')
+        bus.get_object('org.mpris.MediaPlayer2.%s' % playername, '/org/mpris/MediaPlayer2')
         return True
     except:
         return False
@@ -365,20 +364,24 @@ class Player:
                     # deadbeef workaround
                     if self.title == self.file.rsplit('.', 1)[0]:
                         self.title = 'N/A'
-        
-        elif self.np['type'] == 'mpris' and self.running: 
+
+        elif self.np['type'] == 'mpris' and self.running:
             data = self._mprisdata()
-                        
-            self.playing = not str(data['PlaybackStatus']) == "Stopped"
-            if self.playing == True:
-                try: self.artist = str(data['Metadata']['xesam:artist'][0])
-                except: self.artist = None
-                
-                try: self.title  = str(data['Metadata']['xesam:title'])
-                except: self.title = None
-                
-                try: self.album = str(data['Metadata']['xesam:album']) 
-                except: self.album  = None 
+
+            self.playing = not str(data['PlaybackStatus']) == 'Stopped'
+            if self.playing:
+                try:
+                    self.artist = str(data['Metadata']['xesam:artist'][0])
+                except:
+                    self.artist = None
+                try:
+                    self.title = str(data['Metadata']['xesam:title'])
+                except:
+                    self.title = None
+                try:
+                    self.album = str(data['Metadata']['xesam:album'])
+                except:
+                    self.album = None
 
         else:
             if self.np['type'] == 'command':
@@ -436,7 +439,6 @@ class Player:
                 process_fifo(self.ctl['commands'][command], self.ctl['name'])
             elif self.ctl['type'] == 'command':
                 os.system(self.ctl['commands'][command])
-                
 
 
 class Cmus(Player):
@@ -859,49 +861,47 @@ class MPrisPlayer(Player):
         }
         self.np = {'type': 'mpris'}
         self.ctl = {
-            'type'   : 'mpris',
+            'type': 'mpris',
             'command': {
-                'play':  'Play',
+                'play': 'Play',
                 'pause': 'Pause',
-                'next':  'Next',
-                'prev':  'Previous',
-                'stop':  'Stop'
+                'next': 'Next',
+                'prev': 'Previous',
+                'stop': 'Stop'
             }
         }
-        
-        #Store the interface in this object, so it does not have to reinitialized each second
+
+        # Store the interface in this object, so it does not have to reinitialized each second
         # in the main loop
         bus = dbus.SessionBus()
-        self.mprisplayer = bus.get_object('org.mpris.MediaPlayer2.'+self.run['name'], '/org/mpris/MediaPlayer2')
-        self.mprisplayerif = dbus.Interface(self.mprisplayer, "org.freedesktop.DBus.Properties")
-        
+        self.mprisplayer = bus.get_object('org.mpris.MediaPlayer2.' + self.run['name'], '/org/mpris/MediaPlayer2')
+        self.mprisplayerif = dbus.Interface(self.mprisplayer, 'org.freedesktop.DBus.Properties')
+
     def _mprisdata(self):
-        #Future improvement can be: cache and connect to the propertiesChanged signal.
+        # Future improvement can be: cache and connect to the propertiesChanged signal.
         return self.mprisplayerif.GetAll('')
 
     def command(self, command):
         '''
         Overrides the Players method "command".
         Uses the MPRIS interface to call the appropiate object method.
-        ''' 
-        if command == "play":
+        '''
+        if command == 'play':
             self.mprisplayer.PlayPause()
-        elif command == "pause":
+        elif command == 'pause':
             self.mprisplayer.Pause()
-        elif command == "next":
+        elif command == 'next':
             self.mprisplayer.Next()
-        elif command == "prev":
+        elif command == 'prev':
             self.mprisplayer.Previous()
-        elif command == "stop":
+        elif command == 'stop':
             self.mprisplayer.Stop()
-        elif command == "volup":
-            pass  #Can be implemented by getting the volume value, and then update it with +0.1
-        elif command == "voldown":
-            pass  #Can be implemented by getting the volume value, and then update it with -0.1
+        elif command == 'volup':
+            pass    # Can be implemented by getting the volume value, and then update it with +0.1
+        elif command == 'voldown':
+            pass    # Can be implemented by getting the volume value, and then update it with -0.1
         else:
             pass
-
-    
 
 
 class Window:
