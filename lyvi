@@ -1266,7 +1266,7 @@ if __name__ == '__main__':
         else:
             sys.exit('File not found: %s' % args.config_file)
     else:
-        SETTINGS.update(parse_config(CFG_HOME + '/lyvi/rc'))
+        SETTINGS.update(parse_config(CFG_HOME + '/lyvi/lyvi.conf'))
 
     if args.debug:
         logging.basicConfig(filename='lyvi.log', level=logging.DEBUG)
