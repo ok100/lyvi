@@ -239,7 +239,7 @@ def bg_unset():
 def glyr_query(type, file, artist, album, title, lang):
         query = plyr.Query(artist=artist, album=album, title=title, get_type=type, language=lang)
         query.useragent = 'lyvi/%s' % VERSION
-        if SETTINGS['bg_local'] and type in ['backdrops', 'artistphoto', 'cover'] and file:
+        if SETTINGS['bg_local'] and type in ['backdrops', 'artistphoto', 'cover'] and file and os.path.exists(file):
             if args.debug:
                 logging.info('using local bg (if present)')
             query.musictree_path = file
