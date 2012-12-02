@@ -1,0 +1,22 @@
+body {
+  background-color: #dddac6;
+  color: #6d6d6d;
+  font-family: sans-serif;
+  font-size: 12pt;
+  margin: 50px 0px;
+}
+
+a:link,a:visited,a:active {
+  color: #657a99;
+}
+
+#content {
+  width: 640px;
+  margin: 0px auto;
+  text-align: left;
+}
+
+#donate {
+  margin-top: 3em;
+  font-size: 10pt;
+}
