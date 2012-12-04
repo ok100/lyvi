@@ -214,7 +214,8 @@ def bg_set(file, brightness):
 
     # set brightness
     image1 = Image.open(file)
-    image2 = image1.point(lambda p: p * brightness)
+    layer = Image.new('RGB', image1.size, '#' + SETTINGS['bg_color'])
+    image2 = Image.blend(image1, layer, 1 - brightness)
     image2.save(file)
 
     # set urxvt background, keep aspect ratio
