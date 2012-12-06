@@ -134,6 +134,7 @@ def search_player():
     mpris_players = (
         'spotify',
         'pymp',
+        'rhythmbox',
     )
 
     if SETTINGS['player']:
@@ -151,6 +152,8 @@ def search_player():
 
     for player in mpris_players:
         if running_mpris(player):
+            if player == 'rhythmbox':
+                return Rhythmbox()
             return MPrisPlayer(player)
 
     for player in players:
@@ -903,6 +906,15 @@ class MPrisPlayer(Player):
             pass    # Can be implemented by getting the volume value, and then update it with -0.1
         else:
             pass
+
+class Rhythmbox(MPrisPlayer):
+
+    def __init__(self):
+        MPrisPlayer.__init__(self,'rhythmbox')
+        self.mprisplayer = dbus.Interface(self.mprisplayer, 'org.mpris.MediaPlayer2.Player')
+
+    def _mprisdata(self):
+        return self.mprisplayerif.GetAll('org.mpris.MediaPlayer2.Player')
 
 
 class Window:
