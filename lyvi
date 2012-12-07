@@ -907,10 +907,10 @@ class MPrisPlayer(Player):
         else:
             pass
 
-class Rhythmbox(MPrisPlayer):
 
+class Rhythmbox(MPrisPlayer):
     def __init__(self):
-        MPrisPlayer.__init__(self,'rhythmbox')
+        MPrisPlayer.__init__(self, 'rhythmbox')
         self.mprisplayer = dbus.Interface(self.mprisplayer, 'org.mpris.MediaPlayer2.Player')
 
     def _mprisdata(self):
