@@ -33,6 +33,7 @@ GLYR_VERSION = plyr.version().split()[1]
 HOME = os.environ['HOME']
 CFG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ else HOME + '/.config'
 DATA_HOME = os.environ['XDG_DATA_HOME'] if 'XDG_DATA_HOME' in os.environ else HOME + '/.local/share'
+MPRIS_INTERFACE_START = "org.mpris.MediaPlayer2."
 SETTINGS = {
     'autoscroll': False,
     'autoscroll_time': 10,
@@ -131,35 +132,40 @@ def search_player():
         'guayadeque': Guayadeque,
         'mpg123': Mpg123,
     }
-    mpris_players = (
-        'spotify',
-        'pymp',
-        'rhythmbox',
-    )
-
+    
+    # Test whether DBUS is running, and thus test whether there is MPris support
+    mpris_dbus = False
+    try:
+        dbus.SessionBus()
+        mpris_dbus = True
+    except:
+        pass
+    
     if SETTINGS['player']:
         if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in local):
             return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
-        try:    # DBUS and not having X11 running can cause some troubles
-            if running_mpris(SETTINGS['player']):
-                return MPrisPlayer(SETTINGS['player'])
-        except:
-            pass
-
+        if mpris_dbus and running_mpris(SETTINGS['player']):
+            return MPrisPlayer(SETTINGS['player'])
+        
         if running(SETTINGS['player']):
             return players[SETTINGS['player']]()
 
-    for player in mpris_players:
-        if running_mpris(player):
-            if player == 'rhythmbox':
-                return Rhythmbox()
-            return MPrisPlayer(player)
+    # Try to find a running MPRIS intance
+    if mpris_dbus:
+        for name in dbus.SessionBus().list_names():
+            if name.startswith(MPRIS_INTERFACE_START):
+                player = name[len(MPRIS_INTERFACE_START):]
+                if player == 'rhythmbox':
+                    return Rhythmbox()
+                return MPrisPlayer(player)
 
+    # Try to find a running player from the players-dict
     for player in players:
         if running(player):
             return players[player]()
 
+    # Try to find MPD
     if running('mpd') or SETTINGS['mpd_host'] not in local:
         return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
