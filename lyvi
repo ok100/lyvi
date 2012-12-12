@@ -375,12 +375,13 @@ class Player:
                     # deadbeef workaround
                     if self.title == self.file.rsplit('.', 1)[0]:
                         self.title = 'N/A'
-
-        elif self.np['type'] == 'mpris' and not self.running:
-            pass	# Can not get additional info for MPis Players
         
-        elif self.np['type'] == 'mpris' and self.running:
-            data = self._mprisdata()
+        elif self.np['type'] == 'mpris':
+            try:
+                data = self._mprisdata()
+            except:
+                self.running = False
+                return
 
             self.playing = not str(data['PlaybackStatus']) == 'Stopped'
             if self.playing:
@@ -891,8 +892,9 @@ class MPrisPlayer(Player):
         # Store the interface in this object, so it does not have to reinitialized each second
         # in the main loop
         bus = dbus.SessionBus()
-        self.mprisplayer = bus.get_object('org.mpris.MediaPlayer2.' + self.run['name'], '/org/mpris/MediaPlayer2')
-        self.mprisprops = dbus.Interface(self.mprisplayer, 'org.freedesktop.DBus.Properties')
+        playerobject = bus.get_object('org.mpris.MediaPlayer2.' + self.run['name'], '/org/mpris/MediaPlayer2')
+        self.mprisplayer = dbus.Interface(playerobject, MPRIS_INTERFACE_PLAYER)
+        self.mprisprops = dbus.Interface(playerobject, 'org.freedesktop.DBus.Properties')
 
     def _mprisdata(self):
         # Future improvement can be: cache and connect to the propertiesChanged signal.
