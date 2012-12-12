@@ -133,7 +133,7 @@ def search_player():
         'guayadeque': Guayadeque,
         'mpg123': Mpg123,
     }
-    
+
     # Test whether DBUS is running, and thus test whether there is MPris support
     mpris_dbus = False
     try:
@@ -141,14 +141,14 @@ def search_player():
         mpris_dbus = True
     except:
         pass
-    
+
     if SETTINGS['player']:
         if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in local):
             return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
         if mpris_dbus and running_mpris(SETTINGS['player']):
             return MPrisPlayer(SETTINGS['player'])
-        
+
         if running(SETTINGS['player']):
             return players[SETTINGS['player']]()
 
@@ -266,7 +266,7 @@ def glyr_query(type, file, artist, album, title, lang):
 def metadata_get(type, file, artist, album, title, lang):
     if album == 'N/A':
         album = ''
-        
+
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
             or (type == 'cover' and (artist == 'N/A' or title == 'N/A'))
             or ((type == 'artistbio' or type == SETTINGS['bg_type']) and artist == 'N/A')
@@ -378,7 +378,7 @@ class Player:
                     # deadbeef workaround
                     if self.title == self.file.rsplit('.', 1)[0]:
                         self.title = 'N/A'
-        
+
         elif self.np['type'] == 'mpris':
             try:
                 data = self._mprisdata()
