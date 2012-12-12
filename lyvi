@@ -124,7 +124,6 @@ def search_player():
         'shell-fm': Shellfm,
         'pianobar': Pianobar,
         'mocp': Moc,
-        'gmusicbrowser': Gmusicbrowser,
         'mplayer': Mplayer,
         'vlc': Vlc,
         'deadbeef-main': Deadbeef,
@@ -784,31 +783,6 @@ class Guayadeque(Player):
                 'next': cmd_base + 'Next &> /dev/null',
                 'prev': cmd_base + 'Prev &> /dev/null',
                 'stop': cmd_base + 'Stop &> /dev/null',
-            },
-        }
-
-
-class Gmusicbrowser(Player):
-    def __init__(self):
-        config_dir = CFG_HOME + '/gmusicbrowser/'
-
-        self.run = {
-            'type': 'file',
-            'name': config_dir + 'gmusicbrowser.fifo',
-        }
-        self.np = {
-            'type': 'np_file',
-            'name': config_dir + 'nowplaying',
-        }
-        self.ctl = {
-            'type': 'fifo',
-            'name': self.run['name'],
-            'commands': {
-                'play': 'PlayPause',
-                'pause': 'PlayPause',
-                'next': 'NextSong',
-                'prev': 'PrevSong',
-                'stop': 'Stop',
             },
         }
 
