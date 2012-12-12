@@ -33,6 +33,8 @@ GLYR_VERSION = plyr.version().split()[1]
 HOME = os.environ['HOME']
 CFG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ else HOME + '/.config'
 DATA_HOME = os.environ['XDG_DATA_HOME'] if 'XDG_DATA_HOME' in os.environ else HOME + '/.local/share'
+MPRIS_INTERFACE_START = "org.mpris.MediaPlayer2."
+MPRIS_INTERFACE_PLAYER = "org.mpris.MediaPlayer2.Player"
 SETTINGS = {
     'autoscroll': False,
     'autoscroll_time': 10,
@@ -131,35 +133,40 @@ def search_player():
         'guayadeque': Guayadeque,
         'mpg123': Mpg123,
     }
-    mpris_players = (
-        'spotify',
-        'pymp',
-        'rhythmbox',
-    )
-
+    
+    # Test whether DBUS is running, and thus test whether there is MPris support
+    mpris_dbus = False
+    try:
+        dbus.SessionBus()
+        mpris_dbus = True
+    except:
+        pass
+    
     if SETTINGS['player']:
         if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in local):
             return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
-        try:    # DBUS and not having X11 running can cause some troubles
-            if running_mpris(SETTINGS['player']):
-                return MPrisPlayer(SETTINGS['player'])
-        except:
-            pass
-
+        if mpris_dbus and running_mpris(SETTINGS['player']):
+            return MPrisPlayer(SETTINGS['player'])
+        
         if running(SETTINGS['player']):
             return players[SETTINGS['player']]()
 
-    for player in mpris_players:
-        if running_mpris(player):
-            if player == 'rhythmbox':
-                return Rhythmbox()
-            return MPrisPlayer(player)
+    # Try to find a running MPRIS intance
+    if mpris_dbus:
+        for name in dbus.SessionBus().list_names():
+            if name.startswith(MPRIS_INTERFACE_START):
+                player = name[len(MPRIS_INTERFACE_START):]
+                if player == 'rhythmbox':
+                    return Rhythmbox()
+                return MPrisPlayer(player)
 
+    # Try to find a running player from the players-dict
     for player in players:
         if running(player):
             return players[player]()
 
+    # Try to find MPD
     if running('mpd') or SETTINGS['mpd_host'] not in local:
         return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
@@ -257,6 +264,9 @@ def glyr_query(type, file, artist, album, title, lang):
 
 
 def metadata_get(type, file, artist, album, title, lang):
+    if album == 'N/A':
+        album = ''
+        
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
             or (type == 'cover' and (artist == 'N/A' or title == 'N/A'))
             or ((type == 'artistbio' or type == SETTINGS['bg_type']) and artist == 'N/A')
@@ -368,9 +378,13 @@ class Player:
                     # deadbeef workaround
                     if self.title == self.file.rsplit('.', 1)[0]:
                         self.title = 'N/A'
-
-        elif self.np['type'] == 'mpris' and self.running:
-            data = self._mprisdata()
+        
+        elif self.np['type'] == 'mpris':
+            try:
+                data = self._mprisdata()
+            except:
+                self.running = False
+                return
 
             self.playing = not str(data['PlaybackStatus']) == 'Stopped'
             if self.playing:
@@ -434,6 +448,8 @@ class Player:
                 self.artist = 'N/A'
             if self.title in missing_tag:
                 self.title = 'N/A'
+            if self.album in missing_tag:
+                self.album = 'N/A'
 
     def command(self, command):
         if command in self.ctl['commands']:
@@ -863,7 +879,10 @@ class MPrisPlayer(Player):
             'type': 'mpris',
             'name': playername
         }
-        self.np = {'type': 'mpris'}
+        self.np = {
+            'type': 'mpris',
+            'name': playername
+        }
         self.ctl = {
             'type': 'mpris',
             'command': {
@@ -878,12 +897,13 @@ class MPrisPlayer(Player):
         # Store the interface in this object, so it does not have to reinitialized each second
         # in the main loop
         bus = dbus.SessionBus()
-        self.mprisplayer = bus.get_object('org.mpris.MediaPlayer2.' + self.run['name'], '/org/mpris/MediaPlayer2')
-        self.mprisplayerif = dbus.Interface(self.mprisplayer, 'org.freedesktop.DBus.Properties')
+        playerobject = bus.get_object('org.mpris.MediaPlayer2.' + self.run['name'], '/org/mpris/MediaPlayer2')
+        self.mprisplayer = dbus.Interface(playerobject, MPRIS_INTERFACE_PLAYER)
+        self.mprisprops = dbus.Interface(playerobject, 'org.freedesktop.DBus.Properties')
 
     def _mprisdata(self):
         # Future improvement can be: cache and connect to the propertiesChanged signal.
-        return self.mprisplayerif.GetAll('')
+        return self.mprisprops.GetAll(MPRIS_INTERFACE_PLAYER)
 
     def command(self, command):
         '''
@@ -901,9 +921,11 @@ class MPrisPlayer(Player):
         elif command == 'stop':
             self.mprisplayer.Stop()
         elif command == 'volup':
-            pass    # Can be implemented by getting the volume value, and then update it with +0.1
-        elif command == 'voldown':
-            pass    # Can be implemented by getting the volume value, and then update it with -0.1
+            volume = self._mprisdata()['Volume'] + 0.1
+            self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', min(volume, 1.0))
+        elif command == 'voldn':
+            volume = self._mprisdata()['Volume'] - 0.1
+            self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', max(volume, 0.0))
         else:
             pass
 
@@ -911,10 +933,10 @@ class MPrisPlayer(Player):
 class Rhythmbox(MPrisPlayer):
     def __init__(self):
         MPrisPlayer.__init__(self, 'rhythmbox')
-        self.mprisplayer = dbus.Interface(self.mprisplayer, 'org.mpris.MediaPlayer2.Player')
+        self.mprisplayer = dbus.Interface(self.mprisplayer, MPRIS_INTERFACE_PLAYER)
 
     def _mprisdata(self):
-        return self.mprisplayerif.GetAll('org.mpris.MediaPlayer2.Player')
+        return self.mprisprops.GetAll(MPRIS_INTERFACE_PLAYER)
 
 
 class Window:
