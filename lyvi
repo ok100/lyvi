@@ -127,7 +127,6 @@ def search_player():
         'gmusicbrowser': Gmusicbrowser,
         'mplayer': Mplayer,
         'vlc': Vlc,
-        'audacious': Audacious,
         'deadbeef-main': Deadbeef,
         'qmmp': Qmmp,
         'guayadeque': Guayadeque,
@@ -691,32 +690,6 @@ class Vlc(Player):
                 'stop': 'stop',
                 'volup': 'volup 1',
                 'voldn': 'voldown 1',
-            },
-        }
-
-
-class Audacious(Player):
-    def __init__(self):
-        config_dir = CFG_HOME + '/audacious/'
-
-        self.run = {
-            'type': 'file',
-            'name': config_dir + 'lock',
-        }
-        self.np = {
-            'type': 'np_file',
-            'name': config_dir + 'nowplaying',
-        }
-        self.ctl = {
-            'type': 'command',
-            'commands': {
-                'play': 'audtool --playback-playpause',
-                'pause': 'audtool --playback-playpause',
-                'next': 'audtool --playlist-advance',
-                'prev': 'audtool --playlist-reverse',
-                'stop': 'audtool --playback-stop',
-                'volup': 'audtool --set-volume +5',
-                'voldn': 'audtool --set-volume -5',
             },
         }
 
