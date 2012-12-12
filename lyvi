@@ -264,6 +264,9 @@ def glyr_query(type, file, artist, album, title, lang):
 
 
 def metadata_get(type, file, artist, album, title, lang):
+    if album == 'N/A':
+        album = ''
+        
     if ((type == 'lyrics' and (artist == 'N/A' or title == 'N/A'))
             or (type == 'cover' and (artist == 'N/A' or title == 'N/A'))
             or ((type == 'artistbio' or type == SETTINGS['bg_type']) and artist == 'N/A')
@@ -445,6 +448,8 @@ class Player:
                 self.artist = 'N/A'
             if self.title in missing_tag:
                 self.title = 'N/A'
+            if self.album in missing_tag:
+                self.album = 'N/A'
 
     def command(self, command):
         if command in self.ctl['commands']:
