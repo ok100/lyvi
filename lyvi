@@ -400,6 +400,10 @@ class Player:
                     self.album = str(data['Metadata']['xesam:album'])
                 except:
                     self.album = None
+                try:
+                    self.file = str(data['Metadata']['xesam:url']).split('file://')[1]
+                except:
+                    self.file = None
 
         else:
             if self.np['type'] == 'command':
