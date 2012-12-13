@@ -17,7 +17,6 @@ import logging
 import os
 import socket
 import subprocess
-from getpass import getuser
 from textwrap import wrap as wrapwords
 from threading import Thread, Lock
 from time import sleep
@@ -31,10 +30,11 @@ import plyr
 VERSION = '1.1.0-git'
 GLYR_VERSION = plyr.version().split()[1]
 HOME = os.environ['HOME']
-CFG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ else HOME + '/.config'
+CONFIG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ else HOME + '/.config'
 DATA_HOME = os.environ['XDG_DATA_HOME'] if 'XDG_DATA_HOME' in os.environ else HOME + '/.local/share'
-MPRIS_INTERFACE_START = "org.mpris.MediaPlayer2."
-MPRIS_INTERFACE_PLAYER = "org.mpris.MediaPlayer2.Player"
+MPRIS_INTERFACE_START = 'org.mpris.MediaPlayer2.'
+MPRIS_INTERFACE_PLAYER = 'org.mpris.MediaPlayer2.Player'
+LOCAL = ('localhost', '127.0.0.1')
 SETTINGS = {
     'autoscroll': False,
     'autoscroll_time': 10,
@@ -98,6 +98,10 @@ def parse_args():
 
 
 def parse_config(file):
+    """
+    Parses given configuration file in the "key = value" form.
+    Returns a "{'key': 'value'}" dictionary.
+    """
     settings = {}
     try:
         with open(file, 'r') as file:
@@ -118,7 +122,6 @@ def parse_config(file):
 
 
 def search_player():
-    local = ('localhost', '127.0.0.1')
     players = {
         'cmus': Cmus,
         'shell-fm': Shellfm,
@@ -127,8 +130,6 @@ def search_player():
         'mplayer': Mplayer,
         'vlc': Vlc,
         'deadbeef-main': Deadbeef,
-        'qmmp': Qmmp,
-        'guayadeque': Guayadeque,
         'mpg123': Mpg123,
     }
 
@@ -140,8 +141,9 @@ def search_player():
     except:
         pass
 
+    # Try to find a player specified with "player" configuration option
     if SETTINGS['player']:
-        if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in local):
+        if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in LOCAL):
             return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
         if mpris_dbus and running_mpris(SETTINGS['player']):
@@ -155,8 +157,6 @@ def search_player():
         for name in dbus.SessionBus().list_names():
             if name.startswith(MPRIS_INTERFACE_START):
                 player = name[len(MPRIS_INTERFACE_START):]
-                if player == 'rhythmbox':
-                    return Rhythmbox()
                 return MPrisPlayer(player)
 
     # Try to find a running player from the players-dict
@@ -165,7 +165,7 @@ def search_player():
             return players[player]()
 
     # Try to find MPD
-    if running('mpd') or SETTINGS['mpd_host'] not in local:
+    if running('mpd') or SETTINGS['mpd_host'] not in LOCAL:
         return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
 
@@ -200,6 +200,9 @@ def get_output(command):
 
 
 def running(process):
+    """
+    Returns True if the given process is running.
+    """
     return True if process in get_output('ps -C %s' % process) else False
 
 
@@ -391,7 +394,8 @@ class Player:
                 except:
                     self.artist = None
                 try:
-                    self.title = str(data['Metadata']['xesam:title'])
+                    title = data['Metadata']['xesam:title']
+                    self.title = str(title[0]) if isinstance(title, dbus.Array) else str(title)
                 except:
                     self.title = None
                 try:
@@ -432,13 +436,6 @@ class Player:
 
                 if self.np['str']['file_beg'] in s:
                     self.file = s.split(self.np['str']['file_beg'])[1].split(self.np['str']['file_end'])[0]
-
-                    # guayadeque workaround
-                    if self.__class__.__name__ == 'Guayadeque':
-                        if self.file.startswith('file://'):
-                            self.file = self.file.split('file://')[1]
-                        else:
-                            self.file = None
 
         if not self.playing:
             self.artist = 'N/A'
@@ -523,7 +520,7 @@ class Shellfm(Player):
 
 class Pianobar(Player):
     def __init__(self):
-        config_dir = CFG_HOME + '/pianobar/'
+        config_dir = CONFIG_HOME + '/pianobar/'
 
         # set default keys
         settings = {
@@ -559,16 +556,15 @@ class Pianobar(Player):
 
 class Mpd(Player):
     def __init__(self, host, port):
-        local = ('localhost', '127.0.0.1')
         mpc = 'mpc -h %s -p %s' % (host, port)
 
         self.run = {
             'type': 'process',
             'name': 'mpd',
-        } if host in local else None
+        } if host in LOCAL else None
         self.np = {
             'type': 'np_command',
-            'name': mpc + ' current -f "%artist%\\%title%\\%album%\\%file%"' if host in local or os.path.exists(host)
+            'name': mpc + ' current -f "%artist%\\%title%\\%album%\\%file%"' if host in LOCAL or os.path.exists(host)
             else mpc + ' current -f "%artist%\\%title%\\%album%"',
         }
         self.ctl = {
@@ -715,78 +711,6 @@ class Deadbeef(Player):
         }
 
 
-class Qmmp(Player):
-    def __init__(self):
-        self.run = {
-            'type': 'file',
-            'name': '/tmp/qmmp.sock.1000',
-        }
-        self.np = {
-            'type': 'command',
-            'name': 'qmmp --status --no-start',
-            'str': {
-                'artist_beg': 'ARTIST = ',
-                'artist_end': '\n',
-                'album_beg': 'ALBUM = ',
-                'album_end': '\n',
-                'title_beg': 'TITLE = ',
-                'title_end': '\n',
-                'file_beg': '||||',
-                'file_end': '||||',
-                'stopped': '[stopped]',
-            },
-        }
-        self.ctl = {
-            'type': 'command',
-            'commands': {
-                'play': 'qmmp -t',
-                'pause': 'qmmp -t',
-                'next': 'qmmp --next',
-                'prev': 'qmmp --previous',
-                'stop': 'qmmp -s',
-                'volup': 'qmmp --volume-inc',
-                'voldn': 'qmmp --volume-dec',
-            },
-        }
-
-
-class Guayadeque(Player):
-    def __init__(self):
-        cmd_base = 'dbus-send --print-reply --type=method_call --dest=org.mpris.guayadeque /Player\
-                    org.freedesktop.MediaPlayer.'
-        str_base = '"\n         variant             string "'
-
-        self.run = {
-            'type': 'file',
-            'name': '%s/.guayadeque/.guayadeque-%s' (HOME, getuser()),
-        }
-        self.np = {
-            'type': 'command',
-            'name': cmd_base + 'GetMetadata',
-            'str': {
-                'artist_beg': 'artist' + str_base,
-                'artist_end': '"\n',
-                'album_beg': 'album' + str_base,
-                'album_end': '"\n',
-                'title_beg': 'title' + str_base,
-                'title_end': '"\n',
-                'file_beg': 'location' + str_base,
-                'file_end': '"\n',
-                'stopped': '||||',
-            },
-        }
-        self.ctl = {
-            'type': 'command',
-            'commands': {
-                'play': cmd_base + 'Play &> /dev/null',
-                'pause': cmd_base + 'Play &> /dev/null',
-                'next': cmd_base + 'Next &> /dev/null',
-                'prev': cmd_base + 'Prev &> /dev/null',
-                'stop': cmd_base + 'Stop &> /dev/null',
-            },
-        }
-
-
 class Mpg123(Player):
     def __init__(self):
         self.run = {
@@ -861,33 +785,27 @@ class MPrisPlayer(Player):
         Overrides the Players method "command".
         Uses the MPRIS interface to call the appropiate object method.
         '''
-        if command == 'play':
-            self.mprisplayer.PlayPause()
-        elif command == 'pause':
-            self.mprisplayer.Pause()
-        elif command == 'next':
-            self.mprisplayer.Next()
-        elif command == 'prev':
-            self.mprisplayer.Previous()
-        elif command == 'stop':
-            self.mprisplayer.Stop()
-        elif command == 'volup':
-            volume = self._mprisdata()['Volume'] + 0.1
-            self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', min(volume, 1.0))
-        elif command == 'voldn':
-            volume = self._mprisdata()['Volume'] - 0.1
-            self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', max(volume, 0.0))
-        else:
+        try:
+            if command == 'play':
+                self.mprisplayer.PlayPause()
+            elif command == 'pause':
+                self.mprisplayer.Pause()
+            elif command == 'next':
+                self.mprisplayer.Next()
+            elif command == 'prev':
+                self.mprisplayer.Previous()
+            elif command == 'stop':
+                self.mprisplayer.Stop()
+            elif command == 'volup':
+                volume = self._mprisdata()['Volume'] + 0.1
+                self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', min(volume, 1.0))
+            elif command == 'voldn':
+                volume = self._mprisdata()['Volume'] - 0.1
+                self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', max(volume, 0.0))
+        except dbus.DBusException:
+            # Some players (rhythmbox) raises DBusException when attempt to
+            # use "next"/"prev" command on first/last item of the playlist
             pass
-
-
-class Rhythmbox(MPrisPlayer):
-    def __init__(self):
-        MPrisPlayer.__init__(self, 'rhythmbox')
-        self.mprisplayer = dbus.Interface(self.mprisplayer, MPRIS_INTERFACE_PLAYER)
-
-    def _mprisdata(self):
-        return self.mprisprops.GetAll(MPRIS_INTERFACE_PLAYER)
 
 
 class Window:
@@ -1252,7 +1170,7 @@ if __name__ == '__main__':
         else:
             sys.exit('File not found: %s' % args.config_file)
     else:
-        SETTINGS.update(parse_config(CFG_HOME + '/lyvi/lyvi.conf'))
+        SETTINGS.update(parse_config(CONFIG_HOME + '/lyvi/lyvi.conf'))
 
     if args.debug:
         logging.basicConfig(filename='lyvi.log', level=logging.DEBUG)
