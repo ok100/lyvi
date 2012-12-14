@@ -131,6 +131,7 @@ def search_player():
         'vlc': Vlc,
         'deadbeef-main': Deadbeef,
         'mpg123': Mpg123,
+        'consonance': Consonance,
     }
 
     # Test whether DBUS is running, and thus test whether there is MPris support
@@ -344,6 +345,8 @@ class Player:
             self.running = running(self.run['name'])
         elif self.run['type'] == 'mpris':
             self.running = running_mpris(self.run['name'])
+        if not self.running:
+            return
 
         if self.np['type'] == 'np_file' or self.np['type'] == 'np_command':
             if self.np['type'] == 'np_file':
@@ -806,6 +809,41 @@ class MPrisPlayer(Player):
             # Some players (rhythmbox) raises DBusException when attempt to
             # use "next"/"prev" command on first/last item of the playlist
             pass
+
+
+class Consonance(Player):
+    def __init__(self):
+        self.run = {
+            'type': 'process',
+            'name': 'consonance',
+        }
+        self.np = {
+            'type': 'command',
+            'name': 'consonance -c',
+            'str': {
+                'artist_beg': 'artist: ',
+                'artist_end': '\n',
+                'album_beg': 'album: ',
+                'album_end': '\n',
+                'title_beg': 'title: ',
+                'title_end': '\n',
+                'file_beg': 'file: ',
+                'file_end': '\n',
+                'stopped': 'state: Stopped',
+            },
+        }
+        self.ctl = {
+            'type': 'command',
+            'commands': {
+                'play': 'consonance -p',
+                'pause': 'consonance -t',
+                'next': 'consonance -n',
+                'prev': 'consonance -r',
+                'stop': 'consonance -s',
+                'volup': 'consonance -i',
+                'voldn': 'consonance -d',
+            },
+        }
 
 
 class Window:
