@@ -377,7 +377,7 @@ class Player:
                     self.file = s[3]
 
                     # mpd workaround
-                    if self.__class__.__name__ == 'Mpd':
+                    if self.__class__.__name__ == 'Mpd' and not self.file.startswith('/'):
                         f = open(SETTINGS['mpd_config_file'])
                         for line in f.read().splitlines():
                             if 'music_directory' in line and '#' not in line.split('music_directory')[0]:
