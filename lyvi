@@ -72,6 +72,7 @@ SETTINGS = {
     'ui_hidden': False,
     'view': 'lyrics',
 }
+UI_LOCK = Lock()
 
 
 class LoggingThread(Thread):
@@ -262,7 +263,13 @@ def glyr_query(type, file, artist, album, title, lang):
                 os.makedirs(cache_dir)
             db = plyr.Database(cache_dir)
             query.database = db
-        return query.commit()
+
+        # Running multiple instances of lyvi with one database can cause some problems
+        while True:
+            try:
+                return query.commit()
+            except:
+                continue
 
 
 def metadata_get(type, file, artist, album, title, lang):
@@ -295,17 +302,17 @@ def metadata_get(type, file, artist, album, title, lang):
             return
 
 
-def get_and_update(artist, album, title, file, needsupdate, ui, lock):
+def get_and_update(artist, album, title, file, needsupdate, ui):
     for type in needsupdate:
         metadata = metadata_get(type, file, artist, album, title, SETTINGS['lang'])
 
-        lock.acquire()
+        UI_LOCK.acquire()
         try:
             if ui.artist + ui.title == artist + title:
                 setattr(ui, type, metadata)
                 ui.refresh()
         finally:
-            lock.release()
+            UI_LOCK.release()
 
         # Optionally save lyric to a file
         if SETTINGS['save_lyrics'] and file and type == 'lyrics' and metadata and metadata != 'Missing tags':
@@ -1125,7 +1132,7 @@ class Ui:
 
 def main(stdscr):
     if 'rxvt' not in os.environ['TERM']:
-        SETTINGS['bg'] = False
+        SETTINGS['bg'] = False  # Background images are supported only in urxvt
 
     ui = Ui(stdscr)
 
@@ -1137,8 +1144,6 @@ def main(stdscr):
     auto_scroll.daemon = True
     auto_scroll.start()
 
-    lock = Lock()
-
     while True:
         player.status()
 
@@ -1148,9 +1153,11 @@ def main(stdscr):
 
         if player.playing:
             if player.artist != ui.artist or player.album != ui.album or player.title != ui.title:
+                # Song has changed
                 if args.debug:
                     logging.info('current song => artist: "%s" title: "%s" album: "%s" file: "%s"' %
                                  (player.artist, player.title, player.album, player.file))
+
                 needsupdate = ['lyrics', 'guitartabs']
                 if player.artist != ui.artist or player.album != ui.album:
                     needsupdate.insert(1, 'artistbio')
@@ -1163,7 +1170,7 @@ def main(stdscr):
                     needsupdate.insert(1 if SETTINGS['bg_type'] in needsupdate else 0,
                                        needsupdate.pop(needsupdate.index(SETTINGS['view'])))
 
-                lock.acquire()
+                UI_LOCK.acquire()
                 try:
                     ui.artist = player.artist
                     ui.album = player.album
@@ -1178,10 +1185,10 @@ def main(stdscr):
                     ui.pager.scroll('top')
                     ui.refresh()
                 finally:
-                    lock.release()
+                    UI_LOCK.release()
 
                 worker = LoggingThread(target=get_and_update,
-                                       args=(player.artist, player.album, player.title, player.file, needsupdate, ui, lock))
+                                       args=(player.artist, player.album, player.title, player.file, needsupdate, ui))
                 worker.daemon = True
                 worker.start()
         else:
@@ -1202,6 +1209,7 @@ def main(stdscr):
 if __name__ == '__main__':
     args = parse_args()
 
+    # Load configuration file
     if args.config_file:
         if os.path.exists(args.config_file):
             SETTINGS.update(parse_config(args.config_file))
@@ -1225,6 +1233,7 @@ if __name__ == '__main__':
             logging.info('player => %s' % player.__class__.__name__)
 
         if args.command:
+            # Send a command to player
             if args.command in player.ctl['commands']:
                 if args.debug:
                     logging.info('sending command => %s' % args.command)
@@ -1232,6 +1241,7 @@ if __name__ == '__main__':
             else:
                 sys.exit('Unknown command: %s' % args.command)
         else:
+            # Start UI
             curses.wrapper(main)
     except KeyboardInterrupt:
         sys.exit()
