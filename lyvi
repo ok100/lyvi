@@ -34,7 +34,6 @@ CONFIG_HOME = os.environ['XDG_CONFIG_HOME'] if 'XDG_CONFIG_HOME' in os.environ e
 DATA_HOME = os.environ['XDG_DATA_HOME'] if 'XDG_DATA_HOME' in os.environ else HOME + '/.local/share'
 MPRIS_INTERFACE_START = 'org.mpris.MediaPlayer2.'
 MPRIS_INTERFACE_PLAYER = 'org.mpris.MediaPlayer2.Player'
-LOCAL = ('localhost', '127.0.0.1')
 SETTINGS = {
     'autoscroll': False,
     'autoscroll_time': 10,
@@ -63,7 +62,7 @@ SETTINGS = {
     'key_voldn': '-',
     'key_volup': '=',
     'lang': 'en',
-    'mpd_config_file': HOME + '/.mpdconf',
+    'mpd_config_file': HOME + '/.mpdconf' if os.path.exists(HOME + '/.mpdconf') else '/etc/mpd.conf',
     'mpd_host': os.environ['MPD_HOST'] if 'MPD_HOST' in os.environ else 'localhost',
     'mpd_port': os.environ['MPD_PORT'] if 'MPD_PORT' in os.environ else 6600,
     'player': None,
@@ -145,7 +144,7 @@ def search_player():
 
     # Try to find a player specified with "player" configuration option
     if SETTINGS['player']:
-        if SETTINGS['player'] == 'mpd' and (running('mpd') or SETTINGS['mpd_host'] not in LOCAL):
+        if SETTINGS['player'] == 'mpd' and (running('mpd') or not mpd_local()):
             return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
         if mpris_dbus and running_mpris(SETTINGS['player']):
@@ -167,7 +166,7 @@ def search_player():
             return players[player]()
 
     # Try to find MPD
-    if running('mpd') or SETTINGS['mpd_host'] not in LOCAL:
+    if running('mpd') or not mpd_local():
         return Mpd(SETTINGS['mpd_host'], SETTINGS['mpd_port'])
 
 
@@ -341,6 +340,13 @@ def cleanup():
             os.remove(player.np['name'])
 
 
+def mpd_local():
+    """
+    Returns True if MPD is running locally
+    """
+    return True if SETTINGS['mpd_host'] in ('localhost', '127.0.0.1') or os.path.exists(SETTINGS['mpd_host']) else False
+
+
 class Player:
     def status(self):
         self.file = None
@@ -376,18 +382,14 @@ class Player:
                 if len(s) > 3:
                     self.file = s[3]
 
-                    # mpd workaround
-                    if self.__class__.__name__ == 'Mpd' and not self.file.startswith('/'):
-                        f = open(SETTINGS['mpd_config_file'])
-                        for line in f.read().splitlines():
-                            if 'music_directory' in line and '#' not in line.split('music_directory')[0]:
-                                music_dir = line.split('"')[1]
-                        if not music_dir.endswith('/'):
-                            music_dir += '/'
-                        self.file = music_dir + self.file
+                    # MPD workaround
+                    if self.__class__.__name__ == 'Mpd' and self.music_dir and not self.file.startswith('/'):
+                        self.file = self.music_dir + self.file
+                        if not os.path.exists(self.file):
+                            self.file = None
 
-                    # deadbeef workaround
-                    if self.title == self.file.rsplit('.', 1)[0]:
+                    # DeaDBeeF workaround
+                    elif self.__class__.__name__ == 'Deadbeef' and self.title == self.file.rsplit('.', 1)[0]:
                         self.title = 'N/A'
 
         elif self.np['type'] == 'mpris':
@@ -568,14 +570,25 @@ class Mpd(Player):
     def __init__(self, host, port):
         mpc = 'mpc -h %s -p %s' % (host, port)
 
+        # Get a path to music directory from MPD configuration file
+        if mpd_local() and os.path.exists(SETTINGS['mpd_config_file']):
+            with open(SETTINGS['mpd_config_file']) as config_file:
+                for line in config_file.read().splitlines():
+                    if 'music_directory' in line and '#' not in line.split('music_directory')[0]:
+                        self.music_dir = line.split('"')[1]
+            if not self.music_dir.endswith('/'):
+                self.music_dir += '/'
+        else:
+            self.music_dir = None
+
         self.run = {
             'type': 'process',
             'name': 'mpd',
-        } if host in LOCAL else None
+        } if mpd_local() else None
         self.np = {
             'type': 'np_command',
-            'name': mpc + ' current -f "%artist%\\%title%\\%album%\\%file%"' if host in LOCAL or os.path.exists(host)
-            else mpc + ' current -f "%artist%\\%title%\\%album%"',
+            'name': mpc + ' current -f "%artist%\\%title%\\%album%\\%file%"' if mpd_local()
+                    else mpc + ' current -f "%artist%\\%title%\\%album%"',
         }
         self.ctl = {
             'type': 'command',
