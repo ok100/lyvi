@@ -103,22 +103,21 @@ def parse_config(file):
     Returns a "{'key': 'value'}" dictionary.
     """
     settings = {}
-    try:
-        with open(file, 'r') as file:
-            for line in file.read().splitlines():
-                if not line.strip().startswith('#') and '=' in line:
-                    key, value = [x.strip() for x in line.split('=', 1)]
-                    if value == 'True':
-                        value = True
-                    elif value == 'False':
-                        value = False
-                    elif key != 'bg_color' and (value.isdigit() or (value.startswith('-') and value[1:].isdigit())):
-                        value = int(value)
-                    settings[key] = value
-                else:
-                    continue
-    finally:
-        return settings
+    if os.path.exists(file):
+        for line in open(file):
+            if not line.strip().startswith('#') and '=' in line:
+                key, value = line.partition('=')[::2]
+                key, value = key.strip(), value.strip()
+                if value == 'True':
+                    value = True
+                elif value == 'False':
+                    value = False
+                elif key != 'bg_color' and (value.isdigit() or (value.startswith('-') and value[1:].isdigit())):
+                    value = int(value)
+                settings[key] = value
+            else:
+                continue
+    return settings
 
 
 def search_player():
@@ -571,15 +570,13 @@ class Mpd(Player):
         mpc = 'mpc -h %s -p %s' % (host, port)
 
         # Get a path to music directory from MPD configuration file
+        self.music_dir = None
         if mpd_local() and os.path.exists(SETTINGS['mpd_config_file']):
-            with open(SETTINGS['mpd_config_file']) as config_file:
-                for line in config_file.read().splitlines():
-                    if 'music_directory' in line and '#' not in line.split('music_directory')[0]:
-                        self.music_dir = line.split('"')[1]
-            if not self.music_dir.endswith('/'):
-                self.music_dir += '/'
-        else:
-            self.music_dir = None
+            for line in open(SETTINGS['mpd_config_file']):
+                if line.strip().startswith('music_directory'):
+                    self.music_dir = line.split('"')[1]
+                    if not self.music_dir.endswith('/'):
+                        self.music_dir += '/'
 
         self.run = {
             'type': 'process',
