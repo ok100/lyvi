@@ -23,8 +23,10 @@ from time import sleep
 from urllib2 import urlopen
 
 import Image
-import dbus
 import plyr
+
+import dbus
+import dbus.mainloop.glib
 
 
 VERSION = '1.1.0-git'
@@ -72,7 +74,7 @@ SETTINGS = {
     'view': 'lyrics',
 }
 UI_LOCK = Lock()
-
+dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 class LoggingThread(Thread):
     def run(self):
@@ -393,7 +395,7 @@ class Player:
 
         elif self.np['type'] == 'mpris':
             try:
-                data = self._mprisdata()
+                data = self.mprisdata()
             except:
                 self.running = False
                 return
@@ -764,15 +766,15 @@ class Mpg123(Player):
 
 class MPrisPlayer(Player):
     """
-    Class which supports all players that implement the MPRIS Media.
-    Initialize the player with the playername as argument (which
-    of course can also be done with sub-classing and calling the super with a
-    pre-defined playername.
+    Class which supports all players that implement the MPRIS Interface.
+    Initialize the player with the playername as argument (which can also be
+    done by sub-classing the MPrisPlayer, and init the super properly).
     """
     def __init__(self, playername):
         self.run = {
             'type': 'mpris',
-            'name': playername
+            'name': playername,
+            'dbusloop': True
         }
         self.np = {
             'type': 'mpris',
@@ -788,6 +790,9 @@ class MPrisPlayer(Player):
                 'stop': 'Stop'
             }
         }
+        
+        #Player status cache.
+        self.playerstatus = {}
 
         # Store the interface in this object, so it does not have to reinitialized each second
         # in the main loop
@@ -795,16 +800,27 @@ class MPrisPlayer(Player):
         playerobject = bus.get_object('org.mpris.MediaPlayer2.' + self.run['name'], '/org/mpris/MediaPlayer2')
         self.mprisplayer = dbus.Interface(playerobject, MPRIS_INTERFACE_PLAYER)
         self.mprisprops = dbus.Interface(playerobject, 'org.freedesktop.DBus.Properties')
+        self.mprisprops.connect_to_signal("PropertiesChanged", self.loaddata)
+        self.loaddata()
+        
+    def loaddata(self, *args, **kwargs):
+        """
+        Retrieve the player status over DBUS. Arguments are ignored, but
+        *args and **kwargs enable support the dbus callback.
+        """
+        self.playerstatus = self.mprisprops.GetAll(MPRIS_INTERFACE_PLAYER)
 
-    def _mprisdata(self):
-        # Future improvement can be: cache and connect to the propertiesChanged signal.
-        return self.mprisprops.GetAll(MPRIS_INTERFACE_PLAYER)
+    def mprisdata(self):
+        """
+        Returns the (cached) player status.
+        """
+        return self.playerstatus
 
     def command(self, command):
-        '''
+        """
         Overrides the Players method "command".
         Uses the MPRIS interface to call the appropiate object method.
-        '''
+        """
         try:
             if command == 'play':
                 self.mprisplayer.PlayPause()
@@ -817,10 +833,10 @@ class MPrisPlayer(Player):
             elif command == 'stop':
                 self.mprisplayer.Stop()
             elif command == 'volup':
-                volume = self._mprisdata()['Volume'] + 0.1
+                volume = self.playerstatus['Volume'] + 0.1
                 self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', min(volume, 1.0))
             elif command == 'voldn':
-                volume = self._mprisdata()['Volume'] - 0.1
+                volume = self.playerstatus['Volume'] - 0.1
                 self.mprisprops.Set(MPRIS_INTERFACE_PLAYER, 'Volume', max(volume, 0.0))
         except dbus.DBusException:
             # Some players (rhythmbox) raises DBusException when attempt to
@@ -1140,6 +1156,23 @@ class Ui:
             self.refresh()
 
 
+def initdbusloop():
+    """
+    Initializes the DBUS loop, required to enable asynchronous dbus calls.
+    """
+    #DBUS loop relies on the gobject mainloop.
+    import gobject
+    import dbus.glib
+    
+    gobject.threads_init()
+    dbus.glib.init_threads()
+    
+    loop = gobject.MainLoop()
+    gloop = LoggingThread(target=loop.run)
+    gloop.daemon = True
+    gloop.start()
+    
+
 def main(stdscr):
     if 'rxvt' not in os.environ['TERM']:
         SETTINGS['bg'] = False  # Background images are supported only in urxvt
@@ -1153,7 +1186,10 @@ def main(stdscr):
     auto_scroll = LoggingThread(target=ui.autoscroll)
     auto_scroll.daemon = True
     auto_scroll.start()
-
+    
+    if 'dbusloop' in player.run and player.run['dbusloop'] == True:
+        initdbusloop()
+    
     while True:
         player.status()
 
