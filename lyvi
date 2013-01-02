@@ -400,23 +400,24 @@ class Player:
                 self.running = False
                 return
 
-            self.playing = not str(data['PlaybackStatus']) == 'Stopped'
+            self.playing = not unicode(data['PlaybackStatus']) == 'Stopped'
             if self.playing:
                 try:
-                    self.artist = str(data['Metadata']['xesam:artist'][0])
+                    self.artist = unicode(data['Metadata']['xesam:artist'][0])
                 except:
                     self.artist = None
                 try:
                     title = data['Metadata']['xesam:title']
-                    self.title = str(title[0]) if isinstance(title, dbus.Array) else str(title)
+                    #According to MPRIS/Xesam, title is a String, but some players seem return an array
+                    self.title = unicode(title[0]) if isinstance(title, dbus.Array) else unicode(title)
                 except:
                     self.title = None
                 try:
-                    self.album = str(data['Metadata']['xesam:album'])
+                    self.album = unicode(data['Metadata']['xesam:album'])
                 except:
                     self.album = None
                 try:
-                    self.file = str(data['Metadata']['xesam:url']).split('file://')[1]
+                    self.file = unicode(data['Metadata']['xesam:url']).split('file://')[1]
                 except:
                     self.file = None
 
