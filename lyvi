@@ -1188,7 +1188,7 @@ def main(stdscr):
     auto_scroll.daemon = True
     auto_scroll.start()
     
-    if 'dbusloop' in player.run and player.run['dbusloop'] == True:
+    if player.run and 'dbusloop' in player.run and player.run['dbusloop'] == True:
         initdbusloop()
     
     while True:
