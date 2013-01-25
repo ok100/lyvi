@@ -58,6 +58,7 @@ SETTINGS = {
     'key_play': 'x',
     'key_prev': 'z',
     'key_quit': 'q',
+    'key_reload_view': 'r',
     'key_stop': 'v',
     'key_toggle': 'a',
     'key_ui_hide': 'h',
@@ -74,6 +75,12 @@ SETTINGS = {
     'view': 'lyrics',
 }
 UI_LOCK = Lock()
+
+CACHE_DIR = DATA_HOME + '/lyvi'
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
+DB = plyr.Database(CACHE_DIR)
+
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 class LoggingThread(Thread):
@@ -258,11 +265,7 @@ def glyr_query(type, file, artist, album, title, lang):
                 logging.info('using local bg (if present)')
             query.musictree_path = file
         else:
-            cache_dir = DATA_HOME + '/lyvi'
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-            db = plyr.Database(cache_dir)
-            query.database = db
+            query.database = DB
 
         # Running multiple instances of lyvi with one database can cause some problems
         while True:
@@ -1122,6 +1125,28 @@ class Ui:
 
             elif key == ord(SETTINGS['key_ui_hide']):
                 self.hide()
+
+            elif key == ord(SETTINGS['key_reload_view']):
+                # Reload current view
+                DB.delete(plyr.Query(artist=self.artist,
+                                     album=self.album,
+                                     title=self.title,
+                                     get_type=SETTINGS['view'],
+                                     language=SETTINGS['lang']))
+
+                if SETTINGS['view'] == 'lyrics':
+                    text = 'Searching lyrics...'
+                elif SETTINGS['view'] == 'artistbio':
+                    text = 'Searching artist info...'
+                else:
+                    text = 'Searching guitar tab...'
+                setattr(self, SETTINGS['view'], text)
+                self.refresh()
+
+                worker = LoggingThread(target=get_and_update,
+                                       args=(self.artist, self.album, self.title, self.file, [SETTINGS['view']], self))
+                worker.daemon = True
+                worker.start()
 
             elif key in commands:
                 player.command(commands[key])
