@@ -81,6 +81,8 @@ if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR)
 DB = plyr.Database(CACHE_DIR)
 
+HAS_TMUX = True if 'TMUX' in os.environ else False
+
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 class LoggingThread(Thread):
@@ -232,14 +234,17 @@ def bg_set(file, brightness):
     if args.debug:
         logging.info('setting background => file: "%s" brightness: "%s"' % (file, brightness))
 
-    # set brightness
+    # Set brightness
     image1 = Image.open(file)
     layer = Image.new('RGB', image1.size, '#' + SETTINGS['bg_color'])
     image2 = Image.blend(image1, layer, 1 - brightness)
     image2.save(file)
 
-    # set urxvt background, keep aspect ratio
-    os.system('printf "\e]20;%s;100x100+50+50:op=keep-aspect\a"' % file)
+    # Set urxvt background, keep aspect ratio
+    if HAS_TMUX:
+        os.system('printf "\ePtmux;\e\e]20;%s;100x100+50+50:op=keep-aspect\a\e\\\\"' % file)
+    else:
+        os.system('printf "\e]20;%s;100x100+50+50:op=keep-aspect\a"' % file)
 
 
 def bg_unset():
@@ -253,8 +258,11 @@ def bg_unset():
         image = Image.new('RGB', (100, 100), '#' + SETTINGS['bg_color'])
         image.save(bg)
 
-    # set urxvt background, stretch
-    os.system('printf "\e]20;%s\a"' % bg)
+    # Set urxvt background, stretch
+    if HAS_TMUX:
+        os.system('printf "\ePtmux;\e\e]20;%s\a\e\\\\"' % bg)
+    else:
+        os.system('printf "\e]20;%s\a"' % bg)
 
 
 def glyr_query(type, file, artist, album, title, lang):
@@ -1128,12 +1136,6 @@ class Ui:
 
             elif key == ord(SETTINGS['key_reload_view']):
                 # Reload current view
-                DB.delete(plyr.Query(artist=self.artist,
-                                     album=self.album,
-                                     title=self.title,
-                                     get_type=SETTINGS['view'],
-                                     language=SETTINGS['lang']))
-
                 if SETTINGS['view'] == 'lyrics':
                     text = 'Searching lyrics...'
                 elif SETTINGS['view'] == 'artistbio':
@@ -1142,6 +1144,12 @@ class Ui:
                     text = 'Searching guitar tab...'
                 setattr(self, SETTINGS['view'], text)
                 self.refresh()
+
+                DB.delete(plyr.Query(artist=self.artist,
+                                     album=self.album,
+                                     title=self.title,
+                                     get_type=SETTINGS['view'],
+                                     language=SETTINGS['lang']))
 
                 worker = LoggingThread(target=get_and_update,
                                        args=(self.artist, self.album, self.title, self.file, [SETTINGS['view']], self))
@@ -1200,9 +1208,6 @@ def initdbusloop():
     
 
 def main(stdscr):
-    if 'rxvt' not in os.environ['TERM']:
-        SETTINGS['bg'] = False  # Background images are supported only in urxvt
-
     ui = Ui(stdscr)
 
     ui_control = LoggingThread(target=ui.control)
