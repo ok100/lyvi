@@ -339,7 +339,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 img_b = Image.open('/tmp/lyvi-%s-tmp' % os.getpid())
                 img_b.thumbnail((pane.x * x_cellpx, pane.y * y_cellpx), Image.ANTIALIAS)
                 if SETTINGS['bg_tmux_backdrops_underlying']:
-                    layer = Image.new('RGB', img_b.size, '#' + SETTINGS['bg_color'])
+                    layer = Image.new(img_b.mode, img_b.size, '#' + SETTINGS['bg_color'])
                     img_b = Image.blend(img_b, layer, 1 - float(SETTINGS['bg_opacity']))
                 x1 = pane.x_offset * x_cellpx
                 y1 = pane.y_offset * y_cellpx
@@ -356,7 +356,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 img_c = Image.open('/tmp/lyvi-%s-tmp' % os.getpid())
                 img_c.thumbnail((pane.x * x_cellpx, pane.y * y_cellpx), Image.ANTIALIAS)
                 if SETTINGS['bg_tmux_cover_underlying']:
-                    layer = Image.new('RGB', img_c.size, '#' + SETTINGS['bg_color'])
+                    layer = Image.new(img_c.mode, img_c.size, '#' + SETTINGS['bg_color'])
                     img_c = Image.blend(img_c, layer, 1 - float(SETTINGS['bg_opacity']))
                 x1 = pane.x_offset * x_cellpx
                 y1 = pane.y_offset * y_cellpx
@@ -374,7 +374,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 with open('/tmp/lyvi-%s-tmp' % os.getpid(), 'wb') as buf:
                     buf.write(background[0].data)
                 image1 = Image.open('/tmp/lyvi-%s-tmp' % os.getpid())
-                layer = Image.new('RGB', image1.size, '#' + SETTINGS['bg_color'])
+                layer = Image.new(image1.mode, image1.size, '#' + SETTINGS['bg_color'])
                 image2 = Image.blend(image1, layer, 1 - float(SETTINGS['bg_opacity']))
 
                 buf = StringIO()
