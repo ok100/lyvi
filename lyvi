@@ -47,15 +47,10 @@ SETTINGS = {
     'bg_opacity': 0.15,
     'bg_tmux': False,
     'bg_tmux_backdrops_pane': None,
-    'bg_tmux_backdrops_pane_offset_x': 0,
-    'bg_tmux_backdrops_pane_offset_y': 0,
     'bg_tmux_backdrops_underlying': True,
     'bg_tmux_cover_pane': None,
-    'bg_tmux_cover_pane_offset_x': 0,
-    'bg_tmux_cover_pane_offset_y': 0,
     'bg_tmux_cover_underlying': True,
-    'bg_tmux_height': 600,
-    'bg_tmux_width': 1024,
+    'bg_tmux_window_title': None,
     'bg_type': 'backdrops',
     'color_buttons': -1,
     'color_status': -1,
@@ -294,10 +289,20 @@ def tmux_get_layout():
     return layout
 
 
+def get_window_size(title):
+    wininfo = get_output('xwininfo -name %s' % title)
+    for line in wininfo.splitlines():
+        if 'Width:' in line:
+            width = int(line.split()[1])
+        elif 'Height:' in line:
+            height = int(line.split()[1])
+    return width, height
+
+
 def glyr_query(type, file, artist, album, title, lang):
         query = plyr.Query(artist=artist, album=album, title=title, get_type=type, language=lang)
         query.useragent = 'lyvi/%s' % VERSION
-        if SETTINGS['bg_local'] and type in ['backdrops', 'artistphoto', 'cover'] and file and os.path.exists(file):
+        if SETTINGS['bg_local'] and type in ['backdrops', 'cover'] and file and os.path.exists(file):
             if args.debug:
                 logging.info('using local bg (if present)')
             query.musictree_path = file
@@ -323,14 +328,15 @@ def metadata_get(type, file, artist, album, title, lang):
         return 'Missing tags'
 
     if type == 'background':
-        if HAS_TMUX and SETTINGS['bg_tmux']:
-            image = Image.new('RGB', (SETTINGS['bg_tmux_width'], SETTINGS['bg_tmux_height']), '#' + SETTINGS['bg_color'])
+        if HAS_TMUX and SETTINGS['bg_tmux'] and SETTINGS['bg_tmux_window_title']:
+            width, height = get_window_size(SETTINGS['bg_tmux_window_title'])
+            image = Image.new('RGB', (width, height), '#' + SETTINGS['bg_color'])
             backdrops = glyr_query('backdrops', file, artist, album, title, lang)
             cover = glyr_query('cover', file, artist, album, title, lang)
 
             layout = tmux_get_layout()
-            x_cellpx = SETTINGS['bg_tmux_width'] / layout[0].x
-            y_cellpx = SETTINGS['bg_tmux_height'] / layout[0].y
+            x_cellpx = width / layout[0].x
+            y_cellpx = height / layout[0].y
 
             if backdrops and SETTINGS['bg_tmux_backdrops_pane'] != None and SETTINGS['bg_type'] in ['backdrops', 'both']:
                 pane = layout[SETTINGS['bg_tmux_backdrops_pane'] + 1]
@@ -345,8 +351,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 y1 = pane.y_offset * y_cellpx
                 x2 = (pane.x_offset + pane.x) * x_cellpx
                 y2 = (pane.y_offset + pane.y) * y_cellpx
-                image.paste(img_b, (x1 + (x2 - x1) / 2 - img_b.size[0] / 2 + SETTINGS['bg_tmux_backdrops_pane_offset_x'],
-                                    y1 + (y2 - y1) / 2 - img_b.size[1] / 2 + SETTINGS['bg_tmux_backdrops_pane_offset_y']))
+                image.paste(img_b, (x1 + (x2 - x1) / 2 - img_b.size[0] / 2, y1 + (y2 - y1) / 2 - img_b.size[1] / 2))
 
 
             if cover and SETTINGS['bg_tmux_cover_pane'] != None and SETTINGS['bg_type'] in ['cover', 'both']:
@@ -362,8 +367,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 y1 = pane.y_offset * y_cellpx
                 x2 = (pane.x_offset + pane.x) * x_cellpx
                 y2 = (pane.y_offset + pane.y) * y_cellpx
-                image.paste(img_c, (x1 + (x2 - x1) / 2 - img_c.size[0] / 2 + SETTINGS['bg_tmux_cover_pane_offset_x'],
-                                    y1 + (y2 - y1) / 2 - img_c.size[1] / 2 + SETTINGS['bg_tmux_cover_pane_offset_y']))
+                image.paste(img_c, (x1 + (x2 - x1) / 2 - img_c.size[0] / 2, y1 + (y2 - y1) / 2 - img_c.size[1] / 2))
 
             buf = StringIO()
             image.save(buf, format="JPEG")
