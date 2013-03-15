@@ -6,6 +6,13 @@ body {
   margin: 50px 0px;
 }
 
+h1 span {
+  color: #666362;
+  font-size: 12pt;
+  padding: 0px 0px 0px 8px;
+  vertical-align: middle;
+}
+
 a:link, a:visited, a:active {
   color: #557282;
 }
