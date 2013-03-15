@@ -1,17 +1,17 @@
 body {
-  background-color: #dddac6;
-  color: #6d6d6d;
+  background-color: #D2C7B5;
+  color: #140C0B;
   font-family: sans-serif;
   font-size: 12pt;
   margin: 50px 0px;
 }
 
-a:link,a:visited,a:active {
-  color: #657a99;
+a:link, a:visited, a:active {
+  color: #557282;
 }
 
 #content {
-  width: 640px;
+  width: 700px;
   margin: 0px auto;
   text-align: left;
 }
@@ -19,4 +19,61 @@ a:link,a:visited,a:active {
 #donate {
   margin-top: 3em;
   font-size: 10pt;
+}
+
+#forkongithub a {
+  background: #140C0B;
+  color: #877A70;
+  text-decoration: none;
+  font-family: arial, sans-serif;
+  text-align: center;
+  font-weight: bold;
+  padding: 5px 40px;
+  font-size: 1rem;
+  line-height: 2rem;
+  position: relative;
+  transition: 0.5s;
+}
+
+#forkongithub a:hover {
+  background: #6D6D6D;
+  color: #DDDAC6;
+}
+
+#forkongithub a::before, #forkongithub a::after {
+  content: "";
+  width: 100%;
+  display: block;
+  position: absolute;
+  top: 1px;
+  left: 0;
+  height: 1px;
+  background: #dddac6;
+}
+
+#forkongithub a::after {
+  bottom: 1px;
+  top: auto;
+}
+
+@media screen and (min-width: 640px) {
+  #forkongithub {
+    position: absolute;
+	display: block;
+	top: 0;
+	right: 0;
+	width: 200px;
+	overflow: hidden;
+	height: 200px;
+  }
+
+  #forkongithub a {
+    width: 200px;
+	position: absolute;
+	top: 60px;
+	right: -60px;
+	transform: rotate(45deg);
+	-webkit-transform: rotate(45deg);
+	box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
+  }
 }
