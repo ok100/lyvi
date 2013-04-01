@@ -42,7 +42,6 @@ SETTINGS = {
     'autoscroll_step': 1,
     'autoscroll_time': 10,
     'bg': False,
-    'bg_color': '000000',
     'bg_local': False,
     'bg_opacity': 0.15,
     'bg_tmux': False,
@@ -132,7 +131,7 @@ def parse_config(file):
                     value = False
                 elif value == 'None':
                     value = None
-                elif key != 'bg_color' and (value.isdigit() or (value.startswith('-') and value[1:].isdigit())):
+                elif value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
                     value = int(value)
                 settings[key] = value
             else:
@@ -254,11 +253,11 @@ def bg_unset():
     # Ugly, but I can't find any way to unset urxvt background.
     # So, we will create an image with the same color as terminal bg color and set it as background.
     if args.debug:
-        logging.info('unsetting background => color: %s' % SETTINGS['bg_color'])
+        logging.info('unsetting background => color: %s' % BG_COLOR)
 
     bg = '/tmp/lyvi-%s-blank.png' % os.getpid()
     if not os.path.exists(bg):
-        image = Image.new('RGB', (100, 100), '#' + SETTINGS['bg_color'])
+        image = Image.new('RGB', (100, 100), BG_COLOR)
         image.save(bg)
 
     # Set urxvt background, stretch
@@ -330,7 +329,7 @@ def metadata_get(type, file, artist, album, title, lang):
     if type == 'background':
         if HAS_TMUX and SETTINGS['bg_tmux'] and SETTINGS['bg_tmux_window_title']:
             width, height = get_window_size(SETTINGS['bg_tmux_window_title'])
-            image = Image.new('RGB', (width, height), '#' + SETTINGS['bg_color'])
+            image = Image.new('RGB', (width, height), BG_COLOR)
             backdrops = glyr_query('backdrops', file, artist, album, title, lang)
             cover = glyr_query('cover', file, artist, album, title, lang)
 
@@ -345,7 +344,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 img_b = Image.open('/tmp/lyvi-%s-tmp' % os.getpid())
                 img_b.thumbnail((pane.x * x_cellpx, pane.y * y_cellpx), Image.ANTIALIAS)
                 if SETTINGS['bg_tmux_backdrops_underlying']:
-                    layer = Image.new(img_b.mode, img_b.size, '#' + SETTINGS['bg_color'])
+                    layer = Image.new(img_b.mode, img_b.size, BG_COLOR)
                     img_b = Image.blend(img_b, layer, 1 - float(SETTINGS['bg_opacity']))
                 x1 = pane.x_offset * x_cellpx
                 y1 = pane.y_offset * y_cellpx
@@ -361,7 +360,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 img_c = Image.open('/tmp/lyvi-%s-tmp' % os.getpid())
                 img_c.thumbnail((pane.x * x_cellpx, pane.y * y_cellpx), Image.ANTIALIAS)
                 if SETTINGS['bg_tmux_cover_underlying']:
-                    layer = Image.new(img_c.mode, img_c.size, '#' + SETTINGS['bg_color'])
+                    layer = Image.new(img_c.mode, img_c.size, BG_COLOR)
                     img_c = Image.blend(img_c, layer, 1 - float(SETTINGS['bg_opacity']))
                 x1 = pane.x_offset * x_cellpx
                 y1 = pane.y_offset * y_cellpx
@@ -378,7 +377,7 @@ def metadata_get(type, file, artist, album, title, lang):
                 with open('/tmp/lyvi-%s-tmp' % os.getpid(), 'wb') as buf:
                     buf.write(background[0].data)
                 image1 = Image.open('/tmp/lyvi-%s-tmp' % os.getpid())
-                layer = Image.new(image1.mode, image1.size, '#' + SETTINGS['bg_color'])
+                layer = Image.new(image1.mode, image1.size, BG_COLOR)
                 image2 = Image.blend(image1, layer, 1 - float(SETTINGS['bg_opacity']))
 
                 buf = StringIO()
@@ -1382,6 +1381,12 @@ if __name__ == '__main__':
             sys.exit('File not found: %s' % args.config_file)
     else:
         SETTINGS.update(parse_config(CONFIG_HOME + '/lyvi/lyvi.conf'))
+
+    if SETTINGS['bg']:
+        xrdb = get_output('xrdb -query')
+        for line in xrdb.splitlines():
+            if 'background' in line:
+                BG_COLOR = line.split(':')[1].strip()
 
     if args.debug:
         logging.basicConfig(filename='lyvi.log', level=logging.DEBUG)
