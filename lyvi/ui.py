@@ -3,184 +3,138 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
-import textwrap
-
-import termbox
+import urwid
 
 import lyvi
 
 
-COLORS = {
-    'default': 0x0F,
-    'black': termbox.BLACK,
-    'red': termbox.RED,
-    'green': termbox.GREEN,
-    'yellow': termbox.YELLOW,
-    'blue': termbox.BLUE,
-    'magenta': termbox.MAGENTA,
-    'cyan': termbox.CYAN,
-    'white': termbox.WHITE,
-}
-HEADER_BG = COLORS[lyvi.config['header_bg']]
-HEADER_FG = COLORS[lyvi.config['header_fg']]
-TEXT_BG = COLORS[lyvi.config['text_bg']]
-TEXT_FG = COLORS[lyvi.config['text_fg']]
-STATUSBAR_BG = COLORS[lyvi.config['statusbar_bg']]
-STATUSBAR_FG = COLORS[lyvi.config['statusbar_fg']]
+class MyListBox(urwid.ListBox):
+    signals = ['changed']
+
+    def mouse_event(self, size, event, button, col, row, focus):
+        if event == 'mouse press':
+            if button == 4:
+                self.keypress(size, 'up')
+                return True
+            if button == 5:
+                self.keypress(size, 'down')
+                return True
+        return self.__super.mouse_event(size, event, button, col, row, focus)
+
+    def keypress(self, size, key):
+        if key == 'g':
+            self.set_focus(0)
+            return True
+        if key == 'G':
+            self.set_focus(len(self.body) - 1)
+            self.set_focus_valign('bottom')
+            return True
+        return self.__super.keypress(size, key)
+
+    def calculate_visible(self, size, focus=False):
+        width, height = size
+        middle, top, bottom = self.__super.calculate_visible(size, focus)
+        fpos = self.body.index(top[1][-1][0]) if top[1] else self.focus_position
+        top_line = sum([self.body[n].rows((width,)) for n in range(0, fpos)]) + top[0]
+        total_lines = sum([widget.rows((width,)) for widget in self.body])
+        if total_lines <= height:
+            self.pos = 'All'
+        elif top_line == 0:
+            self.pos = 'Top'
+        elif top_line + height == total_lines:
+            self.pos = 'Bot'
+        else:
+            self.pos = '%d%%' % round(top_line * 100 / (total_lines - height))
+        self._emit('changed')
+        return middle, top, bottom
 
 
-class Ui(termbox.Termbox):
-    def __init__(self):
-        self.artist = self.title = self.lyrics = self.artistbio = self.guitartabs = None
-        self.quit = False
-        self.playing = False
-        self.pos_y = 0
-
+class Ui:
     def init(self):
-        """Init the terminal.
-        """
-        termbox.Termbox.__init__(self)
+        self.views = ['lyrics', 'artistbio', 'guitartabs']
+        for view in self.views:
+            setattr(self, view, None)
+        self.artist = None
+        self.title = None
+        self.view = 'lyrics'
 
-    def puts(self, x, y, string, fg, bg):
-        """Write string at start position (x; y).
-        """
-        for char in string:
-            self.change_cell(x, y, ord(char), fg, bg)
-            x += 1
+        self.header = urwid.Text(('header', ''))
+        self.statusbar = urwid.Text(('statusbar', ''), align='right')
+        self.content = urwid.SimpleListWalker([urwid.Text(('content', ''))])
+        self.listbox = MyListBox(self.content)
 
-    def set_view(self, view):
-        """Set the view - lyrics, artistbio, guitartabs.
-        """
-        self.view = view
-        if view == 'lyrics':
-            self.header = '%s - %s' % (self.artist if self.artist else 'N/A',
-                                       self.title if self.title else 'N/A')
-            self.text = ((self.lyrics if self.lyrics else 'No lyrics found.')
-                          if self.artist and self.title else 'Missing tags.') if self.playing else 'Not playing.'
-        elif view == 'artistbio':
-            self.header = self.artist if self.artist else 'N/A'
-            self.text = ((self.artistbio if self.artistbio else 'No artist info found.')
-                          if self.artist else 'Missing tags.') if self.playing else 'Not playing.'
-        elif view == 'guitartabs':
-            self.header = '%s - %s' % (self.artist if self.artist else 'N/A',
-                                       self.title if self.title else 'N/A')
-            self.text = ((self.guitartabs if self.guitartabs else 'No guitar tabs found.')
-                          if self.artist and self.title else 'Missing tags.') if self.playing else 'Not playing.'
+        palette = [
+            ('header', 'white', ''),
+            ('content', '', ''),
+            ('statusbar', '', ''),
+        ]
+        view = urwid.Frame(urwid.Padding(self.listbox, left=1, right=1),
+            footer=self.statusbar)
 
-    def toggle_views(self):
-        """Toggle between views.
-        """
-        self.pos_y = 0
-        views = ['lyrics', 'artistbio', 'guitartabs']
-        self.set_view(views[views.index(self.view) + 1] if views.index(self.view) + 1 < len(views) else views[0])
+        urwid.connect_signal(self.listbox, 'changed', self.update_statusbar)
+
+        self.loop = urwid.MainLoop(view, palette, unhandled_input=self.input)
+        self.update()
+
+    def set_header(self, header):
+        self.header.set_text(('header', header))
+
+    def set_text(self, text):
+        self.content[:] = [self.header, urwid.Divider()] + \
+            [urwid.Text(('content', line)) for line in text.splitlines()]
+
+    def update(self):
+        if lyvi.player.status == 'stopped':
+            self.set_header('N/A' if self.view == 'artistbio' else 'N/A - N/A')
+            self.set_text('Not playing')
+        elif self.view == 'lyrics':
+            self.set_header('%s - %s' % (self.artist or 'N/A', self.title or 'N/A'))
+            self.set_text(self.lyrics or 'No lyrics found')
+        elif self.view == 'artistbio':
+            self.set_header(self.artist or 'N/A')
+            self.set_text(self.artistbio or 'No artist info found')
+        elif self.view == 'guitartabs':
+            self.set_header('%s - %s' % (self.artist or 'N/A', self.title or 'N/A'))
+            self.set_text(self.guitartabs or 'No guitar tabs found')
         self.refresh()
-
-    def wrap(self):
-        """Wrap the content of self.text and self.header
-           and store it into self.content array.
-        """
-        self.content = []
-
-        for wrapped_line in textwrap.wrap(self.header, self.width() - 2):
-            self.content.append(wrapped_line)
-        self.content.append(-1)
-        for line in self.text.strip().splitlines():
-            if line == '':
-                self.content.append('')
-            else:
-                for wrapped_line in textwrap.wrap(line, self.width() - 2, replace_whitespace=False):
-                    self.content.append(wrapped_line)
 
     def refresh(self):
-        """Refresh the UI.
-        """
-        self.set_view(self.view)
-        self.wrap()
-        self.redraw()
+        self.loop.draw_screen()
 
-
-    def redraw(self):
-        """Redraw the UI.
-        """
-        self.clear()
-
-        # Update pager text
-        y = 0
-        view = self.content[self.pos_y:self.pos_y + self.height() - 1]
-        if -1 in view:
-            bg = HEADER_BG
-            fg = HEADER_FG | termbox.BOLD
-        else:
-            bg = TEXT_BG
-            fg = TEXT_FG
-        view += (self.height() - len(view) - 1) * ['']
-        for line in view:
-            if line == -1:
-                bg = TEXT_BG
-                fg = TEXT_FG
-                line = ''
-            self.puts(0, y, ' ' + line.ljust(self.width() - 1), fg, bg)
-            y += 1
-
-        # Calculate position
-        if len(self.content) <= self.height() - 1:
-            pos = 'All'
-        elif self.pos_y == 0:
-            pos = 'Top'
-        elif self.pos_y >= len(self.content) - self.height() + 1:
-            pos = 'Bot'
-        else:
-            pos = '%d%%' % round(self.pos_y * 100 / (len(self.content) - self.height() + 1))
-        pos = pos.rjust(4)
-
-        # Update statusbar
-        statustext = '%s    %s' % (self.view, pos)
-
-        self.puts(0, self.height() - 1, statustext.rjust(self.width()), STATUSBAR_FG, STATUSBAR_BG)
-        self.present()
-
-    def mainloop(self):
-        """Handle input events.
-        """
-        self.set_view(lyvi.config['default_view'])
+    def home(self):
+        self.listbox.set_focus(0)
         self.refresh()
 
-        while True:
-            type, char, key, mod, width, height = self.poll_event()
+    def update_statusbar(self, x=None):
+        self.statusbar.set_text(('statusbar',
+            '%s%s' % (self.view, self.listbox.pos.rjust(10))))
 
-            if type == termbox.EVENT_KEY:
-                if char == 'q':
-                    # Quit
-                    self.quit = True
-                    break
-                elif key == termbox.KEY_ARROW_UP or char == 'k':
-                    # Scroll one line up
-                    if self.pos_y > 0:
-                        self.pos_y -= 1
-                elif key == termbox.KEY_ARROW_DOWN or char == 'j':
-                    # Scroll one line down
-                    if self.pos_y < len(self.content) - self.height() + 1:
-                        self.pos_y += 1
-                elif key == termbox.KEY_PGUP or key == termbox.KEY_ARROW_LEFT:
-                    # Scroll one page up
-                    self.pos_y -= self.height() - 1
-                    if self.pos_y < 0:
-                        self.pos_y = 0
-                elif key == termbox.KEY_PGDN or key == termbox.KEY_ARROW_RIGHT:
-                    # Scroll one page down
-                    if self.pos_y < len(self.content) - self.height() + 1:
-                        self.pos_y += self.height() - 1
-                elif char == 'g':
-                    # Scroll to top
-                    self.pos_y = 0
-                elif char == 'G':
-                    # Scroll to bottom
-                    self.pos_y = len(self.content) - self.height() + 1
-                elif char == 'a':
-                    # Toggle view
-                    self.toggle_views()
+    def toggle_views(self, x=None):
+        n = self.views.index(self.view)
+        self.view = self.views[n + 1] if n < len(self.views) - 1 else self.views[0]
+        self.home()
+        self.update()
 
-            elif type == termbox.EVENT_RESIZE:
-                self.refresh()
-
-            self.redraw()
+    def input(self, key):
+        if key in ('q', 'Q'):
+            # Quit
+            raise urwid.ExitMainLoop()
+        elif key == 'a':
+            # Toggle between views
+            self.toggle_views()
+        elif key == 'R':
+            # Reload current view
+            # FIXME
+            from threading import Thread
+            import lyvi.glyr
+            self.home()
+            text = 'Searching %s...' % \
+                ('artist info' if self.view == 'artistbio' else
+                'guitar tabs' if self.view == 'guitartabs' else self.view)
+            setattr(self, self.view, text)
+            self.update()
+            lyvi.glyr.cache_delete(self.artist, self.title)
+            worker = Thread(target=lyvi.glyr.get_and_update,
+                                   args=(self.view, self.artist, self.title))
+            worker.daemon = True
+            worker.start()

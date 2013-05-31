@@ -5,30 +5,6 @@
 
 import argparse
 import subprocess
-import threading
-
-import lyvi
-
-
-class LoggingThread(threading.Thread):
-    def run(self):
-        try:
-            super(LoggingThread, self).run()
-        except SystemExit:
-            raise
-        except Exception:
-            cleanup()
-            if lyvi.args.debug:
-                lyvi.logging.exception('Uncaught exception')
-            raise
-
-
-def cleanup():
-    try:
-        lyvi.ui.quit = True
-        lyvi.ui.close()
-    except:
-        pass
 
 
 def check_output(command):

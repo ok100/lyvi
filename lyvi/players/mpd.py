@@ -9,16 +9,19 @@ import lyvi
 from lyvi.utils import check_output, running
 
 
+# Get the path to music directory from MPD configuration file
+music_dir = None
+if os.path.exists(lyvi.config['mpd_config_file']):
+    for line in open(lyvi.config['mpd_config_file']):
+        if line.strip().startswith('music_directory'):
+            music_dir = line.split('"')[1]
+            if not music_dir.endswith('/'):
+                music_dir += '/'
+
+
 class Player:
-    def __init__(self):
-        # Get the path to music directory from MPD configuration file
-        self.music_dir = None
-        if os.path.exists(lyvi.config['mpd_config_file']):
-            for line in open(lyvi.config['mpd_config_file']):
-                if line.strip().startswith('music_directory'):
-                    self.music_dir = line.split('"')[1]
-                    if not self.music_dir.endswith('/'):
-                        self.music_dir += '/'
+    running = True
+    status = 'stopped'
 
     def get_status(self):
         if not running('mpd'):

@@ -16,12 +16,26 @@ if not os.path.exists(cache_dir):
 cache = plyr.Database(cache_dir)
 
 
+def cache_delete(artist, title):
+    # FIXME
+    cache.delete(plyr.Query(artist=artist, title=title))
+
+
 def get(type, artist, title):
     query = plyr.Query(get_type=type, artist=artist, title=title)
     query.useragent = 'lyvi/%s' % lyvi.VERSION
     query.database = cache
     items = query.commit()
 
-    if items:
-        return items[0].data.decode()
-    return None
+    return items[0].data.decode() if items else None
+
+
+def get_and_update(view, artist, title):
+    metadata = get(view, artist, title)
+    lyvi.lock.acquire()
+    try:
+        if lyvi.ui.artist == artist and lyvi.ui.title == title:
+            setattr(lyvi.ui, view, metadata)
+            lyvi.ui.update()
+    finally:
+        lyvi.lock.release()

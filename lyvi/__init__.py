@@ -7,6 +7,8 @@ import os
 import runpy
 import sys
 
+from threading import Lock
+
 import lyvi.utils
 
 
@@ -38,7 +40,7 @@ else:
     sys.exit()
 
 if args.debug:
-    # Set logging
+    # Set up logging
     import logging
     import sys
     if os.path.exists('lyvi.log'):
@@ -68,6 +70,7 @@ if lyvi.args.command:
     sys.exit()
 
 import lyvi.ui
+lock = Lock()
 ui = lyvi.ui.Ui()
 
 from lyvi.main import main
