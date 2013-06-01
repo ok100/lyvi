@@ -14,8 +14,7 @@ def watch_player():
     while True:
         lyvi.player.get_status()
         if not lyvi.player.running:
-            # TODO: quit
-            break
+            lyvi.ui.exit()
 
         if lyvi.player.status == 'stopped':
             lyvi.lock.acquire()

@@ -118,7 +118,7 @@ class Ui:
     def input(self, key):
         if key in ('q', 'Q'):
             # Quit
-            raise urwid.ExitMainLoop()
+            self.exit()
         elif key == 'a':
             # Toggle between views
             self.toggle_views()
@@ -138,3 +138,6 @@ class Ui:
                                    args=(self.view, self.artist, self.title))
             worker.daemon = True
             worker.start()
+
+    def exit(self):
+        raise urwid.ExitMainLoop()
