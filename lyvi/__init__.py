@@ -33,6 +33,7 @@ config = {
     'key_quit': 'q',
     'key_toggle_views': 'a',
     'key_reload_view': 'R',
+    'bg': False,
 }
 
 # Read configuration file

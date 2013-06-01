@@ -102,6 +102,7 @@ class Ui:
         self.loop.draw_screen()
 
     def home(self):
+        """Scroll to the top of the ListBox"""
         self.listbox.set_focus(0)
         self.refresh()
 
@@ -111,36 +112,40 @@ class Ui:
         self.frame.set_footer(wrap)
 
     def toggle_views(self, x=None):
+        """Toggle between views"""
         n = self.views.index(self.view)
         self.view = self.views[n + 1] if n < len(self.views) - 1 else self.views[0]
         self.home()
         self.update()
 
+    def reload_view(self):
+        """Reload current view"""
+        if not ((self.view == 'artistbio' and self.artist) or (self.artist and self.title)):
+            return
+        from threading import Thread
+        import lyvi.glyr
+        self.home()
+        text = 'Searching %s...' % \
+            ('artist info' if self.view == 'artistbio' else
+            'guitar tabs' if self.view == 'guitartabs' else self.view)
+        setattr(self, self.view, text)
+        self.update()
+        lyvi.glyr.cache_delete(self.view, lyvi.player.artist,
+            lyvi.player.title, lyvi.player.album)
+        worker = Thread(target=lyvi.glyr.get_and_update,
+            args=(self.view, lyvi.player.artist, lyvi.player.title, lyvi.player.album))
+        worker.daemon = True
+        worker.start()
+        
     def input(self, key):
         import lyvi
         if key == lyvi.config['key_quit']:
-            # Quit
             self.exit()
         elif key == lyvi.config['key_toggle_views']:
-            # Toggle between views
             self.toggle_views()
-        elif key == lyvi.config['key_reload_view'] and (
-                (self.view == 'artistbio' and self.artist) or (self.artist and self.title)):
-            # Reload current view
-            # FIXME
-            from threading import Thread
-            import lyvi.glyr
-            self.home()
-            text = 'Searching %s...' % \
-                ('artist info' if self.view == 'artistbio' else
-                'guitar tabs' if self.view == 'guitartabs' else self.view)
-            setattr(self, self.view, text)
-            self.update()
-            lyvi.glyr.cache_delete(self.artist, self.title)
-            worker = Thread(target=lyvi.glyr.get_and_update,
-                                   args=(self.view, self.artist, self.title))
-            worker.daemon = True
-            worker.start()
+        elif key == lyvi.config['key_reload_view']:
+            self.reload_view()
 
     def exit(self):
+        """Quit"""
         raise urwid.ExitMainLoop()

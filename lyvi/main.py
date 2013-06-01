@@ -41,7 +41,7 @@ def watch_player():
             lyvi.lock.release()
             for view in needsupdate:
                 worker = Thread(target=lyvi.glyr.get_and_update,
-                    args=(view, lyvi.player.artist, lyvi.player.title))
+                    args=(view, lyvi.player.artist, lyvi.player.title, lyvi.player.album))
                 worker.daemon = True
                 worker.start()
 
