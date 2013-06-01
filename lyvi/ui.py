@@ -56,24 +56,24 @@ class Ui:
             setattr(self, view, None)
         self.artist = None
         self.title = None
-        self.view = 'lyrics'
+        self.view = lyvi.config['default_view']
 
         self.header = urwid.Text(('header', ''))
-        self.statusbar = urwid.Text(('statusbar', ''), align='right')
+        self.statusbar = urwid.AttrMap(urwid.Text('', align='right'), 'statusbar')
         self.content = urwid.SimpleListWalker([urwid.Text(('content', ''))])
         self.listbox = MyListBox(self.content)
 
         palette = [
-            ('header', 'white', ''),
-            ('content', '', ''),
-            ('statusbar', '', ''),
+            ('header', lyvi.config['header_fg'], lyvi.config['header_bg']),
+            ('content', lyvi.config['text_fg'], lyvi.config['text_bg']),
+            ('statusbar', lyvi.config['statusbar_fg'], lyvi.config['statusbar_bg']),
         ]
-        view = urwid.Frame(urwid.Padding(self.listbox, left=1, right=1),
+        self.frame = urwid.Frame(urwid.Padding(self.listbox, left=1, right=1),
             footer=self.statusbar)
 
         urwid.connect_signal(self.listbox, 'changed', self.update_statusbar)
 
-        self.loop = urwid.MainLoop(view, palette, unhandled_input=self.input)
+        self.loop = urwid.MainLoop(self.frame, palette, unhandled_input=self.input)
         self.update()
 
     def set_header(self, header):
@@ -106,8 +106,9 @@ class Ui:
         self.refresh()
 
     def update_statusbar(self, x=None):
-        self.statusbar.set_text(('statusbar',
-            '%s%s' % (self.view, self.listbox.pos.rjust(10))))
+        text = urwid.Text('%s%s' % (self.view, self.listbox.pos.rjust(10)), align='right')
+        wrap = urwid.AttrWrap(text, 'statusbar')
+        self.frame.set_footer(wrap)
 
     def toggle_views(self, x=None):
         n = self.views.index(self.view)
@@ -116,13 +117,15 @@ class Ui:
         self.update()
 
     def input(self, key):
-        if key in ('q', 'Q'):
+        import lyvi
+        if key == lyvi.config['key_quit']:
             # Quit
             self.exit()
-        elif key == 'a':
+        elif key == lyvi.config['key_toggle_views']:
             # Toggle between views
             self.toggle_views()
-        elif key == 'R':
+        elif key == lyvi.config['key_reload_view'] and (
+                (self.view == 'artistbio' and self.artist) or (self.artist and self.title)):
             # Reload current view
             # FIXME
             from threading import Thread

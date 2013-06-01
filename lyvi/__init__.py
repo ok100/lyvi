@@ -19,16 +19,20 @@ args = lyvi.utils.parse_args()
 
 # Default settings
 config = {
-    'mpd_config_file': os.environ['HOME'] + '/.mpdconf' if os.path.exists(os.environ['HOME'] + '/.mpdconf') else '/etc/mpd.conf',
+    'mpd_config_file': os.environ['HOME'] + '/.mpdconf'
+        if os.path.exists(os.environ['HOME'] + '/.mpdconf') else '/etc/mpd.conf',
     'mpd_host': os.environ['MPD_HOST'] if 'MPD_HOST' in os.environ else 'localhost',
     'mpd_port': os.environ['MPD_PORT'] if 'MPD_PORT' in os.environ else 6600,
     'default_view': 'lyrics',
     'header_bg': 'default',
-    'header_fg': 'default',
+    'header_fg': 'white',
     'text_bg': 'default',
     'text_fg': 'default',
     'statusbar_bg': 'default',
     'statusbar_fg': 'default',
+    'key_quit': 'q',
+    'key_toggle_views': 'a',
+    'key_reload_view': 'R',
 }
 
 # Read configuration file
