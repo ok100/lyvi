@@ -46,7 +46,7 @@ config = {
 config_file = args.config_file or '%s/.config/lyvi/lyvi.conf' % os.environ['HOME']
 if os.path.exists(config_file):
     config.update((k, v) for k, v in runpy.run_path(config_file).items() if k in config)
-else:
+elif args.config_file:
     print('File not found: %s' % config_file)
     sys.exit()
 
