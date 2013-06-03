@@ -3,6 +3,7 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+import os
 from threading import Thread
 from time import sleep
 
@@ -74,3 +75,6 @@ def main():
 
     if lyvi.bg:
         lyvi.bg.unset()
+        for file in os.listdir(lyvi.TEMP):
+            if file.startswith('lyvi-%s' % lyvi.PID):
+                os.remove('%s/%s' % (lyvi.TEMP, file))
