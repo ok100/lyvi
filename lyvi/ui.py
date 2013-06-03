@@ -135,9 +135,9 @@ class Ui:
                 self.hidden = True
             else:
                 self.hidden = False
-                self.update()
                 lyvi.bg.opacity = lyvi.config['bg_opacity']
                 lyvi.bg.update()
+                self.update()
 
     def reload_view(self):
         """Reload current view"""
@@ -158,17 +158,15 @@ class Ui:
         worker.start()
         
     def input(self, key):
-        import lyvi
-        if key == lyvi.config['key_quit']:
-            self.exit()
-        elif key == lyvi.config['key_toggle_views']:
-            self.toggle_views()
-        elif key == lyvi.config['key_reload_view']:
-            self.reload_view()
-        elif key == lyvi.config['key_toggle_bg_type']:
-            lyvi.bg.toggle_type()
-        elif key == lyvi.config['key_hide_ui']:
-            self.toggle_visibility()
+        bindings = {
+            lyvi.config['key_quit']: self.exit,
+            lyvi.config['key_toggle_views']: self.toggle_views,
+            lyvi.config['key_reload_view']: self.reload_view,
+            lyvi.config['key_toggle_bg_type']: lyvi.bg.toggle_type,
+            lyvi.config['key_hide_ui']: self.toggle_visibility,
+        }
+        if key in bindings:
+            bindings[key]()
 
     def exit(self):
         """Quit"""
