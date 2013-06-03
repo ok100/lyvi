@@ -22,6 +22,7 @@ class Background:
         for line in check_output('xrdb -query').splitlines():
             if 'background' in line:
                 self.bg_color = line.split(':')[1].strip()
+        self.opacity = lyvi.config['bg_opacity']
 
     def toggle_type(self):
         self.type = 'cover' if self.type == 'backdrops' else 'backdrops'
@@ -31,7 +32,7 @@ class Background:
         setattr(self, self.type, lyvi.metadata.get(self.type, self.artist, self.title, self.album))
         self.set()
 
-    def set(self, opacity=lyvi.config['bg_opacity']):
+    def set(self):
         if not getattr(self, self.type):
             self.unset()
             return
@@ -41,7 +42,7 @@ class Background:
             buf.write(getattr(self, self.type))
         image1 = Image.open(file)
         layer = Image.new(image1.mode, image1.size, self.bg_color)
-        image2 = Image.blend(image1, layer, 1 - opacity)
+        image2 = Image.blend(image1, layer, 1 - self.opacity)
         buf = BytesIO()
         image2.save(buf, format="JPEG")
         img = buf.getvalue()

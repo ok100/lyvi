@@ -58,6 +58,7 @@ class Ui:
         self.title = None
         self.album = None
         self.view = lyvi.config['default_view']
+        self.hidden = lyvi.config['ui_hidden']
 
         self.header = urwid.Text(('header', ''))
         self.statusbar = urwid.AttrMap(urwid.Text('', align='right'), 'statusbar')
@@ -78,11 +79,13 @@ class Ui:
         self.update()
 
     def set_header(self, header):
-        self.header.set_text(('header', header))
+        if not self.hidden:
+            self.header.set_text(('header', header))
 
     def set_text(self, text):
-        self.content[:] = [self.header, urwid.Divider()] + \
-            [urwid.Text(('content', line)) for line in text.splitlines()]
+        if not self.hidden:
+            self.content[:] = [self.header, urwid.Divider()] + \
+                [urwid.Text(('content', line)) for line in text.splitlines()]
 
     def update(self):
         if lyvi.player.status == 'stopped':
@@ -108,16 +111,33 @@ class Ui:
         self.refresh()
 
     def update_statusbar(self, x=None):
-        text = urwid.Text('%s%s' % (self.view, self.listbox.pos.rjust(10)), align='right')
-        wrap = urwid.AttrWrap(text, 'statusbar')
-        self.frame.set_footer(wrap)
+        if not self.hidden:
+            text = urwid.Text('%s%s' % (self.view, self.listbox.pos.rjust(10)), align='right')
+            wrap = urwid.AttrWrap(text, 'statusbar')
+            self.frame.set_footer(wrap)
 
     def toggle_views(self, x=None):
         """Toggle between views"""
-        n = self.views.index(self.view)
-        self.view = self.views[n + 1] if n < len(self.views) - 1 else self.views[0]
-        self.home()
-        self.update()
+        if not self.hidden:
+            n = self.views.index(self.view)
+            self.view = self.views[n + 1] if n < len(self.views) - 1 else self.views[0]
+            self.home()
+            self.update()
+
+    def toggle_visibility(self):
+        if lyvi.bg:
+            if not self.hidden:
+                self.set_header('')
+                self.set_text('')
+                self.frame.set_footer(urwid.AttrWrap(urwid.Text(''), 'statusbar'))
+                lyvi.bg.opacity = 1.0
+                lyvi.bg.update()
+                self.hidden = True
+            else:
+                self.hidden = False
+                self.update()
+                lyvi.bg.opacity = lyvi.config['bg_opacity']
+                lyvi.bg.update()
 
     def reload_view(self):
         """Reload current view"""
@@ -147,6 +167,8 @@ class Ui:
             self.reload_view()
         elif key == lyvi.config['key_toggle_bg_type']:
             lyvi.bg.toggle_type()
+        elif key == lyvi.config['key_hide_ui']:
+            self.toggle_visibility()
 
     def exit(self):
         """Quit"""

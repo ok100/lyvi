@@ -21,4 +21,4 @@ def parse_args():
 
 
 def running(process):
-    return True if process in check_output('ps -C %s' % process) else False
+    return process in check_output('ps -C ' + process)

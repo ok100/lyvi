@@ -21,25 +21,27 @@ args = lyvi.utils.parse_args()
 
 # Default settings
 config = {
+    'bg': False,
+    'bg_opacity': 0.15,
+    'bg_tmux': False,
+    'bg_type': 'cover',
+    'default_view': 'lyrics',
+    'header_bg': 'default',
+    'header_fg': 'white',
+    'key_quit': 'q',
+    'key_reload_view': 'R',
+    'key_toggle_bg_type': 's',
+    'key_toggle_views': 'a',
+    'key_hide_ui': 'h',
     'mpd_config_file': os.environ['HOME'] + '/.mpdconf'
         if os.path.exists(os.environ['HOME'] + '/.mpdconf') else '/etc/mpd.conf',
     'mpd_host': os.environ['MPD_HOST'] if 'MPD_HOST' in os.environ else 'localhost',
     'mpd_port': os.environ['MPD_PORT'] if 'MPD_PORT' in os.environ else 6600,
-    'default_view': 'lyrics',
-    'header_bg': 'default',
-    'header_fg': 'white',
-    'text_bg': 'default',
-    'text_fg': 'default',
     'statusbar_bg': 'default',
     'statusbar_fg': 'default',
-    'key_quit': 'q',
-    'key_toggle_views': 'a',
-    'key_reload_view': 'R',
-    'key_toggle_bg_type': 's',
-    'bg': False,
-    'bg_tmux': False,
-    'bg_type': 'cover',
-    'bg_opacity': 0.15,
+    'ui_hidden': False,
+    'text_bg': 'default',
+    'text_fg': 'default',
 }
 
 # Read configuration file
