@@ -131,7 +131,7 @@ class Ui:
             'guitar tabs' if self.view == 'guitartabs' else self.view)
         setattr(self, self.view, text)
         self.update()
-        lyvi.glyr.cache_delete(self.view, self.artist, self.title, self.album)
+        lyvi.metadata.cache_delete(self.view, self.artist, self.title, self.album)
         worker = Thread(target=lyvi.metadata.get_and_update,
             args=(self.view, self.artist, self.title, self.album))
         worker.daemon = True

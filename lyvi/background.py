@@ -9,7 +9,7 @@ from io import BytesIO
 import Image
 
 import lyvi
-import lyvi.glyr
+import lyvi.metadata
 from lyvi.utils import check_output
 
 
@@ -28,7 +28,7 @@ class Background:
         self.update()
 
     def update(self):
-        setattr(self, self.type, lyvi.glyr.get(self.type, self.artist, self.title, self.album))
+        setattr(self, self.type, lyvi.metadata.get(self.type, self.artist, self.title, self.album))
         self.set()
 
     def set(self, opacity=lyvi.config['bg_opacity']):

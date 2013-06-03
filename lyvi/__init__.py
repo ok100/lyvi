@@ -12,6 +12,7 @@ import lyvi.utils
 
 
 VERSION = '2.0-git'
+USERAGENT = 'lyvi/%s' % VERSION
 TEMP = '/tmp'
 PID = os.getpid()
 

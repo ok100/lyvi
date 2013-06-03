@@ -3,12 +3,35 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+import os
+
+import plyr
+
 import lyvi
-import lyvi.glyr
+
+
+cache_dir = '%s/.local/share/lyvi' % os.environ['HOME']
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+cache = plyr.Database(cache_dir)
+
+
+def cache_delete(type, artist, title, album):
+    cache.delete(plyr.Query(get_type=type, artist=artist, title=title, album=album))
+
+
+def get(type, artist, title, album):
+    query = plyr.Query(get_type=type, artist=artist, title=title, album=album)
+    query.useragent = lyvi.USERAGENT
+    query.database = cache
+    items = query.commit()
+    if items:
+        return items[0].data if type in ('backdrops', 'cover') else items[0].data.decode()
+    return None
 
 
 def get_and_update(type, artist, title, album):
-    metadata = lyvi.glyr.get(type, artist, title, album)
+    metadata = get(type, artist, title, album)
     lyvi.lock.acquire()
     try:
         if lyvi.ui.artist == artist and lyvi.ui.title == title:
