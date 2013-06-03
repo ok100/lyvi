@@ -6,13 +6,14 @@
 import os
 import runpy
 import sys
-
 from threading import Lock
 
 import lyvi.utils
 
 
 VERSION = '2.0-git'
+TEMP = '/tmp'
+PID = os.getpid()
 
 # Parse command-line args
 args = lyvi.utils.parse_args()
@@ -33,7 +34,11 @@ config = {
     'key_quit': 'q',
     'key_toggle_views': 'a',
     'key_reload_view': 'R',
+    'key_toggle_bg_type': 's',
     'bg': False,
+    'bg_tmux': False,
+    'bg_type': 'cover',
+    'bg_opacity': 0.15,
 }
 
 # Read configuration file
@@ -43,16 +48,6 @@ if os.path.exists(config_file):
 else:
     print('File not found: %s' % config_file)
     sys.exit()
-
-if args.debug:
-    # Set up logging
-    import logging
-    import sys
-    if os.path.exists('lyvi.log'):
-        os.remove('lyvi.log')
-    logging.basicConfig(filename='lyvi.log', level=logging.DEBUG)
-    logging.info('Lyvi %s (Python %s)' % (VERSION, sys.version.split()[0]))
-    logging.info('config => %s', config)
 
 if lyvi.args.version:
     # Print version and exit
@@ -71,9 +66,18 @@ if lyvi.args.list_players:
 # TODO: autodetection
 player = lyvi.players.mpd.Player()
 if lyvi.args.command:
-    # TODO
+    # TODO: send a command to the connected player and exit
     sys.exit()
 
+# Set up background
+if config['bg']:
+    import lyvi.background
+    bg = lyvi.background.Background()
+    tmux = lyvi.background.Tmux() if 'TMUX' in os.environ else None
+else:
+    bg = None
+
+# Set up UI
 import lyvi.ui
 lock = Lock()
 ui = lyvi.ui.Ui()

@@ -13,9 +13,8 @@ def check_output(command):
 
 def parse_args():
     parser = argparse.ArgumentParser(prog='lyvi')
-    parser.add_argument('command', nargs='?', help='send a command to player')
+    parser.add_argument('command', nargs='?', help='send a command to the player')
     parser.add_argument('-c', '--config-file', help='path to an alternate config file')
-    parser.add_argument('-d', '--debug', help='enable debug mode', action='store_true')
     parser.add_argument('-l', '--list-players', help='print a list of supported players', action='store_true')
     parser.add_argument('-v', '--version', help='print version information', action='store_true')
     return parser.parse_args()

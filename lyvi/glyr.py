@@ -26,15 +26,6 @@ def get(type, artist, title, album):
     query.database = cache
     items = query.commit()
 
-    return items[0].data.decode() if items else None
-
-
-def get_and_update(type, artist, title, album):
-    metadata = get(type, artist, title, album)
-    lyvi.lock.acquire()
-    try:
-        if lyvi.ui.artist == artist and lyvi.ui.title == title:
-            setattr(lyvi.ui, type, metadata)
-            lyvi.ui.update()
-    finally:
-        lyvi.lock.release()
+    if items:
+        return items[0].data if type in ('backdrops', 'cover') else items[0].data.decode()
+    return None

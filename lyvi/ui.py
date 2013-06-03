@@ -56,6 +56,7 @@ class Ui:
             setattr(self, view, None)
         self.artist = None
         self.title = None
+        self.album = None
         self.view = lyvi.config['default_view']
 
         self.header = urwid.Text(('header', ''))
@@ -123,17 +124,16 @@ class Ui:
         if not ((self.view == 'artistbio' and self.artist) or (self.artist and self.title)):
             return
         from threading import Thread
-        import lyvi.glyr
+        import lyvi.metadata
         self.home()
         text = 'Searching %s...' % \
             ('artist info' if self.view == 'artistbio' else
             'guitar tabs' if self.view == 'guitartabs' else self.view)
         setattr(self, self.view, text)
         self.update()
-        lyvi.glyr.cache_delete(self.view, lyvi.player.artist,
-            lyvi.player.title, lyvi.player.album)
-        worker = Thread(target=lyvi.glyr.get_and_update,
-            args=(self.view, lyvi.player.artist, lyvi.player.title, lyvi.player.album))
+        lyvi.glyr.cache_delete(self.view, self.artist, self.title, self.album)
+        worker = Thread(target=lyvi.metadata.get_and_update,
+            args=(self.view, self.artist, self.title, self.album))
         worker.daemon = True
         worker.start()
         
@@ -145,6 +145,8 @@ class Ui:
             self.toggle_views()
         elif key == lyvi.config['key_reload_view']:
             self.reload_view()
+        elif key == lyvi.config['key_toggle_bg_type']:
+            lyvi.bg.toggle_type()
 
     def exit(self):
         """Quit"""
