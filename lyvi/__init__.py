@@ -51,7 +51,8 @@ else:
 
 if lyvi.args.version:
     # Print version and exit
-    print('Lyvi %s' % lyvi.VERSION)
+    import plyr
+    print('Lyvi %s, using libglyr %s' % (lyvi.VERSION, plyr.version().split()[1]))
     sys.exit()
 
 import lyvi.players
