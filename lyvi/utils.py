@@ -5,6 +5,7 @@
 
 import argparse
 import subprocess
+from threading import Thread
 
 
 def check_output(command):
@@ -22,3 +23,18 @@ def parse_args():
 
 def running(process):
     return process in check_output('ps -C ' + process)
+
+
+def get_window_size(title):
+    for line in check_output('xwininfo -name ' + title).splitlines():
+        if 'Width:' in line:
+            width = int(line.split()[1])
+        elif 'Height:' in line:
+            height = int(line.split()[1])
+    return width, height
+
+
+def thread(target, args=()):
+    worker = Thread(target=target, args=args)
+    worker.daemon = True
+    worker.start()

@@ -3,6 +3,8 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+from threading import Lock
+
 import urwid
 
 import lyvi
@@ -51,25 +53,22 @@ class MyListBox(urwid.ListBox):
 
 class Ui:
     def init(self):
-        self.views = ['lyrics', 'artistbio', 'guitartabs']
-        for view in self.views:
-            setattr(self, view, None)
-        self.artist = None
-        self.title = None
-        self.album = None
+        self.lock = Lock()
+        self.reset_tags()
+        self.lyrics = self.artistbio = self.guitartabs = None
         self.view = lyvi.config['default_view']
         self.hidden = lyvi.config['ui_hidden']
-
-        self.header = urwid.Text(('header', ''))
-        self.statusbar = urwid.AttrMap(urwid.Text('', align='right'), 'statusbar')
-        self.content = urwid.SimpleListWalker([urwid.Text(('content', ''))])
-        self.listbox = MyListBox(self.content)
 
         palette = [
             ('header', lyvi.config['header_fg'], lyvi.config['header_bg']),
             ('content', lyvi.config['text_fg'], lyvi.config['text_bg']),
             ('statusbar', lyvi.config['statusbar_fg'], lyvi.config['statusbar_bg']),
         ]
+
+        self.header = urwid.Text(('header', ''))
+        self.statusbar = urwid.AttrMap(urwid.Text('', align='right'), 'statusbar')
+        self.content = urwid.SimpleListWalker([urwid.Text(('content', ''))])
+        self.listbox = MyListBox(self.content)
         self.frame = urwid.Frame(urwid.Padding(self.listbox, left=1, right=1),
             footer=self.statusbar)
 
@@ -77,6 +76,14 @@ class Ui:
 
         self.loop = urwid.MainLoop(self.frame, palette, unhandled_input=self.input)
         self.update()
+
+    def set_tags(self):
+        self.artist = lyvi.player.artist
+        self.title = lyvi.player.title
+        self.album = lyvi.player.album
+
+    def reset_tags(self):
+        self.artist = self.title = self.album = None
 
     def set_header(self, header):
         if not self.hidden:
@@ -112,15 +119,16 @@ class Ui:
 
     def update_statusbar(self, x=None):
         if not self.hidden:
-            text = urwid.Text('%s%s' % (self.view, self.listbox.pos.rjust(10)), align='right')
+            text = urwid.Text(self.view + self.listbox.pos.rjust(10), align='right')
             wrap = urwid.AttrWrap(text, 'statusbar')
             self.frame.set_footer(wrap)
 
     def toggle_views(self, x=None):
         """Toggle between views"""
         if not self.hidden:
-            n = self.views.index(self.view)
-            self.view = self.views[n + 1] if n < len(self.views) - 1 else self.views[0]
+            views = ['lyrics', 'artistbio', 'guitartabs']
+            n = views.index(self.view)
+            self.view = views[n + 1] if n < len(views) - 1 else views[0]
             self.home()
             self.update()
 
@@ -141,28 +149,18 @@ class Ui:
 
     def reload_view(self):
         """Reload current view"""
-        if not ((self.view == 'artistbio' and self.artist) or (self.artist and self.title)):
-            return
-        from threading import Thread
+        from lyvi.utils import thread
         import lyvi.metadata
-        self.home()
-        text = 'Searching %s...' % \
-            ('artist info' if self.view == 'artistbio' else
-            'guitar tabs' if self.view == 'guitartabs' else self.view)
-        setattr(self, self.view, text)
-        self.update()
-        lyvi.metadata.cache_delete(self.view, self.artist, self.title, self.album)
-        worker = Thread(target=lyvi.metadata.get_and_update,
-            args=(self.view, self.artist, self.title, self.album))
-        worker.daemon = True
-        worker.start()
-        
+        with self.lock:
+            lyvi.metadata.cache_delete(self.view, self.artist, self.title, self.album)
+        thread(lyvi.metadata.get_and_update, (self.view,))
+
     def input(self, key):
         bindings = {
             lyvi.config['key_quit']: self.exit,
             lyvi.config['key_toggle_views']: self.toggle_views,
             lyvi.config['key_reload_view']: self.reload_view,
-            lyvi.config['key_toggle_bg_type']: lyvi.bg.toggle_type,
+            lyvi.config['key_toggle_bg_type']: lyvi.bg.toggle_type if lyvi.bg else None,
             lyvi.config['key_hide_ui']: self.toggle_visibility,
         }
         if key in bindings:

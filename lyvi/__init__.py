@@ -6,13 +6,12 @@
 import os
 import runpy
 import sys
-from threading import Lock
 
 import lyvi.utils
 
 
 VERSION = '2.0-git'
-USERAGENT = 'lyvi/%s' % VERSION
+USERAGENT = 'lyvi/' + VERSION
 TEMP = '/tmp'
 PID = os.getpid()
 
@@ -23,7 +22,11 @@ args = lyvi.utils.parse_args()
 config = {
     'bg': False,
     'bg_opacity': 0.15,
-    'bg_tmux': False,
+    'bg_tmux_backdrops_pane': None,
+    'bg_tmux_backdrops_underlying': False,
+    'bg_tmux_cover_pane': None,
+    'bg_tmux_cover_underlying': False,
+    'bg_tmux_window_title': None,
     'bg_type': 'cover',
     'default_view': 'lyrics',
     'header_bg': 'default',
@@ -45,11 +48,11 @@ config = {
 }
 
 # Read configuration file
-config_file = args.config_file or '%s/.config/lyvi/lyvi.conf' % os.environ['HOME']
+config_file = args.config_file or os.environ['HOME'] + '/.config/lyvi/lyvi.conf'
 if os.path.exists(config_file):
     config.update((k, v) for k, v in runpy.run_path(config_file).items() if k in config)
 elif args.config_file:
-    print('File not found: %s' % config_file)
+    print('File not found: ' + config_file)
     sys.exit()
 
 if lyvi.args.version:
@@ -65,7 +68,7 @@ if lyvi.args.list_players:
     print('\033[1mSupported players:\033[0m')
     for name, obj in inspect.getmembers(lyvi.players):
         if inspect.ismodule(obj):
-            print('* %s' % name)
+            print('* ' + name)
     sys.exit()
 # TODO: autodetection
 player = lyvi.players.mpd.Player()
@@ -83,7 +86,6 @@ else:
 
 # Set up UI
 import lyvi.ui
-lock = Lock()
 ui = lyvi.ui.Ui()
 
 from lyvi.main import main

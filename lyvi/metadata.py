@@ -10,7 +10,7 @@ import plyr
 import lyvi
 
 
-cache_dir = '%s/.local/share/lyvi' % os.environ['HOME']
+cache_dir = os.environ['HOME'] + '/.local/share/lyvi'
 if not os.path.exists(cache_dir):
     os.makedirs(cache_dir)
 cache = plyr.Database(cache_dir)
@@ -30,12 +30,28 @@ def get(type, artist, title, album):
     return None
 
 
-def get_and_update(type, artist, title, album):
-    metadata = get(type, artist, title, album)
-    lyvi.lock.acquire()
-    try:
-        if lyvi.ui.artist == artist and lyvi.ui.title == title:
-            setattr(lyvi.ui, type, metadata)
+def get_and_update(type):
+    artist = lyvi.player.artist
+    title = lyvi.player.title
+    album = lyvi.player.album
+
+    if type in ('lyrics', 'artistbio', 'guitartabs'):
+        with lyvi.ui.lock:
+            setattr(lyvi.ui, type, 'Searching %s...' %
+                ('guitar tabs' if type == 'guitartabs'
+                else 'artist info' if type == 'artistbio' else type))
             lyvi.ui.update()
-    finally:
-        lyvi.lock.release()
+
+    data = get(type, artist, title, album)
+
+    if type in ('backdrops', 'cover'):
+        with lyvi.bg.lock:
+            setattr(lyvi.bg, type, data)
+            lyvi.bg.update()
+    else:
+        with lyvi.ui.lock:
+            if type == lyvi.ui.view:
+                lyvi.ui.home()
+            if lyvi.player.artist == artist and lyvi.player.title == title:
+                setattr(lyvi.ui, type, get(type, artist, title, album))
+                lyvi.ui.update()

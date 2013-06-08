@@ -5,89 +5,89 @@
 
 import os
 from io import BytesIO
+from threading import Lock
 
 import Image
 
 import lyvi
-import lyvi.metadata
+from lyvi.metadata import get
 from lyvi.utils import check_output
+
+
+if 'TMUX' in os.environ:
+    BG_BEG = 'printf "\ePtmux;\e\e]20;'   
+    BG_END = ';100x100+50+50:op=keep-aspect\a\e\\\\"'
+else:
+    BG_BEG = 'printf "\e]20;'
+    BG_END = ';100x100+50+50:op=keep-aspect\a"'
+for line in check_output('xrdb -query').splitlines():
+    if 'background' in line:
+        BG_COLOR = line.split(':')[1].strip()
 
 
 class Background:
     def __init__(self):
-        self.artist = self.title = self.album = None
+        self.lock = Lock()
+        self.reset_tags()
         self.backdrops = self.cover = None
         self.type = lyvi.config['bg_type']
-        self.is_set = False
-        for line in check_output('xrdb -query').splitlines():
-            if 'background' in line:
-                self.bg_color = line.split(':')[1].strip()
         self.opacity = lyvi.config['bg_opacity']
+        self.file = '%s/lyvi-%s.jpg' % (lyvi.TEMP, lyvi.PID)
+
+    def set_tags(self):
+        self.artist = lyvi.player.artist
+        self.title = lyvi.player.title
+        self.album = lyvi.player.album
+
+    def reset_tags(self):
+        self.artist = self.title = self.album = None
 
     def toggle_type(self):
         self.type = 'cover' if self.type == 'backdrops' else 'backdrops'
-        self.update()
+        with self.lock:
+            self.update()
+
+    def blend(self, image, opacity):
+        buf = BytesIO(image)
+        image = Image.open(buf)
+        layer = Image.new(image.mode, image.size, BG_COLOR)
+        return Image.blend(image, layer, 1 - opacity)
 
     def update(self):
-        setattr(self, self.type, lyvi.metadata.get(self.type, self.artist, self.title, self.album))
-        self.set()
-
-    def set(self):
-        if not getattr(self, self.type):
-            self.unset()
-            return
-
-        file = '%s/lyvi-%s-tmp' % (lyvi.TEMP, lyvi.PID)
-        with open(file, 'wb') as buf:
-            buf.write(getattr(self, self.type))
-        image1 = Image.open(file)
-        layer = Image.new(image1.mode, image1.size, self.bg_color)
-        image2 = Image.blend(image1, layer, 1 - self.opacity)
-        buf = BytesIO()
-        image2.save(buf, format="JPEG")
-        img = buf.getvalue()
-        file = '%s/lyvi-%s-%s.png' % (lyvi.TEMP, lyvi.PID, self.type)
-        with open(file, 'wb') as f:
-            f.write(img)
-
-        if lyvi.tmux:
-            os.system('printf "\ePtmux;\e\e]20;%s;100x100+50+50:op=keep-aspect\a\e\\\\"' % file)
+        if ((self.type == 'backdrops' and self.backdrops and self.artist)
+                or (self.type == 'cover' and self.cover and self.album)):
+            self.blend(getattr(self, self.type), self.opacity).save(self.file, format="JPEG")
         else:
-            os.system('printf "\e]20;%s;100x100+50+50:op=keep-aspect\a"' % file)
-        self.is_set = True
+            # Create empty image
+            image = Image.new('RGB', (100, 100), BG_COLOR)
+            image.save(self.file)
+        # Set the image as background
+        os.system(BG_BEG + self.file + BG_END)
 
-    def unset(self):
-        if not self.is_set:
-            return
-        file = '%s/lyvi-%s-blank.png' % (lyvi.TEMP, lyvi.PID)
-        if not os.path.exists(file):
-            image = Image.new('RGB', (100, 100), self.bg_color)
-            image.save(file)
-        if lyvi.tmux:
-            os.system('printf "\ePtmux;\e\e]20;%s\a\e\\\\"' % file)
-        else:
-            os.system('printf "\e]20;%s\a"' % file)
-        self.artist = self.title = self.album = None
-        self.is_set = False
+    def cleanup(self):
+        self.reset_tags()
+        with self.lock:
+            self.update()
+        os.remove(self.file)
 
 
 class Tmux:
     def get_layout(self):
-        class TmuxPane:
+        class Pane:
             pass
         display = get_output('tmux display -p \'#{window_layout}\'')
-        lsp = get_output('tmux lsp')
         for delim in '[]{}':
             display = display.replace(delim, ',')
-        self.layout = [TmuxPane()]
-        self.layout[0].x, self.layout[0].y = [int(a) for a in display.split(',')[1].split('x')]
+        self.layout = [Pane()]
+        self.layout[0].x, self.layout[0].y = (int(a) for a in display.split(',')[1].split('x'))
         display = display.split(',', 1)[1]
         chunks = display.split(',')
         for i in range(0, len(chunks) - 1):
             if 'x' in chunks[i] and 'x' not in chunks[i + 3]:
-                self.layout.append(TmuxPane())
-                self.layout[-1].x, self.layout[-1].y = [int(a) for a in chunks[i].split('x')]
+                self.layout.append(Pane())
+                self.layout[-1].x, self.layout[-1].y = (int(a) for a in chunks[i].split('x'))
                 self.layout[-1].x_offset = int(chunks[i + 1])
                 self.layout[-1].y_offset = int(chunks[i + 2])
-        for c in lsp.splitlines():
-            self.layout[lsp.splitlines().index(c) + 1].active = True if 'active' in c else False
+        lsp = get_output('tmux lsp').splitlines()
+        for chunk in lsp:
+            self.layout[lsp.index(chunk) + 1].active = 'active' in chunk

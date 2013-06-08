@@ -4,11 +4,11 @@
 # as published by Sam Hocevar. See the COPYING file for more details.
 
 import os
-from threading import Thread
 from time import sleep
 
 import lyvi
-import lyvi.metadata
+from lyvi.metadata import get_and_update
+from lyvi.utils import thread
 
 
 def watch_player():
@@ -18,63 +18,41 @@ def watch_player():
             lyvi.ui.exit()
 
         if lyvi.player.status == 'stopped':
-            lyvi.lock.acquire()
-            lyvi.ui.artist = lyvi.ui.title = lyvi.ui.album = None
-            lyvi.ui.update()
-            lyvi.lock.release()
+            lyvi.ui.reset_tags()
+            with lyvi.ui.lock:
+                lyvi.ui.update()
             if lyvi.bg:
-                lyvi.bg.unset()
+                lyvi.bg.reset_tags()
+                with lyvi.bg.lock:
+                    lyvi.bg.update()
 
-        elif lyvi.player.artist != lyvi.ui.artist \
-                or lyvi.player.title != lyvi.ui.title \
-                or lyvi.player.album != lyvi.ui.album:
-            # New song
+        elif (lyvi.player.artist != lyvi.ui.artist
+                or lyvi.player.title != lyvi.ui.title
+                or lyvi.player.album != lyvi.ui.album):
             needsupdate = ['lyrics', 'guitartabs']
             if lyvi.player.artist != lyvi.ui.artist:
-                needsupdate.append('artistbio')
-
-            if lyvi.ui.view in needsupdate:
-                lyvi.ui.home()
-
-            lyvi.lock.acquire()
-            lyvi.ui.artist = lyvi.player.artist
-            lyvi.ui.title = lyvi.player.title
-            lyvi.ui.album = lyvi.player.album
-            for view in needsupdate:
-                setattr(lyvi.ui, view, 'Searching %s...' %
-                    ('guitar tabs' if view == 'guitartabs'
-                    else 'artist info' if view == 'artistbio' else view))
-            lyvi.ui.update()
-            lyvi.lock.release()
-
-            for view in needsupdate:
-                worker = Thread(target=lyvi.metadata.get_and_update,
-                    args=(view, lyvi.player.artist, lyvi.player.title, lyvi.player.album))
-                worker.daemon = True
-                worker.start()
-
-            if lyvi.bg and ((lyvi.bg.type == 'backdrops' and lyvi.player.artist != lyvi.bg.artist)
-                    or (lyvi.bg.type == 'cover' and lyvi.player.album != lyvi.bg.album)):
-                lyvi.bg.artist = lyvi.player.artist
-                lyvi.bg.title = lyvi.player.title
-                lyvi.bg.album = lyvi.player.album
-                worker = Thread(target=lyvi.bg.update)
-                worker.daemon = True
-                worker.start()
-
+                needsupdate += ['artistbio']
+            if lyvi.bg:
+                if lyvi.player.artist != lyvi.bg.artist:
+                    needsupdate += ['backdrops']
+                if lyvi.player.album != lyvi.bg.album:
+                    needsupdate += ['cover']
+                lyvi.bg.set_tags()
+            lyvi.ui.set_tags()
+            for item in needsupdate:
+                thread(get_and_update, (item,))
         sleep(1)
 
 
 def main():
-    worker = Thread(target=watch_player)
-    worker.daemon = True
-    worker.start()
+    thread(watch_player)
 
     lyvi.ui.init()
-    lyvi.ui.loop.run()
 
-    if lyvi.bg:
-        lyvi.bg.unset()
-        for file in os.listdir(lyvi.TEMP):
-            if file.startswith('lyvi-%s' % lyvi.PID):
-                os.remove('%s/%s' % (lyvi.TEMP, file))
+    try:
+        lyvi.ui.loop.run()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if lyvi.bg:
+            lyvi.bg.cleanup()
