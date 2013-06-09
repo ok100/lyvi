@@ -95,7 +95,7 @@ class Ui:
                 [urwid.Text(('content', line)) for line in text.splitlines()]
 
     def update(self):
-        if lyvi.player.status == 'stopped':
+        if lyvi.player.status == 'stop':
             self.set_header('N/A' if self.view == 'artistbio' else 'N/A - N/A')
             self.set_text('Not playing')
         elif self.view == 'lyrics':

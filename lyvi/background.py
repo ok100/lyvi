@@ -56,7 +56,7 @@ class Background:
     def update(self):
         if ((self.type == 'backdrops' and self.backdrops and self.artist)
                 or (self.type == 'cover' and self.cover and self.album)):
-            self.blend(getattr(self, self.type), self.opacity).save(self.file, format="JPEG")
+            self.blend(getattr(self, self.type), self.opacity).save(self.file)
         else:
             # Create empty image
             image = Image.new('RGB', (100, 100), BG_COLOR)
@@ -73,8 +73,7 @@ class Background:
 
 class Tmux:
     def get_layout(self):
-        class Pane:
-            pass
+        class Pane: pass
         display = get_output('tmux display -p \'#{window_layout}\'')
         for delim in '[]{}':
             display = display.replace(delim, ',')

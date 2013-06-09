@@ -4,9 +4,9 @@
 # as published by Sam Hocevar. See the COPYING file for more details.
 
 import os
+import telnetlib
 
 import lyvi
-from lyvi.utils import check_output, running
 
 
 # Get the path to music directory from MPD configuration file
@@ -20,25 +20,27 @@ if os.path.exists(lyvi.config['mpd_config_file']):
 
 
 class Player:
-    running = True
-    status = 'stopped'
+    def __init__(self):
+        self.running = True
+        self.status = 'stopped'
+        self.telnet = telnetlib.Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port'])
+        self.telnet.read_until(b'OK MPD')
 
     def get_status(self):
-        if not running('mpd'):
-            self.running = False
-            return
-
-        self.running = True
-
-        status = check_output('mpc status')
-        if '[playing]' in status:
-            self.status = 'playing'
-        elif '[paused]' in status:
-            self.status = 'paused'
-        else:
-            self.status = 'stopped'
-            self.artist = self.title = self.album = self.file = None
-            return
-
-        current = check_output('mpc current -f "%artist%\\%title%\\%album%\\%file%"')
-        self.artist, self.title, self.album, self.file = current.split('\\')
+        self.artist = self.album = self.title = self.file = None
+        self.telnet.write(b'status\n')
+        response = self.telnet.read_until(b'OK').decode()
+        self.telnet.write(b'currentsong\n')
+        response += self.telnet.read_until(b'OK').decode()
+        data = {
+            'state: ': 'status',
+            'Artist: ': 'artist',
+            'Title: ': 'title',
+            'Album: ': 'album',
+            'file: ': 'title',
+        }
+        for line in response.splitlines():
+            for k in data:
+                if k in line:
+                    setattr(self, data[k], line.split(k)[1])
+        self.file = music_dir + self.file if self.file and music_dir else None

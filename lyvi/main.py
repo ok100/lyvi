@@ -17,7 +17,7 @@ def watch_player():
         if not lyvi.player.running:
             lyvi.ui.exit()
 
-        if lyvi.player.status == 'stopped':
+        if lyvi.player.status == 'stop':
             lyvi.ui.reset_tags()
             with lyvi.ui.lock:
                 lyvi.ui.update()
