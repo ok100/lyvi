@@ -31,9 +31,9 @@ def get(type, artist, title, album):
 
 
 def get_and_update(type):
-    artist = lyvi.player.artist
-    title = lyvi.player.title
-    album = lyvi.player.album
+    artist = lyvi.ui.artist
+    title = lyvi.ui.title
+    album = lyvi.ui.album
 
     if type in ('lyrics', 'artistbio', 'guitartabs'):
         with lyvi.ui.lock:
@@ -52,6 +52,6 @@ def get_and_update(type):
         with lyvi.ui.lock:
             if type == lyvi.ui.view:
                 lyvi.ui.home()
-            if lyvi.player.artist == artist and lyvi.player.title == title:
+            if lyvi.ui.artist == artist and lyvi.ui.title == title:
                 setattr(lyvi.ui, type, get(type, artist, title, album))
                 lyvi.ui.update()

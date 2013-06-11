@@ -55,7 +55,6 @@ class Ui:
     def init(self):
         self.lock = Lock()
         self.reset_tags()
-        self.lyrics = self.artistbio = self.guitartabs = None
         self.view = lyvi.config['default_view']
         self.hidden = lyvi.config['ui_hidden']
 
@@ -84,6 +83,7 @@ class Ui:
 
     def reset_tags(self):
         self.artist = self.title = self.album = None
+        self.lyrics = self.artistbio = self.guitartabs = None
 
     def set_header(self, header):
         if not self.hidden:

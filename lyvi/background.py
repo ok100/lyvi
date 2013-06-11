@@ -29,7 +29,6 @@ class Background:
     def __init__(self):
         self.lock = Lock()
         self.reset_tags()
-        self.backdrops = self.cover = None
         self.type = lyvi.config['bg_type']
         self.opacity = lyvi.config['bg_opacity']
         self.file = '%s/lyvi-%s.jpg' % (lyvi.TEMP, lyvi.PID)
@@ -41,6 +40,7 @@ class Background:
 
     def reset_tags(self):
         self.artist = self.title = self.album = None
+        self.backdrops = self.cover = None
 
     def toggle_type(self):
         self.type = 'cover' if self.type == 'backdrops' else 'backdrops'

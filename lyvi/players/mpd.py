@@ -22,9 +22,9 @@ if os.path.exists(lyvi.config['mpd_config_file']):
 class Player:
     def __init__(self):
         self.running = True
-        self.status = 'stopped'
+        self.status = 'stop'
         self.telnet = telnetlib.Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port'])
-        self.telnet.read_until(b'OK MPD')
+        self.telnet.read_until(b'\n')
 
     def get_status(self):
         self.artist = self.album = self.title = self.file = None
@@ -41,6 +41,10 @@ class Player:
         }
         for line in response.splitlines():
             for k in data:
-                if k in line:
-                    setattr(self, data[k], line.split(k)[1])
+                if line.startswith(k):
+                    setattr(self, data[k], line.split(k, 1)[1])
+                    break
         self.file = music_dir + self.file if self.file and music_dir else None
+    
+    def __del__(self):
+        self.telnet.close()
