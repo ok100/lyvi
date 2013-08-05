@@ -7,7 +7,7 @@ import os
 from io import BytesIO
 from threading import Lock
 
-import Image
+from PIL import Image
 
 import lyvi
 from lyvi.metadata import get
@@ -20,7 +20,7 @@ if 'TMUX' in os.environ:
 else:
     BG_BEG = 'printf "\e]20;'
     BG_END = ';100x100+50+50:op=keep-aspect\a"'
-BG_COLOR = "#FFFFFF"
+BG_COLOR = '#FFFFFF'
 for line in check_output('xrdb -query').splitlines():
     if 'background' in line:
         BG_COLOR = line.split(':')[1].strip()
