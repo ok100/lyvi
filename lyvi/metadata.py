@@ -46,6 +46,8 @@ class Metadata:
     def lyrics(self, value):
         self._lyrics = value
         lyvi.ui.update()
+        if lyvi.config['save_lyrics']:
+            self.save('lyrics', lyvi.config['save_lyrics_filename'])
 
     @artistbio.setter
     def artistbio(self, value):
@@ -68,6 +70,8 @@ class Metadata:
         self._cover = value
         if lyvi.bg:
             lyvi.bg.update()
+        if lyvi.config['save_cover']:
+            self.save('cover', lyvi.config['save_cover_filename'])
 
     def __init__(self):
         cache_dir = os.environ['HOME'] + '/.local/share/lyvi'
@@ -90,6 +94,26 @@ class Metadata:
     def delete(self, type, artist, title, album):
         if artist and title and album:
             self.cache.delete(plyr.Query(get_type=type, artist=artist, title=title, album=album))
+
+    def save(self, type, filename):
+        data = getattr(self, type)
+        if self.file and data and data != 'Searching...':
+            replace = {
+                '<filename>': self.file.rsplit('/', 1)[1].rsplit('.', 1)[0],
+                '<songdir>': self.file.rsplit('/', 1)[0],
+                '<artist>': self.artist,
+                '<title>': self.title,
+                '<album>': self.album
+            }
+            file = filename
+            for k in replace:
+                file = file.replace(k, replace[k])
+            if not os.path.exists(file.rsplit('/', 1)[0]):
+                os.makedirs(file.rsplit('/', 1)[0])
+            if not os.path.exists(file):
+                mode = 'wb' if isinstance(data, bytes) else 'w'
+                with open(file, mode) as f:
+                    f.write(data)
 
     def get(self, type):
         artist = self.artist
