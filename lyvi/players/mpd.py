@@ -59,8 +59,6 @@ class Player(_Player):
             self.telnet.write(b'next\n')
         elif command == 'prev':
             self.telnet.write(b'previous\n')
-        elif command == 'next':
-            self.telnet.write(b'next\n')
         elif command == 'stop':
             self.telnet.write(b'stop\n')
     
