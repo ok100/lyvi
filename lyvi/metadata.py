@@ -4,54 +4,110 @@
 # as published by Sam Hocevar. See the COPYING file for more details.
 
 import os
+from threading import Lock
 
 import plyr
 
 import lyvi
 
 
-cache_dir = os.environ['HOME'] + '/.local/share/lyvi'
-if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
-cache = plyr.Database(cache_dir)
+class Metadata:
+    artist = None
+    album = None
+    title = None
+    file = None
+    _lyrics = None
+    _artistbio = None
+    _guitartabs = None
+    _backdrops = None
+    _cover = None
 
+    @property
+    def lyrics(self):
+        return self._lyrics
 
-def cache_delete(type, artist, title, album):
-    cache.delete(plyr.Query(get_type=type, artist=artist, title=title, album=album))
+    @property
+    def artistbio(self):
+        return self._artistbio
 
+    @property
+    def guitartabs(self):
+        return self._guitartabs
 
-def get(type, artist, title, album):
-    query = plyr.Query(get_type=type, artist=artist, title=title, album=album)
-    query.useragent = lyvi.USERAGENT
-    query.database = cache
-    items = query.commit()
-    if items:
-        return items[0].data if type in ('backdrops', 'cover') else items[0].data.decode()
-    return None
+    @property
+    def backdrops(self):
+        return self._backdrops
 
+    @property
+    def cover(self):
+        return self._cover
 
-def get_and_update(type):
-    artist = lyvi.ui.artist
-    title = lyvi.ui.title
-    album = lyvi.ui.album
+    @lyrics.setter
+    def lyrics(self, value):
+        self._lyrics = value
+        lyvi.ui.update()
 
-    if type in ('lyrics', 'artistbio', 'guitartabs'):
-        with lyvi.ui.lock:
-            setattr(lyvi.ui, type, 'Searching %s...' %
-                ('guitar tabs' if type == 'guitartabs'
-                else 'artist info' if type == 'artistbio' else type))
-            lyvi.ui.update()
+    @artistbio.setter
+    def artistbio(self, value):
+        self._artistbio = value
+        lyvi.ui.update()
 
-    data = get(type, artist, title, album)
+    @guitartabs.setter
+    def guitartabs(self, value):
+        self._guitartabs = value
+        lyvi.ui.update()
 
-    if type in ('backdrops', 'cover'):
-        with lyvi.bg.lock:
-            setattr(lyvi.bg, type, data)
+    @backdrops.setter
+    def backdrops(self, value):
+        self._backdrops = value
+        if lyvi.bg:
             lyvi.bg.update()
-    else:
-        with lyvi.ui.lock:
-            if type == lyvi.ui.view:
-                lyvi.ui.home()
-            if lyvi.ui.artist == artist and lyvi.ui.title == title:
-                setattr(lyvi.ui, type, get(type, artist, title, album))
-                lyvi.ui.update()
+
+    @cover.setter
+    def cover(self, value):
+        self._cover = value
+        if lyvi.bg:
+            lyvi.bg.update()
+
+    def __init__(self):
+        cache_dir = os.environ['HOME'] + '/.local/share/lyvi'
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+        self.cache = plyr.Database(cache_dir)
+        self.lock = Lock()
+
+    def set_tags(self):
+        self.artist = lyvi.player.artist
+        self.title = lyvi.player.title
+        self.album = lyvi.player.album
+        self.file = lyvi.player.file
+
+    def reset_tags(self):
+        self.artist = self.title = self.album = self.file = None
+        self.lyrics = self.artistbio = self.guitartabs = None
+        self.backdrops = self.cover = None
+
+    def delete(self, type, artist, title, album):
+        if artist and title and album:
+            self.cache.delete(plyr.Query(get_type=type, artist=artist, title=title, album=album))
+
+    def get(self, type):
+        artist = self.artist
+        title = self.title
+        if lyvi.ui.view == type:
+            lyvi.ui.home()
+        if type in ('lyrics', 'artistbio', 'guitartabs'):
+            setattr(self, type, 'Searching...')
+        query = plyr.Query(get_type=type, artist=self.artist, title=self.title, album=self.album)
+        query.useragent = lyvi.USERAGENT
+        query.database = self.cache
+        items = query.commit()
+        data = None
+        if items:
+            if type in ('backdrops', 'cover'):
+                data = items[0].data
+            else:
+                data = items[0].data.decode()
+        with self.lock:
+            if artist == self.artist and title == self.title:
+                setattr(self, type, data)

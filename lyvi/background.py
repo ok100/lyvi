@@ -5,12 +5,10 @@
 
 import os
 from io import BytesIO
-from threading import Lock
 
 from PIL import Image
 
 import lyvi
-from lyvi.metadata import get
 from lyvi.utils import check_output
 
 
@@ -28,25 +26,13 @@ for line in check_output('xrdb -query').splitlines():
 
 class Background:
     def __init__(self):
-        self.lock = Lock()
-        self.reset_tags()
         self.type = lyvi.config['bg_type']
         self.opacity = lyvi.config['bg_opacity']
         self.file = '%s/lyvi-%s.jpg' % (lyvi.TEMP, lyvi.PID)
 
-    def set_tags(self):
-        self.artist = lyvi.player.artist
-        self.title = lyvi.player.title
-        self.album = lyvi.player.album
-
-    def reset_tags(self):
-        self.artist = self.title = self.album = None
-        self.backdrops = self.cover = None
-
     def toggle_type(self):
         self.type = 'cover' if self.type == 'backdrops' else 'backdrops'
-        with self.lock:
-            self.update()
+        self.update()
 
     def blend(self, image, opacity):
         buf = BytesIO(image)
@@ -54,21 +40,18 @@ class Background:
         layer = Image.new(image.mode, image.size, BG_COLOR)
         return Image.blend(image, layer, 1 - opacity)
 
-    def update(self):
-        if ((self.type == 'backdrops' and self.backdrops and self.artist)
-                or (self.type == 'cover' and self.cover and self.album)):
-            self.blend(getattr(self, self.type), self.opacity).save(self.file)
+    def update(self, clean=False):
+        if ((self.type == 'backdrops' and lyvi.md.backdrops and lyvi.md.artist)
+                or (self.type == 'cover' and lyvi.md.cover and lyvi.md.album)
+                and not clean):
+            image = self.blend(getattr(lyvi.md, self.type), self.opacity)
         else:
-            # Create empty image
             image = Image.new('RGB', (100, 100), BG_COLOR)
-            image.save(self.file)
-        # Set the image as background
+        image.save(self.file)
         os.system(BG_BEG + self.file + BG_END)
 
     def cleanup(self):
-        self.reset_tags()
-        with self.lock:
-            self.update()
+        self.update(clean=True)
         os.remove(self.file)
 
 

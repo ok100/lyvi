@@ -6,13 +6,15 @@
 import os
 import runpy
 import sys
+from tempfile import gettempdir
 
 import lyvi.utils
+from lyvi.main import main
 
 
 VERSION = '2.0-git'
 USERAGENT = 'lyvi/' + VERSION
-TEMP = '/tmp'
+TEMP = gettempdir()
 PID = os.getpid()
 
 # Parse command-line args
@@ -40,6 +42,7 @@ config = {
         if os.path.exists(os.environ['HOME'] + '/.mpdconf') else '/etc/mpd.conf',
     'mpd_host': os.environ['MPD_HOST'] if 'MPD_HOST' in os.environ else 'localhost',
     'mpd_port': os.environ['MPD_PORT'] if 'MPD_PORT' in os.environ else 6600,
+    'default_player': None,
     'statusbar_bg': 'default',
     'statusbar_fg': 'default',
     'ui_hidden': False,
@@ -47,33 +50,44 @@ config = {
     'text_fg': 'default',
 }
 
-# Read configuration file
-config_file = args.config_file or os.environ['HOME'] + '/.config/lyvi/lyvi.conf'
-if os.path.exists(config_file):
-    config.update((k, v) for k, v in runpy.run_path(config_file).items() if k in config)
-elif args.config_file:
-    print('File not found: ' + config_file)
-    sys.exit()
-
 if lyvi.args.version:
     # Print version and exit
     import plyr
     print('Lyvi %s, using libglyr %s' % (lyvi.VERSION, plyr.version().split()[1]))
     sys.exit()
 
+# Read configuration file
+config_file = args.config_file or os.environ['HOME'] + '/.config/lyvi/lyvi.conf'
+if os.path.exists(config_file):
+    config.update((k, v) for k, v in runpy.run_path(config_file).items() if k in config)
+elif args.config_file:
+    print('Configuration file not found: ' + config_file)
+    sys.exit()
+
+import inspect
 import lyvi.players
 if lyvi.args.list_players:
     # Print a list of supported players and exit
-    import inspect
     print('\033[1mSupported players:\033[0m')
     for name, obj in inspect.getmembers(lyvi.players):
-        if inspect.ismodule(obj):
+        if inspect.ismodule(obj) and name != 'player':
             print('* ' + name)
     sys.exit()
-# TODO: autodetection
-player = lyvi.players.mpd.Player()
+player = None
+if config['default_player'] and getattr(lyvi.players, config['default_player']).Player.found():
+    # Use default player
+    player = getattr(lyvi.players, config['default_player']).Player()
+else:
+    # Try to autodetect running player
+    for name, obj in inspect.getmembers(lyvi.players):
+        if inspect.ismodule(obj) and name != 'player' and obj.Player.found():
+            player = obj.Player()
+            break
+if not player:
+    print('No running supported player found')
+    sys.exit()
 if lyvi.args.command:
-    # TODO: send a command to the connected player and exit
+    player.send_command(lyvi.args.command)
     sys.exit()
 
 # Set up background
@@ -85,7 +99,9 @@ else:
     bg = None
 
 # Set up UI
-import lyvi.ui
-ui = lyvi.ui.Ui()
+import lyvi.tui
+ui = lyvi.tui.Ui()
 
-from lyvi.main import main
+import lyvi.metadata
+md = lyvi.metadata.Metadata()
+

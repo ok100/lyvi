@@ -7,7 +7,6 @@ import os
 from time import sleep
 
 import lyvi
-from lyvi.metadata import get_and_update
 from lyvi.utils import thread
 
 
@@ -16,41 +15,30 @@ def watch_player():
         lyvi.player.get_status()
         if not lyvi.player.running:
             lyvi.ui.exit()
-
-        if lyvi.player.status == 'stop':
-            lyvi.ui.reset_tags()
-            with lyvi.ui.lock:
-                lyvi.ui.update()
-            if lyvi.bg:
-                lyvi.bg.reset_tags()
-                with lyvi.bg.lock:
-                    lyvi.bg.update()
-
-        elif (lyvi.player.artist != lyvi.ui.artist
-                or lyvi.player.title != lyvi.ui.title
-                or lyvi.player.album != lyvi.ui.album):
+        if lyvi.player.state == 'stop':
+            lyvi.md.reset_tags()
+        elif (lyvi.player.artist != lyvi.md.artist
+                or lyvi.player.title != lyvi.md.title
+                or lyvi.player.album != lyvi.md.album):
             needsupdate = ['lyrics', 'guitartabs']
-            if lyvi.player.artist != lyvi.ui.artist:
+            if lyvi.player.artist != lyvi.md.artist:
                 needsupdate += ['artistbio']
             if lyvi.bg:
-                if lyvi.player.artist != lyvi.bg.artist:
+                if lyvi.player.artist != lyvi.md.artist:
                     needsupdate += ['backdrops']
-                if lyvi.player.album != lyvi.bg.album:
+                if lyvi.player.album != lyvi.md.album:
                     needsupdate += ['cover']
-                lyvi.bg.set_tags()
-            lyvi.ui.set_tags()
+            lyvi.md.set_tags()
             for item in needsupdate:
-                thread(get_and_update, (item,))
+                thread(lyvi.md.get, (item,))
         sleep(1)
 
 
 def main():
     thread(watch_player)
-
     lyvi.ui.init()
-
     try:
-        lyvi.ui.loop.run()
+        lyvi.ui.mainloop()
     except KeyboardInterrupt:
         pass
     finally:

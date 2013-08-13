@@ -3,8 +3,6 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
-from threading import Lock
-
 import urwid
 
 import lyvi
@@ -52,61 +50,60 @@ class MyListBox(urwid.ListBox):
 
 
 class Ui:
-    def init(self):
-        self.lock = Lock()
-        self.reset_tags()
-        self.view = lyvi.config['default_view']
-        self.hidden = lyvi.config['ui_hidden']
+    view = lyvi.config['default_view']
+    hidden = lyvi.config['ui_hidden']
+    _header = ''
+    _text = ''
 
+    @property
+    def header(self):
+        return self._header
+
+    @property
+    def text(self):
+        return self._text
+
+    @header.setter
+    def header(self, value):
+        self._header = value
+        if not self.hidden:
+            self.head.set_text(('header', self.header))
+
+    @text.setter
+    def text(self, value):
+        self._text = value
+        if not self.hidden:
+            self.content[:] = [self.head, urwid.Divider()] + \
+                [urwid.Text(('content', line)) for line in self.text.splitlines()]
+
+    def init(self):
         palette = [
             ('header', lyvi.config['header_fg'], lyvi.config['header_bg']),
             ('content', lyvi.config['text_fg'], lyvi.config['text_bg']),
             ('statusbar', lyvi.config['statusbar_fg'], lyvi.config['statusbar_bg']),
         ]
-
-        self.header = urwid.Text(('header', ''))
+        self.head = urwid.Text(('header', ''))
         self.statusbar = urwid.AttrMap(urwid.Text('', align='right'), 'statusbar')
         self.content = urwid.SimpleListWalker([urwid.Text(('content', ''))])
         self.listbox = MyListBox(self.content)
         self.frame = urwid.Frame(urwid.Padding(self.listbox, left=1, right=1),
             footer=self.statusbar)
-
         urwid.connect_signal(self.listbox, 'changed', self.update_statusbar)
-
         self.loop = urwid.MainLoop(self.frame, palette, unhandled_input=self.input)
-        self.update()
-
-    def set_tags(self):
-        self.artist = lyvi.player.artist
-        self.title = lyvi.player.title
-        self.album = lyvi.player.album
-
-    def reset_tags(self):
-        self.artist = self.title = self.album = None
-        self.lyrics = self.artistbio = self.guitartabs = None
-
-    def set_header(self, header):
-        if not self.hidden:
-            self.header.set_text(('header', header))
-
-    def set_text(self, text):
-        if not self.hidden:
-            self.content[:] = [self.header, urwid.Divider()] + \
-                [urwid.Text(('content', line)) for line in text.splitlines()]
 
     def update(self):
-        if lyvi.player.status == 'stop':
-            self.set_header('N/A' if self.view == 'artistbio' else 'N/A - N/A')
-            self.set_text('Not playing')
+        if lyvi.player.state == 'stop':
+            self.header = 'N/A' if self.view == 'artistbio' else 'N/A - N/A'
+            self.text = 'Not playing'
         elif self.view == 'lyrics':
-            self.set_header('%s - %s' % (self.artist or 'N/A', self.title or 'N/A'))
-            self.set_text(self.lyrics or 'No lyrics found')
+            self.header = '%s - %s' % (lyvi.md.artist or 'N/A', lyvi.md.title or 'N/A')
+            self.text = lyvi.md.lyrics or 'No lyrics found'
         elif self.view == 'artistbio':
-            self.set_header(self.artist or 'N/A')
-            self.set_text(self.artistbio or 'No artist info found')
+            self.header = lyvi.md.artist or 'N/A'
+            self.text = lyvi.md.artistbio or 'No artist info found'
         elif self.view == 'guitartabs':
-            self.set_header('%s - %s' % (self.artist or 'N/A', self.title or 'N/A'))
-            self.set_text(self.guitartabs or 'No guitar tabs found')
+            self.header = '%s - %s' % (lyvi.md.artist or 'N/A', lyvi.md.title or 'N/A')
+            self.text = lyvi.md.guitartabs or 'No guitar tabs found'
         self.refresh()
 
     def refresh(self):
@@ -135,8 +132,8 @@ class Ui:
     def toggle_visibility(self):
         if lyvi.bg:
             if not self.hidden:
-                self.set_header('')
-                self.set_text('')
+                self.header = ''
+                self.text = ''
                 self.frame.set_footer(urwid.AttrWrap(urwid.Text(''), 'statusbar'))
                 lyvi.bg.opacity = 1.0
                 lyvi.bg.update()
@@ -151,9 +148,8 @@ class Ui:
         """Reload current view"""
         from lyvi.utils import thread
         import lyvi.metadata
-        with self.lock:
-            lyvi.metadata.cache_delete(self.view, self.artist, self.title, self.album)
-        thread(lyvi.metadata.get_and_update, (self.view,))
+        lyvi.md.delete(self.view, lyvi.md.artist, lyvi.md.title, lyvi.md.album)
+        thread(lyvi.md.get, (self.view,))
 
     def input(self, key):
         bindings = {
@@ -165,6 +161,9 @@ class Ui:
         }
         if key in bindings:
             bindings[key]()
+
+    def mainloop(self):
+        return self.loop.run()
 
     def exit(self):
         """Quit"""
