@@ -24,11 +24,11 @@ args = lyvi.utils.parse_args()
 config = {
     'bg': False,
     'bg_opacity': 0.15,
-    #'bg_tmux_backdrops_pane': None,
-    #'bg_tmux_backdrops_underlying': False,
-    #'bg_tmux_cover_pane': None,
-    #'bg_tmux_cover_underlying': False,
-    #'bg_tmux_window_title': None,
+    'bg_tmux_backdrops_pane': None,
+    'bg_tmux_backdrops_underlying': False,
+    'bg_tmux_cover_pane': None,
+    'bg_tmux_cover_underlying': False,
+    'bg_tmux_window_title': None,
     'bg_type': 'cover',
     'default_player': None,
     'default_view': 'lyrics',
@@ -97,8 +97,13 @@ if lyvi.args.command:
 # Set up background
 if config['bg']:
     import lyvi.background
-    bg = lyvi.background.Background()
-    tmux = lyvi.background.Tmux() if 'TMUX' in os.environ else None
+    if (config['bg_tmux_backdrops_pane'] is not None
+            and config['bg_tmux_cover_pane'] is not None
+            and config['bg_tmux_window_title'] is not None
+            and 'TMUX' in os.environ):
+        bg = lyvi.background.TmuxBackground()
+    else:
+        bg = lyvi.background.Background()
 else:
     bg = None
 
