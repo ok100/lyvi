@@ -13,12 +13,6 @@ import lyvi
 from lyvi.utils import check_output
 
 
-if 'TMUX' in os.environ:
-    BG_BEG = 'printf "\ePtmux;\e\e]20;'   
-    BG_END = ';100x100+50+50:op=keep-aspect\a\e\\\\"'
-else:
-    BG_BEG = 'printf "\e]20;'
-    BG_END = ';100x100+50+50:op=keep-aspect\a"'
 BG_COLOR = '#FFFFFF'
 for line in check_output('xrdb -query').splitlines():
     if 'background' in line:
@@ -26,6 +20,9 @@ for line in check_output('xrdb -query').splitlines():
 
 
 class Background:
+    ESCAPE_STR_BEG = 'printf "\e]20;'
+    ESCAPE_STR_END = ';100x100+50+50:op=keep-aspect\a"'
+
     def __init__(self):
         self.type = lyvi.config['bg_type']
         self.opacity = lyvi.config['bg_opacity']
@@ -43,14 +40,14 @@ class Background:
         return Image.blend(image, layer, 1 - opacity)
 
     def update(self, clean=False):
-        if ((self.type == 'backdrops' and lyvi.md.backdrops and lyvi.md.artist)
-                or (self.type == 'cover' and lyvi.md.cover and lyvi.md.album)
+        if (((self.type == 'backdrops' and lyvi.md.backdrops and lyvi.md.artist)
+                or (self.type == 'cover' and lyvi.md.cover and lyvi.md.album))
                 and not clean):
             image = self.blend(getattr(lyvi.md, self.type), self.opacity)
         else:
             image = Image.new('RGB', (100, 100), BG_COLOR)
         image.save(self.file)
-        os.system(BG_BEG + self.file + BG_END)
+        os.system(self.ESCAPE_STR_BEG + self.file + self.ESCAPE_STR_END)
 
     def cleanup(self):
         self.update(clean=True)
@@ -58,9 +55,8 @@ class Background:
 
 
 class TmuxBackground(Background):
-    title = lyvi.config['bg_tmux_window_title']
-    cover_pane = lyvi.config['bg_tmux_cover_pane']
-    backdrops_pane = lyvi.config['bg_tmux_backdrops_pane']
+    ESCAPE_STR_BEG = 'printf "\ePtmux;\e\e]20;'   
+    ESCAPE_STR_END = ';100x100+50+50:op=keep-aspect\a\e\\\\"'
 
     def get_layout(self):
         class Pane: pass
@@ -83,7 +79,7 @@ class TmuxBackground(Background):
         return layout
 
     def get_size(self):
-        for line in check_output('xwininfo -name ' + self.title).splitlines():
+        for line in check_output('xwininfo -name ' + lyvi.config['bg_tmux_window_title']).splitlines():
             if 'Width:' in line:
                 width = int(line.split()[1])
             elif 'Height:' in line:
@@ -112,16 +108,16 @@ class TmuxBackground(Background):
         image = Image.new('RGB', (width, height), BG_COLOR)
         cover_data = [
             lyvi.md.cover, 
-            layout[self.cover_pane + 1],
+            layout[lyvi.config['bg_tmux_cover_pane'] + 1],
             lyvi.config['bg_tmux_cover_underlying']
         ]
         backdrops_data = [
             lyvi.md.backdrops, 
-            layout[self.backdrops_pane + 1],
+            layout[lyvi.config['bg_tmux_backdrops_pane'] + 1],
             lyvi.config['bg_tmux_backdrops_underlying']
         ]
         if not clean:
-            if self.backdrops_pane == self.cover_pane:
+            if lyvi.config['bg_tmux_backdrops_pane'] == lyvi.config['bg_tmux_cover_pane']:
                 to_paste = [cover_data] if self.type == 'cover' else [backdrops_data]
             else:
                 to_paste = [cover_data, backdrops_data]
@@ -129,4 +125,4 @@ class TmuxBackground(Background):
                 if i[0]:
                     image = self.paste(image, i[0], i[1], cell_w, cell_h, i[2])
         image.save(self.file)
-        os.system(BG_BEG + self.file + BG_END)
+        os.system(self.ESCAPE_STR_BEG + self.file + self.ESCAPE_STR_END)
