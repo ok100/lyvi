@@ -78,13 +78,13 @@ if lyvi.args.list_players:
             print('* ' + name)
     sys.exit()
 player = None
-if config['default_player'] and getattr(lyvi.players, config['default_player']).Player.found():
+if config['default_player'] and getattr(lyvi.players, config['default_player']).Player.running():
     # Use default player
     player = getattr(lyvi.players, config['default_player']).Player()
 else:
     # Try to autodetect running player
     for name, obj in inspect.getmembers(lyvi.players):
-        if inspect.ismodule(obj) and name != 'player' and obj.Player.found():
+        if inspect.ismodule(obj) and name != 'player' and obj.Player.running():
             player = obj.Player()
             break
 if not player:

@@ -12,10 +12,9 @@ from lyvi.utils import running
 
 
 class Player(_Player):
-    def found():
-        if lyvi.config['mpd_host'] not in ('localhost', '127.0.0.1') or running('mpd'):
-            return True
-        return False
+    @classmethod
+    def running(self):
+        return (lyvi.config['mpd_host'] not in ('localhost', '127.0.0.1') or running('mpd'))
 
     def __init__(self):
         self.music_dir = None

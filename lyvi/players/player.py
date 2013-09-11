@@ -4,24 +4,12 @@
 # as published by Sam Hocevar. See the COPYING file for more details.
 
 class _Player:
-    _running = True
     _state = 'stop'
     artist = None
     album = None
     title = None
     file = None
     
-    @property
-    def running(self):
-        return self._running
-
-    @running.setter
-    def running(self, value):
-        if value is True or value is False:
-            self._running = value
-        else:
-            raise ValueError('incorrect running value')
-
     @property
     def state(self):
         return self._state
@@ -33,8 +21,8 @@ class _Player:
         else:
             raise ValueError('incorrect state value')
 
-    @staticmethod
-    def found():
+    @classmethod
+    def running():
         raise NotImplementedError('found() should be implemented in subclass') 
 
     def get_status(self):

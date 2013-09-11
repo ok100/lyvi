@@ -9,7 +9,10 @@ from threading import Thread
 
 
 def check_output(command):
-    return subprocess.check_output(command, shell=True).decode()
+    try:
+        return subprocess.check_output(command, shell=True).decode()
+    except subprocess.CalledProcessError:
+        return ''
 
 
 def parse_args():

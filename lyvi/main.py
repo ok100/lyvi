@@ -11,9 +11,9 @@ from lyvi.utils import thread
 
 def watch_player():
     while True:
-        lyvi.player.get_status()
-        if not lyvi.player.running:
+        if not lyvi.player.running():
             lyvi.ui.exit()
+        lyvi.player.get_status()
         if lyvi.player.state == 'stop':
             lyvi.md.reset_tags()
         elif (lyvi.player.artist != lyvi.md.artist

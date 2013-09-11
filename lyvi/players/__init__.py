@@ -4,4 +4,5 @@
 # as published by Sam Hocevar. See the COPYING file for more details.
 
 from lyvi.players import player
+from lyvi.players import cmus
 from lyvi.players import mpd
