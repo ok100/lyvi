@@ -3,7 +3,6 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
-import argparse
 import subprocess
 from threading import Thread
 
@@ -13,19 +12,6 @@ def check_output(command):
         return subprocess.check_output(command, shell=True).decode()
     except subprocess.CalledProcessError:
         return ''
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(prog='lyvi')
-    parser.add_argument('command', nargs='?',
-        help='send a command to the player and exit')
-    parser.add_argument('-c', '--config-file',
-        help='path to an alternate config file')
-    parser.add_argument('-l', '--list-players',
-        help='print a list of supported players and exit', action='store_true')
-    parser.add_argument('-v', '--version',
-        help='print version information and exit', action='store_true')
-    return parser.parse_args()
 
 
 def running(process):

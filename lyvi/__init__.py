@@ -3,22 +3,20 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+import argparse
 import os
 import runpy
 import sys
 from tempfile import gettempdir
+from time import sleep
 
-import lyvi.utils
-from lyvi.main import main
+from lyvi.utils import thread
 
 
 VERSION = '2.0-git'
 USERAGENT = 'lyvi/' + VERSION
 TEMP = gettempdir()
 PID = os.getpid()
-
-# Parse command-line args
-args = lyvi.utils.parse_args()
 
 # Default settings
 config = {
@@ -54,10 +52,22 @@ config = {
     'text_fg': 'default',
 }
 
-if lyvi.args.version:
+# Parse command-line args
+parser = argparse.ArgumentParser(prog='lyvi')
+parser.add_argument('command', nargs='?',
+    help='send a command to the player and exit')
+parser.add_argument('-c', '--config-file',
+    help='path to an alternate config file')
+parser.add_argument('-l', '--list-players',
+    help='print a list of supported players and exit', action='store_true')
+parser.add_argument('-v', '--version',
+    help='print version information and exit', action='store_true')
+args = parser.parse_args()
+
+if args.version:
     # Print version and exit
     import plyr
-    print('Lyvi %s, using libglyr %s' % (lyvi.VERSION, plyr.version().split()[1]))
+    print('Lyvi %s, using libglyr %s' % (VERSION, plyr.version().split()[1]))
     sys.exit()
 
 # Read configuration file
@@ -70,7 +80,7 @@ elif args.config_file:
 
 import inspect
 import lyvi.players
-if lyvi.args.list_players:
+if args.list_players:
     # Print a list of supported players and exit
     print('\033[1mSupported players:\033[0m')
     for name, obj in inspect.getmembers(lyvi.players):
@@ -88,10 +98,10 @@ else:
             player = obj.Player()
             break
 if not player:
-    print('No running supported player found')
+    print('No running supported player found!')
     sys.exit()
-if lyvi.args.command:
-    player.send_command(lyvi.args.command)
+if args.command:
+    player.send_command(args.command)
     sys.exit()
 
 # Set up background
@@ -111,6 +121,45 @@ else:
 import lyvi.tui
 ui = lyvi.tui.Ui()
 
+# Set up metadata
 import lyvi.metadata
 md = lyvi.metadata.Metadata()
 
+
+def watch_player():
+    while True:
+        if not player.running():
+            exit()
+        player.get_status()
+        if player.state == 'stop':
+            md.reset_tags()
+        elif (player.artist != md.artist
+                or player.title != md.title
+                or player.album != md.album):
+            needsupdate = ['lyrics', 'guitartabs']
+            if player.artist != md.artist:
+                needsupdate += ['artistbio']
+            if bg:
+                if player.artist != md.artist:
+                    needsupdate += ['backdrops']
+                if player.album != md.album:
+                    needsupdate += ['cover']
+            md.set_tags()
+            for item in needsupdate:
+                thread(md.get, (item,))
+        sleep(1)
+
+
+def exit():
+    ui.quit = True
+    if bg:
+        bg.cleanup()
+
+
+def main():
+    thread(watch_player)
+    ui.init()
+    try:
+        ui.mainloop()
+    except KeyboardInterrupt:
+        exit()

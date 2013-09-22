@@ -13,7 +13,6 @@ class _Player:
     @property
     def state(self):
         return self._state
-
     @state.setter
     def state(self, value):
         if value in ('play', 'pause', 'stop'):
@@ -22,7 +21,7 @@ class _Player:
             raise ValueError('incorrect state value')
 
     @classmethod
-    def running():
+    def running(self):
         raise NotImplementedError('found() should be implemented in subclass') 
 
     def get_status(self):

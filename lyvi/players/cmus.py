@@ -5,7 +5,6 @@
 
 import os
 
-import lyvi
 from lyvi.players.player import _Player
 from lyvi.utils import running, check_output
 

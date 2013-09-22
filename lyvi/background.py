@@ -5,7 +5,6 @@
 
 import os
 from io import BytesIO
-#from threading import Timer
 
 from PIL import Image
 
@@ -106,19 +105,19 @@ class TmuxBackground(Background):
         cell_w = width / layout[0].w
         cell_h = height / layout[0].h
         image = Image.new('RGB', (width, height), BG_COLOR)
-        cover_data = [
-            lyvi.md.cover, 
-            layout[lyvi.config['bg_tmux_cover_pane'] + 1],
-            lyvi.config['bg_tmux_cover_underlying']
-        ]
-        backdrops_data = [
-            lyvi.md.backdrops, 
-            layout[lyvi.config['bg_tmux_backdrops_pane'] + 1],
-            lyvi.config['bg_tmux_backdrops_underlying']
-        ]
         if not clean:
+            cover_data = [
+                lyvi.md.cover, 
+                layout[lyvi.config['bg_tmux_cover_pane'] + 1],
+                lyvi.config['bg_tmux_cover_underlying']
+            ]
+            backdrops_data = [
+                lyvi.md.backdrops, 
+                layout[lyvi.config['bg_tmux_backdrops_pane'] + 1],
+                lyvi.config['bg_tmux_backdrops_underlying']
+            ]
             if lyvi.config['bg_tmux_backdrops_pane'] == lyvi.config['bg_tmux_cover_pane']:
-                to_paste = [cover_data] if self.type == 'cover' else [backdrops_data]
+                to_paste = [cover_data if self.type == 'cover' else backdrops_data]
             else:
                 to_paste = [cover_data, backdrops_data]
             for i in to_paste:

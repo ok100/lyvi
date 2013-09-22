@@ -54,6 +54,7 @@ class Ui:
     hidden = lyvi.config['ui_hidden']
     _header = ''
     _text = ''
+    quit = False
 
     @property
     def header(self):
@@ -90,6 +91,10 @@ class Ui:
             footer=self.statusbar)
         urwid.connect_signal(self.listbox, 'changed', self.update_statusbar)
         self.loop = urwid.MainLoop(self.frame, palette, unhandled_input=self.input)
+        self.set_alarm()
+
+    def set_alarm(self):
+        self.loop.event_loop.alarm(0.5, self.check_exit)
 
     def update(self):
         if lyvi.player.state == 'stop':
@@ -110,7 +115,7 @@ class Ui:
         self.loop.draw_screen()
 
     def home(self):
-        """Scroll to the top of the ListBox"""
+        """Scroll to the top of the current view"""
         self.listbox.set_focus(0)
         self.refresh()
 
@@ -153,7 +158,7 @@ class Ui:
 
     def input(self, key):
         bindings = {
-            lyvi.config['key_quit']: self.exit,
+            lyvi.config['key_quit']: lyvi.exit,
             lyvi.config['key_toggle_views']: self.toggle_views,
             lyvi.config['key_reload_view']: self.reload_view,
             lyvi.config['key_toggle_bg_type']: lyvi.bg.toggle_type if lyvi.bg else None,
@@ -163,8 +168,10 @@ class Ui:
             bindings[key]()
 
     def mainloop(self):
-        return self.loop.run()
+        """Start the main loop"""
+        self.loop.run()
 
-    def exit(self):
-        """Quit"""
-        raise urwid.ExitMainLoop()
+    def check_exit(self):
+        self.set_alarm()
+        if self.quit:
+            raise urwid.ExitMainLoop()
