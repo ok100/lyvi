@@ -122,10 +122,15 @@ class Metadata:
             lyvi.ui.home()
         if type in ('lyrics', 'artistbio', 'guitartabs'):
             setattr(self, type, 'Searching...')
-        query = plyr.Query(get_type=type, artist=self.artist, title=self.title, album=self.album)
-        query.useragent = lyvi.USERAGENT
-        query.database = self.cache
-        items = query.commit()
+        try:
+            query = plyr.Query(get_type=type, artist=self.artist, title=self.title, album=self.album)
+        except AttributeError:
+            # Some tags are missing
+            items = None
+        else:
+            query.useragent = lyvi.USERAGENT
+            query.database = self.cache
+            items = query.commit()
         data = None
         if items:
             if type in ('backdrops', 'cover'):
