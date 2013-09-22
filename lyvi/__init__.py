@@ -105,6 +105,7 @@ if args.command:
     sys.exit()
 
 # Set up background
+bg = None
 if config['bg']:
     import lyvi.background
     if (config['bg_tmux_backdrops_pane'] is not None
@@ -112,10 +113,8 @@ if config['bg']:
             and config['bg_tmux_window_title'] is not None
             and 'TMUX' in os.environ):
         bg = lyvi.background.TmuxBackground()
-    else:
+    elif 'rxvt' in os.environ['TERM']:
         bg = lyvi.background.Background()
-else:
-    bg = None
 
 # Set up UI
 import lyvi.tui
