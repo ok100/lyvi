@@ -22,6 +22,12 @@ class MyListBox(urwid.ListBox):
         return self.__super.mouse_event(size, event, button, col, row, focus)
 
     def keypress(self, size, key):
+        if key == 'j':
+            self.keypress(size, 'down')
+            return True
+        if key == 'k':
+            self.keypress(size, 'up')
+            return True
         if key == 'g':
             self.set_focus(0)
             return True
