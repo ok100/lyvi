@@ -7,11 +7,11 @@ import os
 import telnetlib
 
 import lyvi
-from lyvi.players.player import _Player
+from lyvi.players import Player
 from lyvi.utils import running
 
 
-class Player(_Player):
+class Player(Player):
     @classmethod
     def running(self):
         return (lyvi.config['mpd_host'] not in ('localhost', '127.0.0.1') or running('mpd'))

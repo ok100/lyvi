@@ -5,11 +5,11 @@
 
 import os
 
-from lyvi.players.player import _Player
+from lyvi.players import Player
 from lyvi.utils import running, check_output
 
 
-class Player(_Player):
+class Player(Player):
     @classmethod
     def running(self):
         return running('cmus')
