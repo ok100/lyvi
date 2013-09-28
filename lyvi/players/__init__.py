@@ -9,7 +9,7 @@ import sys
 import lyvi
 
 
-players = ['cmus', 'mpd', 'mpris']
+players = ['cmus', 'moc', 'mpd', 'mpris']
 
 
 def list():
@@ -31,8 +31,7 @@ def find():
         obj = getattr(sys.modules[__name__], name).Player
         if obj.running():
             return obj()
-    print('No running supported player found!')
-    sys.exit()
+    return None
 
 
 class Player:

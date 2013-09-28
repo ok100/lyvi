@@ -151,9 +151,12 @@ if args.list_players:
     lyvi.players.list()
     sys.exit()
 player = lyvi.players.find()
+if not player:
+    print('No running supported player found!')
+    sys.exit()
 if args.command:
     player.send_command(args.command)
     sys.exit()
-bg = init_background()
 md = init_metadata()
+bg = init_background()
 ui = init_ui()

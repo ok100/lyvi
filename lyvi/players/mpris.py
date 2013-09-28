@@ -7,7 +7,6 @@ import dbus
 import dbus.exceptions
 import dbus.glib
 import dbus.mainloop.glib
-
 from gi.repository import GObject
 
 from lyvi.players import Player
