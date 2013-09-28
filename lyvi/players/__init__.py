@@ -53,7 +53,7 @@ class Player:
 
     @classmethod
     def running(self):
-        raise NotImplementedError('found() should be implemented in subclass') 
+        raise NotImplementedError('running() should be implemented in subclass') 
 
     def get_status(self):
         raise NotImplementedError('get_status() should be implemented in subclass') 
