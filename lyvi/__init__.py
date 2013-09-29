@@ -68,10 +68,10 @@ def parse_config():
     file = args.config_file or os.environ['HOME'] + '/.config/lyvi/lyvi.conf'
     if os.path.exists(file):
         config.update((k, v) for k, v in runpy.run_path(file).items() if k in config)
-        return config
     elif args.config_file:
         print('Configuration file not found: ' + file)
         sys.exit()
+    return config
 
 
 def print_version():
