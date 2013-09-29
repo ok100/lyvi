@@ -115,6 +115,19 @@ class Metadata:
                 with open(file, mode) as f:
                     f.write(data)
 
+    def _query(self, type, normalize=True):
+        try:
+            query = plyr.Query(get_type=type, artist=self.artist, title=self.title, album=self.album)
+        except AttributeError:
+            # Missing tags?
+            return None
+        else:
+            query.useragent = lyvi.USERAGENT
+            query.database = self.cache
+            if not normalize:
+                query.normalize = ('none', 'artist', 'album', 'title')
+            return query.commit()
+
     def get(self, type):
         artist = self.artist
         title = self.title
@@ -122,15 +135,7 @@ class Metadata:
             lyvi.ui.home()
         if type in ('lyrics', 'artistbio', 'guitartabs'):
             setattr(self, type, 'Searching...')
-        try:
-            query = plyr.Query(get_type=type, artist=self.artist, title=self.title, album=self.album)
-        except AttributeError:
-            # Some tags are missing
-            items = None
-        else:
-            query.useragent = lyvi.USERAGENT
-            query.database = self.cache
-            items = query.commit()
+        items = self._query(type, normalize=False) or self._query(type)
         data = None
         if items:
             if type in ('backdrops', 'cover'):
