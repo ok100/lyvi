@@ -6,6 +6,8 @@
 import subprocess
 from threading import Thread
 
+from psutil import process_iter
+
 
 def check_output(command):
     try:
@@ -14,8 +16,11 @@ def check_output(command):
         return ''
 
 
-def running(process):
-    return process in check_output('ps -C ' + process)
+def running(process_name):
+    for p in process_iter():
+        if p.name == process_name:
+            return True
+    return False
 
 
 def thread(target, args=()):
