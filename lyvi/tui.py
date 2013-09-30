@@ -14,10 +14,12 @@ class MyListBox(urwid.ListBox):
     def mouse_event(self, size, event, button, col, row, focus):
         if event == 'mouse press':
             if button == 4:
-                self.keypress(size, 'up')
+                for _ in range(3):
+                    self.keypress(size, 'up')
                 return True
             if button == 5:
-                self.keypress(size, 'down')
+                for _ in range(3):
+                    self.keypress(size, 'down')
                 return True
         return self.__super.mouse_event(size, event, button, col, row, focus)
 
@@ -131,7 +133,7 @@ class Ui:
             wrap = urwid.AttrWrap(text, 'statusbar')
             self.frame.set_footer(wrap)
 
-    def toggle_views(self, x=None):
+    def toggle_views(self, _=None):
         """Toggle between views"""
         if not self.hidden:
             views = ['lyrics', 'artistbio', 'guitartabs']
@@ -170,7 +172,7 @@ class Ui:
             lyvi.config['key_toggle_bg_type']: lyvi.bg.toggle_type if lyvi.bg else None,
             lyvi.config['key_hide_ui']: self.toggle_visibility,
         }
-        if key in bindings:
+        if key in bindings and bindings[key] is not None:
             bindings[key]()
 
     def mainloop(self):
