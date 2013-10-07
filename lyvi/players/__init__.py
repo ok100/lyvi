@@ -9,16 +9,18 @@ import sys
 import lyvi
 
 
-players = ['cmus', 'moc', 'mpd', 'mpris']
+players = ['cmus', 'moc', 'pianobar', 'mpd', 'mpris']
 
 
 def list():
+    """Prints a list of supported players"""
     print('\033[1mSupported players:\033[0m')
     for player in sorted(players):
         print('* ' + player)
 
 
 def find():
+    """Returns the initialized player class, or None if no player was found"""
     players.pop(players.index('mpris'))
     if lyvi.config['default_player']:
         if mpris.running(lyvi.config['default_player']):
@@ -49,7 +51,7 @@ class Player:
         if value in ('play', 'pause', 'stop'):
             self._state = value
         else:
-            raise ValueError('incorrect state value')
+            raise ValueError('incorrect state value: ' + value)
 
     @classmethod
     def running(self):

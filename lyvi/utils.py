@@ -16,6 +16,11 @@ def check_output(command):
         return ''
 
 
+def process_fifo(file, command):
+    with open(file, 'w') as f:
+        f.write(command + '\n')
+
+
 def running(process_name):
     for p in process_iter():
         if p.name == process_name:

@@ -108,9 +108,12 @@ def main():
     try:
         ui.mainloop()
     except KeyboardInterrupt:
+        pass
+    finally:
         exit()
 
 
+# Objects used across the whole package
 args = parse_args()
 config = parse_config()
 if args.version:
