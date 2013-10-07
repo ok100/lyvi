@@ -9,7 +9,7 @@ import sys
 import lyvi
 
 
-players = ['cmus', 'moc', 'pianobar', 'mpd', 'mpris']
+players = ['cmus', 'moc', 'pianobar', 'shell-fm', 'mpd', 'mpris']
 
 
 def list():

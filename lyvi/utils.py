@@ -3,6 +3,7 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+import socket
 import subprocess
 from threading import Thread
 
@@ -19,6 +20,13 @@ def check_output(command):
 def process_fifo(file, command):
     with open(file, 'w') as f:
         f.write(command + '\n')
+
+
+def process_socket(sock, command):
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.connect(sock)
+    s.send((command + '\n').encode())
+    s.close()
 
 
 def running(process_name):
