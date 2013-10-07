@@ -15,7 +15,7 @@ class Player(Player):
 
     @classmethod
     def running(self):
-        return os.path.exists(self.SOCKET)
+        return running('shell-fm') and os.path.exists(self.SOCKET)
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'stop'}

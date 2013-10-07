@@ -27,6 +27,7 @@ defaults = {
         if os.path.exists(os.environ['HOME'] + '/.mpdconf') else '/etc/mpd.conf',
     'mpd_host': os.environ['MPD_HOST'] if 'MPD_HOST' in os.environ else 'localhost',
     'mpd_port': os.environ['MPD_PORT'] if 'MPD_PORT' in os.environ else 6600,
+    'mplayer_config_dir': os.environ['HOME'] + '/.mplayer/',
     'save_cover': False,
     'save_cover_filename': '<songdir>/cover.jpg',
     'save_lyrics': False,
