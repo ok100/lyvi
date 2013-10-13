@@ -34,7 +34,7 @@ defaults = {
     'save_lyrics_filename': '<songdir>/<filename>.lyric',
     'statusbar_bg': 'default',
     'statusbar_fg': 'default',
-    'ui_hidden': False,
     'text_bg': 'default',
     'text_fg': 'default',
+    'ui_hidden': False,
 }

@@ -104,17 +104,18 @@ class Tmux:
             layout[lsp.index(chunk) + 1].active = 'active' in chunk
         return layout
 
-    def _get_size(self):
-        for line in check_output('xwininfo -name ' + lyvi.config['bg_tmux_window_title']).splitlines():
-            if 'Width:' in line:
-                width = int(line.split()[1])
-            elif 'Height:' in line:
-                height = int(line.split()[1])
+    def _get_size_px(self):
+        info = check_output('xwininfo -name ' + lyvi.config['bg_tmux_window_title'])
+        try:
+            width = int(info.split('Width: ')[1].split('\n')[0])
+            height = int(info.split('Height: ')[1].split('\n')[0])
+        except IndexError:
+            width = height = 0
         return width, height
     
     def update(self):
         self.layout = self._get_layout()
-        self.width, self.height = self._get_size()
+        self.width, self.height = self._get_size_px()
         self.cell.w = round(self.width / self.layout[0].w)
         self.cell.h = round(self.height / self.layout[0].h)
 
