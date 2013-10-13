@@ -39,7 +39,7 @@ class Player(Player):
             setattr(self, k, data[k])
 
     def send_command(self, command):
-        if not os.path.exists(self.FIFO)
+        if not os.path.exists(self.FIFO):
             return
 
         cmd = {
