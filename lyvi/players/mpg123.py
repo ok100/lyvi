@@ -18,6 +18,7 @@ class Player(Player):
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play'}
+
         with open(self.LOG_FILE) as f:
             for line in f.read().splitlines():
                 if 'Title:' and 'Artist:' in line:
@@ -26,8 +27,6 @@ class Player(Player):
                     )
                 elif 'Album: ' in line:
                     data['album'] = line.split('Album: ')[1].strip()
+
         for k in data:
             setattr(self, k, data[k])
-
-    def send_command(self, command):
-        return False

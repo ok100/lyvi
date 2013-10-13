@@ -50,16 +50,17 @@ class Player(Player):
             setattr(self, k, tags[k])
 
     def send_command(self, command):
-        if command == 'play':
-            self.telnet.write(b'play\n')
-        elif command == 'pause':
-            self.telnet.write(b'pause\n')
-        elif command == 'next':
-            self.telnet.write(b'next\n')
-        elif command == 'prev':
-            self.telnet.write(b'previous\n')
-        elif command == 'stop':
-            self.telnet.write(b'stop\n')
+        cmd = {
+            'play': b'play\n',
+            'pause': b'pause\n',
+            'next': b'next\n',
+            'prev': b'previous\n',
+            'stop': b'stop\n',
+        }.get(command)
+
+        if cmd:
+            self.telnet.write(cmd)
+            return True
     
     def __del__(self):
         self.telnet.close()

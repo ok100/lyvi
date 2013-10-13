@@ -24,31 +24,34 @@ class Player(Player):
 
     @classmethod
     def running(self):
-        return running('mplayer') or running('mpv')
+        return (running('mplayer') or running('mpv')) and os.path.exists(self.LOG_FILE)
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play'}
-        if os.path.exists(self.LOG_FILE):
-            with open(self.LOG_FILE) as f:
-                for line in f.read().splitlines():
-                    for i in self.ID:
-                        if i in line:
-                            data[self.ID[i]] = line.split(i)[1]
+
+        with open(self.LOG_FILE) as f:
+            for line in f.read().splitlines():
+                for i in self.ID:
+                    if i in line:
+                        data[self.ID[i]] = line.split(i)[1]
+
         for k in data:
             setattr(self, k, data[k])
 
     def send_command(self, command):
         if not os.path.exists(self.FIFO):
             return
-        if command == 'play' or command == 'pause':
-            process_fifo(self.FIFO, 'pause')
-        elif command == 'next':
-            process_fifo(self.FIFO, 'pt_step 1')
-        elif command == 'prev':
-            process_fifo(self.FIFO, 'pt_step -1')
-        elif command == 'stop':
-            process_fifo(self.FIFO, 'stop')
-        elif command == 'volup':
-            process_fifo(self.FIFO, 'volume +5')
-        elif command == 'voldn':
-            process_fifo(self.FIFO, 'volume -5')
+
+        cmd = {
+            'play': 'pause',
+            'pause': 'pause',
+            'next': 'pt_step 1',
+            'prev': 'pt_step -1',
+            'stop': 'stop',
+            'volup': 'volume +5',
+            'voldn': 'volume -5',
+        }.get(command)
+
+        if cmd:
+            process_fifo(self.FIFO, cmd)
+            return True

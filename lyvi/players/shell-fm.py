@@ -15,28 +15,33 @@ class Player(Player):
 
     @classmethod
     def running(self):
-        return running('shell-fm') and os.path.exists(self.SOCKET)
+        return running('shell-fm') and os.path.exists(self.NOWPLAYING_FILE)
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'stop'}
-        if os.path.exists(self.NOWPLAYING_FILE):
-            with open(self.NOWPLAYING_FILE) as f:
-                data['artist'], data['title'], data['album'], data['state'] = f.read().split('|')
-            data['state'] = (data['state']
-                    .replace('PLAYING', 'play')
-                    .replace('PAUSED', 'pause')
-                    .replace('STOPPED', 'stop'))
+
+        with open(self.NOWPLAYING_FILE) as f:
+            data['artist'], data['title'], data['album'], data['state'] = f.read().split('|')
+        data['state'] = (data['state']
+                .replace('PLAYING', 'play')
+                .replace('PAUSED', 'pause')
+                .replace('STOPPED', 'stop'))
+
         for k in data:
             setattr(self, k, data[k])
 
     def send_command(self, command):
-        if command == 'pause':
-            process_socket(self.SOCKET, 'pause')
-        elif command == 'next':
-            process_socket(self.SOCKET, 'skip')
-        elif command == 'stop':
-            process_socket(self.SOCKET, 'stop')
-        elif command == 'volup':
-            process_socket(self.SOCKET, 'volume +5')
-        elif command == 'voldn':
-            process_socket(self.SOCKET, 'volume -5')
+        if not os.path.exists(self.SOCKET):
+            return
+
+        cmd = {
+            'pause': 'pause',
+            'next': 'skip',
+            'stop': 'stop',
+            'volup': 'volume +5',
+            'voldn': 'volume -5',
+        }.get(command)
+
+        if cmd:
+            process_socket(self.SOCKET, cmd)
+            return True

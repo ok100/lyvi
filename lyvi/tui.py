@@ -77,13 +77,15 @@ class Ui:
         self._header = value
         if not self.hidden:
             self.head.set_text(('header', self.header))
+            self.refresh()
 
     @text.setter
     def text(self, value):
         self._text = value
         if not self.hidden:
             self.content[:] = [self.head, urwid.Divider()] + \
-                [urwid.Text(('content', line)) for line in self.text.splitlines()]
+                    [urwid.Text(('content', line)) for line in self.text.splitlines()]
+            self.refresh()
 
     def init(self):
         palette = [
@@ -117,7 +119,6 @@ class Ui:
         elif self.view == 'guitartabs':
             self.header = '%s - %s' % (lyvi.md.artist or 'N/A', lyvi.md.title or 'N/A')
             self.text = lyvi.md.guitartabs or 'No guitar tabs found'
-        self.refresh()
 
     def refresh(self):
         self.loop.draw_screen()
@@ -165,15 +166,15 @@ class Ui:
         thread(lyvi.md.get, (self.view,))
 
     def input(self, key):
-        bindings = {
+        bind = {
             lyvi.config['key_quit']: lyvi.exit,
             lyvi.config['key_toggle_views']: self.toggle_views,
             lyvi.config['key_reload_view']: self.reload_view,
             lyvi.config['key_toggle_bg_type']: lyvi.bg.toggle_type if lyvi.bg else None,
             lyvi.config['key_hide_ui']: self.toggle_visibility,
-        }
-        if key in bindings and bindings[key] is not None:
-            bindings[key]()
+        }.get(key)
+        if bind:
+            bind()
 
     def mainloop(self):
         """Start the main loop"""

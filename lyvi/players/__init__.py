@@ -61,7 +61,7 @@ class Player:
         raise NotImplementedError('get_status() should be implemented in subclass') 
 
     def send_command(self, command):
-        raise NotImplementedError('send_command() should be implemented in subclass') 
+        return
 
 
 for player in players:

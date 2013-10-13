@@ -6,18 +6,18 @@
 import os
 
 from lyvi.players import Player
-from lyvi.utils import running, check_output
+from lyvi.utils import check_output
 
 
 class Player(Player):
     @classmethod
     def running(self):
-        return running('cmus')
+        return os.path.exists(os.environ['HOME'] + '/.cmus/socket')
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None}
-        response = check_output('cmus-remote -Q')
-        for line in response.splitlines():
+
+        for line in check_output('cmus-remote -Q').splitlines():
             if line.startswith('status '):
                 data['state'] = (line.split()[1].replace('playing', 'play')
                         .replace('paused', 'pause')
@@ -30,21 +30,21 @@ class Player(Player):
                 data['title'] = line.split(' ', 2)[2]
             elif line.startswith('file '):
                 data['file'] = line.split(' ', 1)[1]
+
         for k in data:
             setattr(self, k, data[k])
 
     def send_command(self, command):
-        if command == 'play':
-            os.system('cmus-remote -p')
-        elif command == 'pause':
-            os.system('cmus-remote -u')
-        elif command == 'next':
-            os.system('cmus-remote -n')
-        elif command == 'prev':
-            os.system('cmus-remote -r')
-        elif command == 'stop':
-            os.system('cmus-remote -s')
-        elif command == 'volup':
-            os.system('cmus-remote -v +5')
-        elif command == 'voldn':
-            os.system('cmus-remote -v -5')
+        cmd = {
+            'play': 'cmus-remote -p',
+            'pause': 'cmus-remote -u',
+            'next': 'cmus-remote -n',
+            'prev': 'cmus-remote -r',
+            'stop': 'cmus-remote -s',
+            'volup': 'cmus-remote -v +5',
+            'voldn': 'cmus-remote -v -5',
+        }.get(command)
+
+        if cmd:
+            os.system(cmd)
+            return True

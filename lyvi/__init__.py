@@ -39,7 +39,7 @@ def parse_config():
     if os.path.exists(file):
         config.update((k, v) for k, v in runpy.run_path(file).items() if k in config)
     elif args.config_file:
-        print('Configuration file not found: ' + file)
+        sys.stderr.write('Configuration file not found: ' + file + '\n')
         sys.exit()
     return config
 
@@ -125,10 +125,11 @@ if args.list_players:
     sys.exit()
 player = lyvi.players.find()
 if not player:
-    print('No running supported player found!')
+    sys.stderr.write('No running supported player found!\n')
     sys.exit()
 if args.command:
-    player.send_command(args.command)
+    if not player.send_command(args.command):
+        sys.stderr.write('Unknown command: ' + args.command + '\n')
     sys.exit()
 md = init_metadata()
 bg = init_background()

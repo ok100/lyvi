@@ -16,8 +16,8 @@ class Player(Player):
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None}
-        response = check_output('mocp -i 2> /dev/null')
-        for line in response.splitlines():
+
+        for line in check_output('mocp -i 2> /dev/null').splitlines():
             if line.startswith('State: '):
                 data['state'] = (line.split()[1]
                         .replace('PLAY', 'play')
@@ -31,21 +31,21 @@ class Player(Player):
                 data['title'] = line.split(' ', 1)[1]
             elif line.startswith('File: '):
                 data['file'] = line.split(' ', 1)[1]
+
         for k in data:
             setattr(self, k, data[k])
 
     def send_command(self, command):
-        if command == 'play':
-            os.system('mocp -U 2> /dev/null')
-        elif command == 'pause':
-            os.system('mocp -P 2> /dev/null')
-        elif command == 'next':
-            os.system('mocp -f 2> /dev/null')
-        elif command == 'prev':
-            os.system('mocp -r 2> /dev/null')
-        elif command == 'stop':
-            os.system('mocp -s 2> /dev/null')
-        elif command == 'volup':
-            os.system('mocp --volume +5 2> /dev/null')
-        elif command == 'voldn':
-            os.system('mocp --volume -5 2> /dev/null')
+        cmd = {
+            'play': 'mocp -U 2> /dev/null',
+            'pause': 'mocp -P 2> /dev/null',
+            'next': 'mocp -f 2> /dev/null',
+            'prev': 'mocp -r 2> /dev/null',
+            'stop': 'mocp -s 2> /dev/null',
+            'volup': 'mocp --volume +5 2> /dev/null',
+            'voldn': 'mocp --volume -5 2> /dev/null',
+        }.get(command)
+        
+        if cmd:
+            os.system(cmd)
+            return True

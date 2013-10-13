@@ -58,6 +58,7 @@ class Player(Player):
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None}
+
         data['state'] = (self.playerstatus['PlaybackStatus']
                 .replace('Stopped', 'stop')
                 .replace('Playing', 'play')
@@ -80,28 +81,33 @@ class Player(Player):
             data['file'] = self.playerstatus['Metadata']['xesam:url'].split('file://')[1]
         except KeyError:
             pass
+
         for k in data:
             setattr(self, k, data[k])
 
     def send_command(self, command):
-        try:
-            if command == 'play':
-                self.mprisplayer.PlayPause()
-            elif command == 'pause':
-                self.mprisplayer.Pause()
-            elif command == 'next':
-                self.mprisplayer.Next()
-            elif command == 'prev':
-                self.mprisplayer.Previous()
-            elif command == 'stop':
-                self.mprisplayer.Stop()
-            elif command == 'volup':
-                volume = self.playerstatus['Volume'] + 0.1
-                self.mprisprops.Set('org.mpris.MediaPlayer2.Player', 'Volume', min(volume, 1.0))
-            elif command == 'voldn':
-                volume = self.playerstatus['Volume'] - 0.1
-                self.mprisprops.Set('org.mpris.MediaPlayer2.Player', 'Volume', max(volume, 0.0))
-        except dbus.DBusException:
-            # Some players (rhythmbox) raises DBusException when attempt to
-            # use "next"/"prev" command on first/last item of the playlist
-            pass
+        if command == 'volup':
+            volume = self.playerstatus['Volume'] + 0.1
+            self.mprisprops.Set('org.mpris.MediaPlayer2.Player', 'Volume', min(volume, 1.0))
+            return True
+        if command == 'voldn':
+            volume = self.playerstatus['Volume'] - 0.1
+            self.mprisprops.Set('org.mpris.MediaPlayer2.Player', 'Volume', max(volume, 0.0))
+            return True
+
+        cmd = {
+            'play': self.mprisplayer.PlayPause,
+            'pause': self.mprisplayer.Pause,
+            'next': self.mprisplayer.Next,
+            'prev': self.mprisplayer.Previous,
+            'stop': self.mprisplayer.Stop,
+        }.get(command)
+        
+        if cmd:
+            try:
+                cmd()
+            except dbus.DBusException:
+                # Some players (rhythmbox) raises DBusException when attempt to
+                # use "next"/"prev" command on first/last item of the playlist
+                pass
+            return True
