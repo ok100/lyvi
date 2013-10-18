@@ -3,6 +3,9 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+"""Pianobar plugin for Lyvi."""
+
+
 import os
 
 from lyvi.players import Player
@@ -12,6 +15,7 @@ from lyvi.utils import process_fifo, running
 class Player(Player):
     NOWPLAYING_FILE = os.environ['HOME'] + '/.config/pianobar/nowplaying'
     FIFO = os.environ['HOME'] + '/.config/pianobar/ctl'
+    # Default control keys
     config = {
         'act_songpausetoggle': 'p',
         'act_songnext': 'n',
@@ -24,6 +28,8 @@ class Player(Player):
         return running('pianobar') and os.path.exists(self.NOWPLAYING_FILE)
 
     def __init__(self):
+        """Get the actual control keys from the pianobar configuration file
+        so we can send the right commands to the fifo."""
         with open(os.environ['HOME'] + '/.config/pianobar/config') as f:
             for line in f.read().splitlines():
                 if not line.strip().startswith('#') and line.split('=')[0].strip() in self.config:

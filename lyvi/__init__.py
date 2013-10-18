@@ -3,12 +3,14 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+"""Command-line lyrics (and more!) viewer."""
+
 import argparse
 import os
 import runpy
 import sys
+import time
 from tempfile import gettempdir
-from time import sleep
 
 import lyvi.config_defaults
 from lyvi.utils import thread
@@ -21,6 +23,7 @@ PID = os.getpid()
 
 
 def parse_args():
+    """Return the populated Namespace of command-line args."""
     parser = argparse.ArgumentParser(prog='lyvi')
     parser.add_argument('command', nargs='?',
         help='send a command to the player and exit')
@@ -34,6 +37,7 @@ def parse_args():
 
 
 def parse_config():
+    """Return a dict with updated configuration options."""
     config = dict(lyvi.config_defaults.defaults)
     file = args.config_file or os.environ['HOME'] + '/.config/lyvi/lyvi.conf'
     if os.path.exists(file):
@@ -45,11 +49,15 @@ def parse_config():
 
 
 def print_version():
+    """Print version information."""
     import plyr
     print('Lyvi %s, using libglyr %s' % (VERSION, plyr.version().split()[1]))
 
 
 def init_background():
+    """If background is enabled, return the initialized Background class, 
+    otherwise return None.
+    """
     if config['bg']:
         import lyvi.background
         if (config['bg_tmux_backdrops_pane'] is not None
@@ -63,16 +71,19 @@ def init_background():
 
 
 def init_ui():
+    """Return the initialized Ui class."""
     import lyvi.tui
     return lyvi.tui.Ui()
 
 
 def init_metadata():
+    """Return the initialized Metadata class."""
     import lyvi.metadata
     return lyvi.metadata.Metadata()
 
 
 def watch_player():
+    """Main loop which checks for new song and updates the metadata."""
     while True:
         if not player.running():
             exit()
@@ -93,16 +104,18 @@ def watch_player():
             md.set_tags()
             for item in needsupdate:
                 thread(md.get, (item,))
-        sleep(1)
+        time.sleep(1)
 
 
 def exit():
+    """Do the cleanup and exit the app."""
     ui.quit = True
     if bg:
         bg.cleanup()
 
 
 def main():
+    """Start the app."""
     thread(watch_player)
     ui.init()
     try:
@@ -113,7 +126,7 @@ def main():
         exit()
 
 
-# Objects used across the whole package
+# Shared objects used across the whole package
 args = parse_args()
 config = parse_config()
 if args.version:

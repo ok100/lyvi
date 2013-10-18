@@ -3,6 +3,9 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+"""Cmus plugin for Lyvi."""
+
+
 import os
 
 from lyvi.players import Player

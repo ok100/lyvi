@@ -3,6 +3,9 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+"""MPD plugin for Lyvi."""
+
+
 import os
 import telnetlib
 
@@ -17,6 +20,7 @@ class Player(Player):
         return (lyvi.config['mpd_host'] not in ('localhost', '127.0.0.1') or running('mpd'))
 
     def __init__(self):
+        """Get a path to the music directory and initialize the telnet connection."""
         self.music_dir = None
         if os.path.exists(lyvi.config['mpd_config_file']):
             for line in open(lyvi.config['mpd_config_file']):
@@ -67,4 +71,5 @@ class Player(Player):
             return True
     
     def __del__(self):
+        """Close the telnet connection."""
         self.telnet.close()
