@@ -3,6 +3,10 @@
 # terms of the Do What The Fuck You Want To Public License, Version 2,
 # as published by Sam Hocevar. See the COPYING file for more details.
 
+from math import ceil
+from threading import Thread, Event
+from time import sleep
+
 import urwid
 
 import lyvi
@@ -40,21 +44,51 @@ class MyListBox(urwid.ListBox):
         return self.__super.keypress(size, key)
 
     def calculate_visible(self, size, focus=False):
+        self.size = size
         width, height = size
-        middle, top, bottom = self.__super.calculate_visible(size, focus)
+        middle, top, bottom = self.__super.calculate_visible(self.size, focus)
         fpos = self.body.index(top[1][-1][0]) if top[1] else self.focus_position
         top_line = sum([self.body[n].rows((width,)) for n in range(0, fpos)]) + top[0]
-        total_lines = sum([widget.rows((width,)) for widget in self.body])
-        if total_lines <= height:
+        self.total_lines = sum([widget.rows((width,)) for widget in self.body])
+        if self.total_lines <= height:
             self.pos = 'All'
         elif top_line == 0:
             self.pos = 'Top'
-        elif top_line + height == total_lines:
+        elif top_line + height == self.total_lines:
             self.pos = 'Bot'
         else:
-            self.pos = '%d%%' % round(top_line * 100 / (total_lines - height))
+            self.pos = '%d%%' % round(top_line * 100 / (self.total_lines - height))
         self._emit('changed')
         return middle, top, bottom
+
+
+class Autoscroll(Thread):
+    def __init__(self, widget):
+        super().__init__()
+        self.daemon = True
+        self.widget = widget
+        self.event = Event()
+
+    def _can_scroll(self):
+        return lyvi.player.length and lyvi.player.state == 'play' and lyvi.ui.view == 'lyrics'
+
+    def run(self):
+        while True:
+            if self._can_scroll():
+                time = ceil(lyvi.player.length / (self.widget.total_lines - self.widget.size[1]))
+                for _ in range(time):
+                    if self.event.wait(1):
+                        reset = True
+                        self.event.clear()
+                        break
+                    reset = False
+                if not reset and self._can_scroll():
+                    self.widget.keypress(self.widget.size, 'down')
+            else:
+                sleep(1)
+
+    def reset(self):
+        self.event.set()
 
 
 class Ui:
@@ -93,14 +127,18 @@ class Ui:
             ('content', lyvi.config['text_fg'], lyvi.config['text_bg']),
             ('statusbar', lyvi.config['statusbar_fg'], lyvi.config['statusbar_bg']),
         ]
+
         self.head = urwid.Text(('header', ''))
         self.statusbar = urwid.AttrMap(urwid.Text('', align='right'), 'statusbar')
         self.content = urwid.SimpleListWalker([urwid.Text(('content', ''))])
         self.listbox = MyListBox(self.content)
-        self.frame = urwid.Frame(urwid.Padding(self.listbox, left=1, right=1),
-            footer=self.statusbar)
-        urwid.connect_signal(self.listbox, 'changed', self.update_statusbar)
+        self.frame = urwid.Frame(urwid.Padding(self.listbox, left=1, right=1), footer=self.statusbar)
         self.loop = urwid.MainLoop(self.frame, palette, unhandled_input=self.input)
+        self.autoscroll = Autoscroll(self.listbox) if lyvi.config['autoscroll'] else None
+
+        if self.autoscroll:
+            self.autoscroll.start()
+        urwid.connect_signal(self.listbox, 'changed', self.update_statusbar)
         self.set_alarm()
 
     def set_alarm(self):

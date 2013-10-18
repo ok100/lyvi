@@ -46,6 +46,8 @@ class Metadata:
     def lyrics(self, value):
         self._lyrics = value
         lyvi.ui.update()
+        if lyvi.ui.autoscroll:
+            lyvi.ui.autoscroll.reset()
         if lyvi.config['save_lyrics']:
             self.save('lyrics', lyvi.config['save_lyrics_filename'])
 

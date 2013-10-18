@@ -57,12 +57,16 @@ class Player(Player):
         self.playerstatus = self.mprisprops.GetAll('org.mpris.MediaPlayer2.Player')
 
     def get_status(self):
-        data = {'artist': None, 'album': None, 'title': None, 'file': None}
+        data = {'artist': None, 'album': None, 'title': None, 'file': None, 'length': None}
 
         data['state'] = (self.playerstatus['PlaybackStatus']
                 .replace('Stopped', 'stop')
                 .replace('Playing', 'play')
                 .replace('Paused', 'pause'))
+        try:
+            data['length'] = round(int(self.playerstatus['Metadata']['mpris:length']) / 1000000)
+        except KeyError:
+            pass
         try:
             data['artist'] = self.playerstatus['Metadata']['xesam:artist'][0]
         except KeyError:

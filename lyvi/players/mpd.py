@@ -28,26 +28,30 @@ class Player(Player):
         self.telnet.read_until(b'\n')
 
     def get_status(self):
-        tags = {'artist': None, 'album': None, 'title': None, 'file': None}
+        data = {'artist': None, 'album': None, 'title': None, 'file': None, 'length': None}
+
         self.telnet.write(b'status\n')
         response = self.telnet.read_until(b'OK').decode()
         self.telnet.write(b'currentsong\n')
         response += self.telnet.read_until(b'OK').decode()
-        data = {
+        t = {
             'state: ': 'state',
             'Artist: ': 'artist',
             'Title: ': 'title',
             'Album: ': 'album',
             'file: ': 'file',
+            'time: ': 'length',
         }
         for line in response.splitlines():
-            for k in data:
+            for k in t:
                 if line.startswith(k):
-                    tags[data[k]] = line.split(k, 1)[1]
+                    data[t[k]] = line.split(k, 1)[1]
                     break
-        tags['file'] = self.music_dir + tags['file'] if tags['file'] and self.music_dir else None
-        for k in tags:
-            setattr(self, k, tags[k])
+        data['file'] = self.music_dir + data['file'] if data['file'] and self.music_dir else None
+        data['length'] = int(data['length'].split(':')[1]) if data['length'] else None
+
+        for k in data:
+            setattr(self, k, data[k])
 
     def send_command(self, command):
         cmd = {

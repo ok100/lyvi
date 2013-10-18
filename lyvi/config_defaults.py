@@ -6,6 +6,7 @@
 import os
 
 defaults = {
+    'autoscroll': False,
     'bg': False,
     'bg_opacity': 0.15,
     'bg_tmux_backdrops_pane': None,

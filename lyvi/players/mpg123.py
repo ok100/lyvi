@@ -17,7 +17,7 @@ class Player(Player):
         return running('mpg123') and os.path.exists(self.LOG_FILE)
 
     def get_status(self):
-        data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play'}
+        data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play', 'length': None}
 
         with open(self.LOG_FILE) as f:
             for line in f.read().splitlines():

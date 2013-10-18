@@ -15,7 +15,7 @@ class Player(Player):
         return os.path.exists(os.environ['HOME'] + '/.moc/pid')
 
     def get_status(self):
-        data = {'artist': None, 'album': None, 'title': None, 'file': None}
+        data = {'artist': None, 'album': None, 'title': None, 'file': None, 'length': None}
 
         for line in check_output('mocp -i 2> /dev/null').splitlines():
             if line.startswith('State: '):
@@ -31,6 +31,8 @@ class Player(Player):
                 data['title'] = line.split(' ', 1)[1]
             elif line.startswith('File: '):
                 data['file'] = line.split(' ', 1)[1]
+            elif line.startswith('TotalSec: '):
+                data['length'] = int(line.split(' ', 1)[1])
 
         for k in data:
             setattr(self, k, data[k])

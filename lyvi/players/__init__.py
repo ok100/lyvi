@@ -37,22 +37,38 @@ def find():
 
 
 class Player:
+    _artist = None
+    _album = None
+    _title = None
+    _file = None
+    _length = None
     _state = 'stop'
-    artist = None
-    album = None
-    title = None
-    file = None
-    
-    @property
-    def state(self):
-        return self._state
-    @state.setter
-    def state(self, value):
-        if value in ('play', 'pause', 'stop'):
-            self._state = value
-        else:
-            raise ValueError('incorrect state value: ' + value)
 
+    def _getter(var):
+        def get(self):
+            return getattr(self, var)
+        return get
+
+    def _setter(var, vtype):
+        def set(self, value):
+            if type(vtype) is tuple:
+                if value in vtype:
+                    setattr(self, var, value)
+                else:
+                    raise ValueError('unsupported value for \'%s\': %s' % (var[1:], value))
+            elif isinstance(value, vtype) or value is None:
+                setattr(self, var, value)
+            else:
+                raise ValueError('unsupported type for \'%s\': %s' % (var[1:], type(value).__name__))
+        return set
+
+    artist = property(_getter('_artist'), _setter('_artist', str))
+    album = property(_getter('_album'), _setter('_album', str))
+    title = property(_getter('_title'), _setter('_title', str))
+    file = property(_getter('_file'), _setter('_file', str))
+    length = property(_getter('_length'), _setter('_length', int))
+    state = property(_getter('_state'), _setter('_state', ('play', 'pause', 'stop')))
+    
     @classmethod
     def running(self):
         raise NotImplementedError('running() should be implemented in subclass') 

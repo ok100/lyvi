@@ -105,13 +105,15 @@ class Tmux:
         return layout
 
     def _get_size_px(self):
-        info = check_output('xwininfo -name ' + lyvi.config['bg_tmux_window_title'])
-        try:
-            width = int(info.split('Width: ')[1].split('\n')[0])
-            height = int(info.split('Height: ')[1].split('\n')[0])
-        except IndexError:
-            width = height = 0
-        return width, height
+        while(True):
+            info = check_output('xwininfo -name ' + lyvi.config['bg_tmux_window_title'])
+            try:
+                width = int(info.split('Width: ')[1].split('\n')[0])
+                height = int(info.split('Height: ')[1].split('\n')[0])
+            except IndexError:
+                continue
+            else:
+                return width, height
     
     def update(self):
         self.layout = self._get_layout()

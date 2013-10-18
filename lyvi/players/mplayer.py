@@ -20,6 +20,7 @@ class Player(Player):
         'ID_CLIP_INFO_VALUE1=': 'artist',
         'ID_CLIP_INFO_VALUE3=': 'album',
         'ID_FILENAME=': 'file',
+        'ID_LENGTH=': 'length',
     }
 
     @classmethod
@@ -27,13 +28,16 @@ class Player(Player):
         return (running('mplayer') or running('mpv')) and os.path.exists(self.LOG_FILE)
 
     def get_status(self):
-        data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play'}
+        data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play', 'length': None}
 
         with open(self.LOG_FILE) as f:
             for line in f.read().splitlines():
                 for i in self.ID:
                     if i in line:
                         data[self.ID[i]] = line.split(i)[1]
+
+        if data['length']:
+            data['length'] = int(data['length'].split('.')[0])
 
         for k in data:
             setattr(self, k, data[k])
