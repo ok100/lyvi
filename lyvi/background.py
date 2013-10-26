@@ -5,6 +5,7 @@
 
 """Classes for normal and Tmux backgrounds."""
 
+
 import os
 from io import BytesIO
 
@@ -21,7 +22,6 @@ for line in check_output('xrdb -query').splitlines():
         break
 else:
     BG_COLOR = '#FFFFFF'
-del line
 
 
 def pil_image(image):

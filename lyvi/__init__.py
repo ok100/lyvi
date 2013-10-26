@@ -5,6 +5,7 @@
 
 """Command-line lyrics (and more!) viewer."""
 
+
 import argparse
 import os
 import runpy
