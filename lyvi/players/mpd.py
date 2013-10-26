@@ -7,7 +7,7 @@
 
 
 import os
-import telnetlib
+from telnetlib import Telnet
 
 import lyvi
 from lyvi.players import Player
@@ -17,7 +17,11 @@ from lyvi.utils import running
 class Player(Player):
     @classmethod
     def running(self):
-        return (lyvi.config['mpd_host'] not in ('localhost', '127.0.0.1') or running('mpd'))
+        try:
+            Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port'])
+            return True
+        except OSError:
+            return False
 
     def __init__(self):
         """Get a path to the music directory and initialize the telnet connection."""
@@ -28,7 +32,7 @@ class Player(Player):
                     self.music_dir = line.split('"')[1]
                     if not self.music_dir.endswith('/'):
                         self.music_dir += '/'
-        self.telnet = telnetlib.Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port'])
+        self.telnet = Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port'])
         self.telnet.read_until(b'\n')
 
     def get_status(self):

@@ -14,5 +14,5 @@ setup(
     license='WTFPL',
     packages=['lyvi', 'lyvi.players'],
     scripts=['scripts/lyvi'],
-    install_requires=['Pillow', 'plyr', 'urwid']
+    install_requires=['Pillow', 'plyr', 'urwid', 'psutil']
 )
