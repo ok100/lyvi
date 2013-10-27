@@ -42,10 +42,18 @@ def parse_config():
     config = dict(lyvi.config_defaults.defaults)
     file = args.config_file or os.environ['HOME'] + '/.config/lyvi/lyvi.conf'
     if os.path.exists(file):
-        config.update((k, v) for k, v in runpy.run_path(file).items() if k in config)
+        try:
+            config.update((k, v) for k, v in runpy.run_path(file).items() if k in config)
+        except:
+            # Error in configuration file
+            import traceback
+            tbtype, tbvalue, tb = sys.exc_info()
+            sys.stderr.write('\033[31mError in configuration file.\033[0m\n\n%s\n'
+                    % ''.join(traceback.format_exception_only(tbtype, tbvalue)).strip())
+            sys.exit(1)
     elif args.config_file:
         sys.stderr.write('Configuration file not found: ' + file + '\n')
-        sys.exit()
+        sys.exit(1)
     return config
 
 
@@ -140,11 +148,11 @@ if args.list_players:
 player = lyvi.players.find()
 if not player:
     sys.stderr.write('No running supported player found!\n')
-    sys.exit()
+    sys.exit(1)
 if args.command:
     if not player.send_command(args.command):
         sys.stderr.write('Unknown command: ' + args.command + '\n')
-    sys.exit()
+    sys.exit(1)
 md = init_metadata()
 bg = init_background()
 ui = init_ui()
