@@ -14,5 +14,6 @@ setup(
     license='WTFPL',
     packages=['lyvi', 'lyvi.players'],
     scripts=['scripts/lyvi'],
-    install_requires=['Pillow', 'plyr', 'urwid', 'psutil']
+    install_requires=['Pillow', 'plyr', 'urwid', 'psutil'],
+    package_data={'lyvi': ['data/pianobar/*']}
 )
