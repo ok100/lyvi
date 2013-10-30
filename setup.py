@@ -15,5 +15,6 @@ setup(
     packages=['lyvi', 'lyvi.players'],
     scripts=['scripts/lyvi'],
     install_requires=['Pillow', 'plyr', 'urwid', 'psutil'],
-    package_data={'lyvi': ['data/pianobar/*']}
+    package_data={'lyvi': ['data/pianobar/*']},
+    data_files=[('share/man/man1', ['doc/lyvi.1'])]
 )
