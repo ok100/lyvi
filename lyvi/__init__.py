@@ -152,7 +152,8 @@ if not player:
 if args.command:
     if not player.send_command(args.command):
         sys.stderr.write('Unknown command: ' + args.command + '\n')
-    sys.exit(1)
+        sys.exit(1)
+    sys.exit()
 md = init_metadata()
 bg = init_background()
 ui = init_ui()
