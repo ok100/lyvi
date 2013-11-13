@@ -18,7 +18,7 @@ class Player(Player):
     @classmethod
     def running(self):
         try:
-            Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port'])
+            Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port']).close()
             return True
         except OSError:
             return False
