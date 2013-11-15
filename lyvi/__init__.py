@@ -121,6 +121,7 @@ def exit():
     ui.quit = True
     if bg:
         bg.cleanup()
+    player.cleanup()
 
 
 def main():

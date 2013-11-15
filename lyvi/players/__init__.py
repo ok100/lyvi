@@ -112,6 +112,10 @@ class Player:
         """
         pass
 
+    def cleanup(self):
+        """Cleanup the player object."""
+        pass
+
 
 # Import all players from the players list
 for player in players:

@@ -74,6 +74,5 @@ class Player(Player):
             self.telnet.write(cmd)
             return True
     
-    def __del__(self):
-        """Close the telnet connection."""
+    def cleanup(self):
         self.telnet.close()
