@@ -15,7 +15,7 @@ from lyvi.utils import check_output
 class Player(Player):
     @classmethod
     def running(self):
-        return os.path.exists(os.environ['HOME'] + '/.cmus/socket')
+        return os.system('cmus-remote -C') == 0
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'length': None}
