@@ -7,6 +7,7 @@
 
 
 import os
+import subprocess
 
 from lyvi.players import Player
 from lyvi.utils import check_output
@@ -15,7 +16,10 @@ from lyvi.utils import check_output
 class Player(Player):
     @classmethod
     def running(self):
-        return os.system('cmus-remote -C') == 0
+        try:
+            return subprocess.call(['cmus-remote', '-C']) == 0
+        except OSError:
+            return False
 
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'length': None}
