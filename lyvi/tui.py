@@ -6,8 +6,8 @@
 """Curses user interface."""
 
 
-import math
-import time
+from math import ceil
+from time import sleep
 from threading import Thread, Event
 
 import urwid
@@ -104,7 +104,7 @@ class Autoscroll(Thread):
         """Start the timer."""
         while True:
             if self._can_scroll():
-                time = math.ceil(lyvi.player.length / (self.widget.total_lines - self.widget.size[1]))
+                time = ceil(lyvi.player.length / (self.widget.total_lines - self.widget.size[1]))
                 for _ in range(time):
                     if self.event.wait(1):
                         reset = True
@@ -114,7 +114,7 @@ class Autoscroll(Thread):
                 if not reset and self._can_scroll():
                     self.widget.keypress(self.widget.size, 'down')
             else:
-                time.sleep(1)
+                sleep(1)
 
     def reset(self):
         """Reset the timer."""

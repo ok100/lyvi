@@ -39,10 +39,9 @@ def process_socket(sock, command):
     file -- the path to the socket
     command -- the command without newline character at the end
     """
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.connect(sock)
-    s.send((command + '\n').encode())
-    s.close()
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+        s.connect(sock)
+        s.send((command + '\n').encode())
 
 
 def running(process_name):

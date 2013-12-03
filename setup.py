@@ -13,7 +13,11 @@ setup(
     author_email='ok100@openmailbox.org',
     license='WTFPL',
     packages=['lyvi', 'lyvi.players'],
-    scripts=['scripts/lyvi'],
+    entry_points={
+        'console_scripts': [
+            'lyvi = lyvi:main'
+        ]
+    },
     install_requires=['Pillow', 'plyr', 'urwid', 'psutil'],
     package_data={'lyvi': ['data/pianobar/*']},
     data_files=[('share/man/man1', ['doc/lyvi.1'])]
