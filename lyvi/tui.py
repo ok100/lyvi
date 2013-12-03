@@ -105,12 +105,12 @@ class Autoscroll(Thread):
         while True:
             if self._can_scroll():
                 time = ceil(lyvi.player.length / (self.widget.total_lines - self.widget.size[1]))
+                reset = False
                 for _ in range(time):
                     if self.event.wait(1):
                         reset = True
                         self.event.clear()
                         break
-                    reset = False
                 if not reset and self._can_scroll():
                     self.widget.keypress(self.widget.size, 'down')
             else:
