@@ -1,0 +1,417 @@
+.\" Man page generated from reStructuredText.
+.
+.TH LYVI 1 "" "2.0-git" ""
+.SH NAME
+Lyvi \- command-line lyrics (and more!) viewer
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.sp
+\fBlyvi [\-h] [\-c file] [\-l] [\-v] [command]\fP
+.SH DESCRIPTION
+.sp
+Lyvi is a lyrics, artist info and guitar tabs viewer. On supported terminals, Lyvi can also
+show artist photos and cover images.
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \fB\-h\fP, \fB\-\-help\fP
+Show help message and exit.
+.TP
+.B \fB\-c\fP, \fB\-\-config\-file file\fP
+Change the configuration file from default \fB$HOME/.config/lyvi/lyvi.conf\fP to \fBfile\fP\&.
+.TP
+.B \fB\-l\fP, \fB\-\-list\-players\fP
+Print a list of supported players and exit.
+.TP
+.B \fB\-v\fP, \fB\-\-version\fP
+Print version information and exit.
+.TP
+.B \fBcommand\fP
+Send a command to the connected player and exit.
+.sp
+Available commands are:
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+\fBplay\fP
+.IP \(bu 2
+\fBpause\fP
+.IP \(bu 2
+\fBnext\fP
+.IP \(bu 2
+\fBprev\fP
+.IP \(bu 2
+\fBstop\fP
+.IP \(bu 2
+\fBvolup\fP
+.IP \(bu 2
+\fBvoldn\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBNote:\fP Not all commands are supported by all players.
+.UNINDENT
+.SH KEY BINDINGS
+.INDENT 0.0
+.TP
+.B \fBq\fP
+Quit
+.TP
+.B \fBR\fP
+Reload metadata for current view
+.TP
+.B \fBs\fP
+Toggle background type
+.TP
+.B \fBa\fP
+Toggle view
+.TP
+.B \fBh\fP
+Toggle UI
+.TP
+.B \fBUp/k/Mouse wheel\fP
+Scroll up
+.TP
+.B \fBDown/j/Mouse wheel\fP
+Scroll down
+.TP
+.B \fBg\fP
+Scroll to the top
+.TP
+.B \fBG\fP
+Scroll to the bottom
+.UNINDENT
+.SH PLAYER SETUP
+.sp
+Players not mentioned here should work out\-of\-box.
+.SS Mpd
+.INDENT 0.0
+.IP \(bu 2
+\fIOptional:\fP Set \fBmpd_host\fP, \fBmpd_port\fP and \fBmpd_config_file\fP configuration options (see below)
+.UNINDENT
+.SS Mpg123
+.INDENT 0.0
+.IP \(bu 2
+Redirect \fBmpg123\fP output to \fB/tmp/mpg123.log\fP, e.g.:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mpg123 *.mp3 2> /tmp/mpg123.log
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Mplayer
+.INDENT 0.0
+.IP \(bu 2
+\fIOptional:\fP Set \fBmplayer_config_dir\fP configuration option (see below)
+.IP \(bu 2
+Create a fifo:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkfifo /path/to/mplayer/config/dir/fifo
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+Add this line to mplayer configuration file:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+input=file=/path/to/mplayer/config/dir/fifo
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+If you\(aqre using MPlayer with a front\-end (e.g. SMPlayer, UMPlayer...), configure it to save
+MPlayer log to \fB/path/to/mplayer/config/dir/log\fP file
+.INDENT 2.0
+.INDENT 3.5
+.INDENT 0.0
+.IP a. 3
+For SMPlayer/UMPlayer, this option is located at
+Options > Preferences > Advanced > Logs > Autosave MPlayer log to file
+.IP b. 3
+For standalone MPlayer, you need to run it with the following command\-line arguments:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mplayer \-quiet \-msglevel all=0 \-identify *.mp3 > /path/to/mplayer/config/dir/log
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Pianobar
+.INDENT 0.0
+.IP \(bu 2
+Copy \fBeventcmd\fP script from \fBlyvi/data/pianobar/\fP to \fB~/.config/pianobar/\fP and make it executable.
+If you already have custom \fBeventcmd\fP script, add \fBsongstart\fP event like in the example script.
+.IP \(bu 2
+Add this line to \fB~/.config/pianobar/config\fP:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+event_command = /home/USER/.config/pianobar/eventcmd
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+Create a fifo:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkfifo ~/.config/pianobar/ctl
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Shell\-fm
+.INDENT 0.0
+.IP \(bu 2
+Add these lines to \fB~/.shell\-fm/shell\-fm.rc\fP:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+np\-file = /home/USER/.shell\-fm/nowplaying
+np\-file\-format = %a|%t|%l|%p
+unix = /home/USER/.shell\-fm/socket
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH CONFIGURATION
+.sp
+Default path to the configuration file is \fB$HOME/.config/lyvi/lyvi.conf\fP\&.
+The configuration file has Python syntax. Basically, each line should contain one configuration option
+in the \fBoption = value\fP format.
+.SS Options
+.sp
+Each option is in the format \fBoption [type] (default_value)\fP\&.
+.INDENT 0.0
+.TP
+.B \fBautoscroll [bool] (False)\fP
+Enable autoscroll.
+.TP
+.B \fBbg [bool] (False)\fP
+Enable background. Currently, the background is supported only in urxvt.
+.TP
+.B \fBbg_opacity [float] (0.15)\fP
+Background opacity.
+.TP
+.B \fBbg_tmux_backdrops_pane [int or None] (None)\fP
+A tmux pane where the backdrops are displayed. Panes are numbered from 0.
+To enable tmux support, this option must be set.
+.TP
+.B \fBbg_tmux_backdrops_underlying [bool] (False)\fP
+Set to True if Lyvi is running in the same pane where backdrops are displayed.
+.TP
+.B \fBbg_tmux_cover_pane [int or None] (None)\fP
+A tmux pane where the covers are displayed. Panes are numbered from 0.
+To enable tmux support, this option must be set.
+.TP
+.B \fBbg_tmux_cover_underlying [bool] (False)\fP
+Set to True if Lyvi is running in the same pane where covers are displayed.
+.TP
+.B \fBbg_tmux_window_title [str or None] (None)\fP
+A title of the terminal window running tmux.
+To enable tmux support, this option must be set.
+.TP
+.B \fBbg_type [\(aqbackdrops\(aq or \(aqcover\(aq] (\(aqcover\(aq)\fP
+Default background type.
+.TP
+.B \fBdefault_player [str or None] (None)\fP
+Try to find player specified with this option first.
+.TP
+.B \fBdefault_view [\(aqlyrics\(aq or \(aqartistbio\(aq or \(aqguitartabs\(aq] (\(aqlyrics\(aq)\fP
+Default view.
+.TP
+.B \fBheader_bg [str] (\(aqdefault\(aq)\fP
+Background color of the header.
+.TP
+.B \fBheader_fg [str] (\(aqwhite\(aq)\fP
+Foreground color of the header.
+.TP
+.B \fBkey_quit [str] (\(aqq\(aq)\fP
+"Quit" key.
+.TP
+.B \fBkey_reload_view [str] (\(aqR\(aq)\fP
+"Reload current view" key.
+.TP
+.B \fBkey_toggle_bg_type [str] (\(aqs\(aq)\fP
+"Toggle background type" key.
+.TP
+.B \fBkey_toggle_views [str] (\(aqa\(aq)\fP
+"Toggle view" key.
+.TP
+.B \fBkey_toggle_ui [str] (\(aqh\(aq)\fP
+"Toggle UI" key.
+.TP
+.B \fBmpd_config_file [str] (\(aq~/.mpdconf\(aq or \(aq/etc/mpd.conf\(aq)\fP
+Path to the mpd configuration file.
+.TP
+.B \fBmpd_host [str] (same as MPD_HOST environment variable or \(aqlocalhost\(aq)\fP
+Mpd host.
+.TP
+.B \fBmpd_port [int] (same as MPD_PORT environment variable or 6600)\fP
+Mpd port.
+.TP
+.B \fBmplayer_config_dir [str] (os.environ[\(aqHOME\(aq] + \(aq/.mplayer/\(aq)\fP
+Path to the mplayer configuration directory.
+.TP
+.B \fBsave_cover [str or None] (None)\fP
+Path to the saved cover (see below).
+.TP
+.B \fBsave_lyrics [str or None] (None)\fP
+Path to the saved lyrics (see below).
+.TP
+.B \fBstatusbar_bg [str] (\(aqdefault\(aq)\fP
+Background color of the statusbar.
+.TP
+.B \fBstatusbar_fg [str] (\(aqdefault\(aq)\fP
+Foreground color of the statusbar.
+.TP
+.B \fBtext_bg [str] (\(aqdefault\(aq)\fP
+Background color of the text.
+.TP
+.B \fBtext_fg [str] (\(aqdefault\(aq)\fP
+Foreground color of the text.
+.TP
+.B \fBui_hidden [bool] (False)\fP
+Hide UI by default.
+.UNINDENT
+.SS Metadata saving
+.sp
+In the \fBsave_lyrics\fP and \fBsave_cover\fP options, the following variables can be used:
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+\fB<filename>\fP \-\- current song\(aqs file name without the suffix
+.IP \(bu 2
+\fB<songdir>\fP \-\- current song\(aqs directory
+.IP \(bu 2
+\fB<artist>\fP \-\- current song\(aqs artist
+.IP \(bu 2
+\fB<title>\fP \-\- current song\(aqs title
+.IP \(bu 2
+\fB<album>\fP \-\- current song\(aqs album
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+E.g.:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+save_lyrics = \(aq<songdir>/<filename>.lyric\(aq
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Examples
+.INDENT 0.0
+.IP \(bu 2
+MPD as a default player, normal background:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+player = \(aqmpd\(aq
+bg = True
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+Tmux background, assuming that tmux window title is "music" and both cover and backdrops
+are displayed in the pane 2:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+bg = True
+bg_tmux_window_title = \(aqmusic\(aq
+bg_tmux_backdrops_pane = 2
+bg_tmux_cover_pane = 2
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+Disable "Quit" and "Toggle UI" keys if Lyvi is running in tmux:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+import os
+
+if \(aqTMUX\(aq in os.environ:
+    key_quit = None
+    key_toggle_ui = None
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH AUTHOR
+Ondrej Kipila <ok100 at openmailbox dot org>
+.\" Generated by docutils manpage writer.
+.

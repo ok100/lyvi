@@ -8,6 +8,5 @@ done < <(grep -e '^\(title\|artist\|album\|stationName\|pRet\|pRetStr\|wRet\|wRe
 
 case "$1" in
 	songstart)
-		echo "$artist\\$title\\$album" > $HOME/.config/pianobar/nowplaying
-	;;
+		echo "$artist|$title|$album" > $HOME/.config/pianobar/nowplaying ;;
 esac
