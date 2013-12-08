@@ -98,7 +98,8 @@ class Autoscroll(Thread):
 
     def _can_scroll(self):
         """Return True if we can autoscroll."""
-        return lyvi.player.length and lyvi.player.state == 'play' and lyvi.ui.view == 'lyrics' and not lyvi.ui.hidden
+        return (lyvi.player.length and lyvi.player.state == 'play' and lyvi.ui.view == 'lyrics'
+                and not lyvi.ui.hidden and self.widget.pos not in ('All', 'Bot'))
 
     def run(self):
         """Start the timer."""
