@@ -13,7 +13,17 @@ import lyvi
 
 
 # List of all player-specific submodules
-players = ['cmus', 'moc', 'mpg123', 'pianobar', 'shell-fm', 'mplayer', 'mpd', 'mpris']
+players = [
+    'cmus',
+    'moc',
+    'mpg123',
+    'pianobar',
+    'shell-fm',
+    'mplayer',
+    'xmms2',
+    'mpd',
+    'mpris',
+]
 
 
 def list():
