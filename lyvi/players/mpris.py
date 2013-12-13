@@ -110,7 +110,7 @@ class Player(Player):
             pass
         try:
             data['file'] = self.playerstatus['Metadata']['xesam:url'].split('file://')[1]
-        except KeyError:
+        except (KeyError, IndexError):
             pass
 
         for k in data:
