@@ -10,7 +10,7 @@ setup(
     name='Lyvi',
     version='2.0-git',
     description='Command-line lyrics (and more!) viewer',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     url='http://ok100.github.io/lyvi/',
     author='Ondrej Kipila',
     author_email='ok100@openmailbox.org',
