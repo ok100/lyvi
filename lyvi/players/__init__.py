@@ -22,8 +22,16 @@ players = [
     'mplayer',
     'xmms2',
     'mpd',
-    'mpris',
 ]
+
+# Enable MPRIS only if dbus and GObject modules are available
+try:
+    import dbus
+    from gi.repository import GObject
+except ImportError:
+    mpris = False
+else:
+    players.append('mpris')
 
 
 def list():
@@ -35,14 +43,16 @@ def list():
 
 def find():
     """Return the initialized player class, or None if no player was found."""
-    players.pop(players.index('mpris'))
+    if mpris:
+        players.pop(players.index('mpris'))
     if lyvi.config['default_player']:
-        if mpris.running(lyvi.config['default_player']):
+        if mpris and mpris.running(lyvi.config['default_player']):
             return mpris.Player(lyvi.config['default_player'])
         players.insert(0, players.pop(players.index(lyvi.config['default_player'])))
-    obj = mpris.find()
-    if obj:
-        return obj
+    if mpris:
+        obj = mpris.find()
+        if obj:
+            return obj
     for name in players:
         obj = getattr(sys.modules[__name__], name).Player
         if obj.running():
@@ -83,7 +93,7 @@ class Player:
     file = property(_getter('_file'), _setter('_file', str))
     length = property(_getter('_length'), _setter('_length', int))
     state = property(_getter('_state'), _setter('_state', ('play', 'pause', 'stop')))
-    
+
     @classmethod
     def running(self):
         """Return True if the player is running."""
@@ -110,7 +120,7 @@ class Player:
 
         Keyword arguments:
         command -- a command to send
-        
+
         Command names:
         play -- start playback
         pause -- pause playback

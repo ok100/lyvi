@@ -1,8 +1,6 @@
 from setuptools import setup
 
 
-print('Please make sure to have python-dbus and python-gobject modules installed.')
-
 setup(
     name='Lyvi',
     version='2.0-git',
@@ -22,3 +20,5 @@ setup(
     package_data={'lyvi': ['data/pianobar/*']},
     data_files=[('share/man/man1', ['doc/lyvi.1'])]
 )
+
+print('To enable MPRIS support, please make sure to have python-dbus and python-gobject modules installed.')
