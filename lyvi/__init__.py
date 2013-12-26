@@ -16,9 +16,11 @@ from tempfile import gettempdir
 import lyvi.config_defaults
 from lyvi.utils import thread
 
+# Make this PEP 386 compatible:
+__version__ = '2.0-git'
 
-VERSION = '2.0-git'
-USERAGENT = 'lyvi/' + VERSION
+
+USERAGENT = 'lyvi/' + __version__
 TEMP = gettempdir()
 PID = os.getpid()
 
@@ -60,11 +62,11 @@ def parse_config():
 def print_version():
     """Print version information."""
     import plyr
-    print('Lyvi %s, using libglyr %s' % (VERSION, plyr.version().split()[1]))
+    print('Lyvi %s, using libglyr %s' % (__version__, plyr.version().split()[1]))
 
 
 def init_background():
-    """If background is enabled, return the initialized Background class, 
+    """If background is enabled, return the initialized Background class,
     otherwise return None.
     """
     if config['bg']:
@@ -136,7 +138,6 @@ def main():
         exit()
 
 
-# Shared objects used across the whole package
 args = parse_args()
 config = parse_config()
 if args.version:
