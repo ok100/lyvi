@@ -1,4 +1,10 @@
 from setuptools import setup
+from pip.req import parse_requirements
+from lyvi import __version__
+
+
+# parse_requirements() returns generator of pip.req.InstallRequirement objects
+install_reqs = parse_requirements('pip_requirements.txt')
 
 
 setup(
@@ -16,7 +22,7 @@ setup(
             'lyvi = lyvi:main'
         ]
     },
-    install_requires=['Pillow', 'plyr', 'urwid', 'psutil'],
+    install_requires=[str(ir.req) for ir in install_reqs],
     package_data={'lyvi': ['data/pianobar/*']},
     data_files=[('share/man/man1', ['doc/lyvi.1'])]
 )

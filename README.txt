@@ -2,3 +2,23 @@ Lyvi
 ====
 
 For more information, see http://ok100.github.io/lyvi/
+
+
+You can install the python dependencies by issuing:
+
+.. code-block:: python
+
+    $ sudo pip install -r pip_requirements.txt --use-mirrors
+
+This will also be done for you when issuing the setup.py script.
+
+There are other dependencies that need to be installed separately though:
+
+    * ``libglyr`` (https://github.com/sahib/glyr)
+
+For MPRIS support these dependencies are needed:
+
+    * ``python-dbus``
+    * ``python-gobject``
+
+Chances are that all these are available by your package manager.
