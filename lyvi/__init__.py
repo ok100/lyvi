@@ -138,7 +138,6 @@ def main():
         exit()
 
 
-# Shared objects used across the whole package
 args = parse_args()
 config = parse_config()
 if args.version:

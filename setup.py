@@ -1,6 +1,5 @@
 from setuptools import setup
 from pip.req import parse_requirements
-from lyvi import __version__
 
 
 # parse_requirements() returns generator of pip.req.InstallRequirement objects
