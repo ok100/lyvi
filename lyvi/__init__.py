@@ -9,6 +9,7 @@
 import argparse
 import os
 import runpy
+import signal
 import sys
 import time
 from tempfile import gettempdir
@@ -118,8 +119,11 @@ def watch_player():
         time.sleep(1)
 
 
-def exit():
-    """Do the cleanup and exit the app."""
+def exit(signum=None, frame=None):
+    """Do the cleanup and exit the app.
+
+    Parameters are not used, but required for signal callback.
+    """
     ui.quit = True
     if bg:
         bg.cleanup()
@@ -159,3 +163,6 @@ if args.command:
 md = init_metadata()
 bg = init_background()
 ui = init_ui()
+
+# Also do the cleanup when the terminal is closed
+signal.signal(signal.SIGHUP, exit)
