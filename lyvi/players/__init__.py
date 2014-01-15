@@ -97,22 +97,20 @@ class Player:
     @classmethod
     def running(self):
         """Return True if the player is running."""
-        raise NotImplementedError('running() should be implemented in subclass') 
+        raise NotImplementedError('running() should be implemented in subclass')
 
     def get_status(self):
         """Set the class properties to the actual values.
 
         Properties:
-        state -- string
-        artist -- string
-        album -- string
-        title -- string
-        file -- string
-        length -- int (in seconds)
-
-        Property 'state' must be one of: 'play', 'pause', 'stop', other properties can be None.
+        state -- str ('play', 'pause' or 'stop')
+        artist -- str or None
+        album -- str or None
+        title -- str or None
+        file -- str or None
+        length -- int (in seconds) or None
         """
-        raise NotImplementedError('get_status() should be implemented in subclass') 
+        raise NotImplementedError('get_status() should be implemented in subclass')
 
     def send_command(self, command):
         """Send a given command to the player. Return True if the command was recognized.

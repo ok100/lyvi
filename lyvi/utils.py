@@ -7,7 +7,7 @@
 
 
 import socket
-import subprocess
+import subprocess as sp
 from threading import Thread
 
 from psutil import process_iter
@@ -16,8 +16,8 @@ from psutil import process_iter
 def check_output(command):
     """Return an output of the given command."""
     try:
-        return subprocess.check_output(command, shell=True).decode()
-    except subprocess.CalledProcessError:
+        return sp.check_output(command, shell=True, stderr=sp.DEVNULL).decode()
+    except sp.CalledProcessError:
         return ''
 
 

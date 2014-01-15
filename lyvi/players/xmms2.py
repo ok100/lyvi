@@ -7,15 +7,13 @@
 
 
 import os
-
-import urllib.parse
+from urllib.parse import unquote_plus
 
 from lyvi.players import Player
 from lyvi.utils import running, check_output
 
 
 class Player(Player):
-
     @classmethod
     def running(self):
         return running('xmms2d')
@@ -24,19 +22,17 @@ class Player(Player):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play', 'length': None}
         try:
             data['state'], data['artist'], data['album'], data['title'], data['file'], data['length'] = \
-                    check_output('xmms2 current -f \'${playback_status}|${artist}|${album}|${title}|${url}|${duration}\' 2> /dev/null').split('|')
+                    check_output('xmms2 current -f \'${playback_status}|${artist}|${album}|${title}|${url}|${duration}\'').split('|')
         except ValueError:
             return
 
-        data['state'] = (data['state']
-                .replace('Playing', 'play')
-                .replace('Paused', 'pause')
-                .replace('Stopped', 'stop'))
+        for x, y in (('Playing', 'play'), ('Paused', 'pause'), ('Stopped', 'stop')):
+            data['state'] = data['state'].replace(x, y)
 
         # unquote_plus replaces % not as plus signs but as spaces (url decode)
-        data['file'] = (urllib.parse.unquote_plus(data['file']).strip()
-                .replace('\'', '')
-                .replace("file://", ""))
+        data['file'] = unquote_plus(data['file']).strip()
+        for x, y in (('\'', ''), ('file://', '')):
+            data['file'] = data['file'].replace(x, y)
 
         try:
             data['length'] = int(data['length'].split(':')[0]) * 60 + int(data['length'].split(':')[1])
@@ -48,13 +44,13 @@ class Player(Player):
 
     def send_command(self, command):
         cmd = {
-            'play': 'xmms2 play 2> /dev/null',
-            'pause': 'xmms2 pause 2> /dev/null',
-            'next': 'xmms2 jump +1 2> /dev/null',
-            'prev': 'xmms2 jump -1 2> /dev/null',
-            'stop': 'xmms2 stop 2> /dev/null',
-            'volup': 'xmms2 server volume +5 2> /dev/null',
-            'voldn': 'xmms2 server volume -5 2> /dev/null',
+            'play': 'xmms2 play',
+            'pause': 'xmms2 pause',
+            'next': 'xmms2 jump +1',
+            'prev': 'xmms2 jump -1',
+            'stop': 'xmms2 stop',
+            'volup': 'xmms2 server volume +5',
+            'voldn': 'xmms2 server volume -5',
         }.get(command)
 
         if cmd:

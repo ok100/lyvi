@@ -26,19 +26,19 @@ class Player(Player):
 
         for line in check_output('cmus-remote -Q').splitlines():
             if line.startswith('status '):
-                data['state'] = (line.split()[1].replace('playing', 'play')
-                        .replace('paused', 'pause')
-                        .replace('stopped', 'stop'))
+                data['state'] = line.split()[1].replace('playing', 'play')
+                for x, y in (('playing', 'play'), ('paused', 'pause'), ('stopped', 'stop')):
+                    data['state'] = data['state'].replace(x, y)
             elif line.startswith('tag artist '):
-                data['artist'] = line.split(' ', 2)[2]
+                data['artist'] = line.split(maxsplit=2)[2]
             elif line.startswith('tag album '):
-                data['album'] = line.split(' ', 2)[2]
+                data['album'] = line.split(maxsplit=2)[2]
             elif line.startswith('tag title '):
-                data['title'] = line.split(' ', 2)[2]
+                data['title'] = line.split(maxsplit=2)[2]
             elif line.startswith('file '):
-                data['file'] = line.split(' ', 1)[1]
+                data['file'] = line.split(maxsplit=1)[1]
             elif line.startswith('duration '):
-                data['length'] = int(line.split(' ', 1)[1])
+                data['length'] = int(line.split(maxsplit=1)[1])
 
         for k in data:
             setattr(self, k, data[k])
