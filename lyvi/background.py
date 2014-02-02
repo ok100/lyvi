@@ -82,7 +82,7 @@ class Background:
 
     def __init__(self):
         """Initialize the class."""
-        self.FILE = '%s/lyvi-%s.jpg' % (lyvi.TEMP, lyvi.PID)
+        self.FILE = os.path.join(lyvi.TEMP, 'lyvi-%s.jpg' % lyvi.PID)
         self.type = lyvi.config['bg_type']
         self.opacity = lyvi.config['bg_opacity']
 
@@ -191,7 +191,7 @@ class Tmux:
                 continue
             else:
                 return width, height
-    
+
     def update(self):
         """Set class properties to the actual values."""
         self.layout = self._get_layout()
@@ -201,7 +201,7 @@ class Tmux:
 
 
 class TmuxBackground(Background):
-    ESCAPE_STR_BEG = 'printf "\ePtmux;\e\e]20;'   
+    ESCAPE_STR_BEG = 'printf "\ePtmux;\e\e]20;'
     ESCAPE_STR_END = ';100x100+50+50:op=keep-aspect\a\e\\\\"'
 
     def __init__(self):
@@ -214,12 +214,12 @@ class TmuxBackground(Background):
         image = Image.new('RGB', (self._tmux.width, self._tmux.height), BG_COLOR)
         if not clean:
             cover = {
-                'image': lyvi.md.cover, 
+                'image': lyvi.md.cover,
                 'pane': self._tmux.layout[lyvi.config['bg_tmux_cover_pane'] + 1],
                 'underlying': lyvi.config['bg_tmux_cover_underlying']
             }
             backdrops = {
-                'image': lyvi.md.backdrops, 
+                'image': lyvi.md.backdrops,
                 'pane': self._tmux.layout[lyvi.config['bg_tmux_backdrops_pane'] + 1],
                 'underlying': lyvi.config['bg_tmux_backdrops_underlying']
             }

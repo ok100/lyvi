@@ -86,7 +86,7 @@ class Metadata:
 
     def __init__(self):
         """Initialize the class."""
-        cache_dir = os.environ['HOME'] + '/.local/share/lyvi'
+        cache_dir = os.path.join(os.environ['HOME'], '.local/share/lyvi')
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
         self.cache = plyr.Database(cache_dir)
@@ -134,8 +134,8 @@ class Metadata:
         data = getattr(self, type)
         if self.file and data and data != 'Searching...':
             replace = {
-                '<filename>': self.file.rsplit('/', 1)[1].rsplit('.', 1)[0],
-                '<songdir>': self.file.rsplit('/', 1)[0],
+                '<filename>': os.path.splitext(os.path.basename(self.file))[0],
+                '<songdir>': os.path.dirname(self.file),
                 '<artist>': self.artist,
                 '<title>': self.title,
                 '<album>': self.album
@@ -143,8 +143,8 @@ class Metadata:
             file = filename
             for k in replace:
                 file = file.replace(k, replace[k])
-            if not os.path.exists(file.rsplit('/', 1)[0]):
-                os.makedirs(file.rsplit('/', 1)[0])
+            if not os.path.exists(os.path.dirname(file)):
+                os.makedirs(os.path.dirname(file))
             if not os.path.exists(file):
                 mode = 'wb' if isinstance(data, bytes) else 'w'
                 with open(file, mode) as f:

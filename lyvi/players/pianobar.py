@@ -13,8 +13,9 @@ from lyvi.utils import process_fifo, running
 
 
 class Player(Player):
-    NOWPLAYING_FILE = os.environ['HOME'] + '/.config/pianobar/nowplaying'
-    FIFO = os.environ['HOME'] + '/.config/pianobar/ctl'
+    CONFIG_FILE = os.path.join(os.environ['HOME'], '.config/pianobar/config')
+    NOWPLAYING_FILE = os.path.join(os.environ['HOME'], '.config/pianobar/nowplaying')
+    FIFO = os.path.join(os.environ['HOME'], '.config/pianobar/ctl')
     # Default control keys
     config = {
         'act_songpausetoggle': 'p',
@@ -30,7 +31,7 @@ class Player(Player):
     def __init__(self):
         """Get the actual control keys from the pianobar configuration file
         so we can send the right commands to the fifo."""
-        with open(os.environ['HOME'] + '/.config/pianobar/config') as f:
+        with open(self.CONFIG_FILE) as f:
             for line in f.read().splitlines():
                 if not line.strip().startswith('#') and line.split('=')[0].strip() in self.config:
                     self.config[line.split('=')[0].strip()] = line.split('=')[1].strip()

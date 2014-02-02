@@ -12,12 +12,10 @@ import lyvi
 from lyvi.players import Player
 from lyvi.utils import process_fifo, running
 
-if not lyvi.config['mplayer_config_dir'].endswith('/'):
-    lyvi.config['mplayer_config_dir'] = lyvi.config['mplayer_config_dir'] + '/'
 
 class Player(Player):
-    LOG_FILE = lyvi.config['mplayer_config_dir'] + 'log'
-    FIFO = lyvi.config['mplayer_config_dir'] + 'fifo'
+    LOG_FILE = os.path.join(lyvi.config['mplayer_config_dir'], 'log')
+    FIFO = os.path.join(lyvi.config['mplayer_config_dir'], 'fifo')
     ID = {
         'ID_CLIP_INFO_VALUE0=': 'title',
         'ID_CLIP_INFO_VALUE1=': 'artist',

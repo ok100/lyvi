@@ -111,8 +111,8 @@ defaults = {
 # Path to the mpd configuration file.
 # Type: str
 # Default value: '~/.mpdconf' or '/etc/mpd.conf'
-'mpd_config_file': os.environ['HOME'] + '/.mpdconf'
-    if os.path.exists(os.environ['HOME'] + '/.mpdconf') else '/etc/mpd.conf',
+'mpd_config_file': os.path.join(os.environ['HOME'], '.mpdconf')
+    if os.path.exists(os.path.join(os.environ['HOME'], '.mpdconf')) else '/etc/mpd.conf',
 
 # Mpd host.
 # Type: str
@@ -126,8 +126,8 @@ defaults = {
 
 # Path to the mplayer configuration directory.
 # Type: str
-# Default value: '~/.mplayer/'
-'mplayer_config_dir': os.environ['HOME'] + '/.mplayer/',
+# Default value: '~/.mplayer'
+'mplayer_config_dir': os.path.join(os.environ['HOME'], '.mplayer'),
 
 # Path to the saved cover.
 # Type: str

@@ -30,8 +30,6 @@ class Player(Player):
             for line in open(lyvi.config['mpd_config_file']):
                 if line.strip().startswith('music_directory'):
                     self.music_dir = line.split('"')[1]
-                    if not self.music_dir.endswith('/'):
-                        self.music_dir += '/'
         self.telnet = Telnet(lyvi.config['mpd_host'], lyvi.config['mpd_port'])
         self.telnet.read_until(b'\n')
 
@@ -55,7 +53,7 @@ class Player(Player):
                 if line.startswith(k):
                     data[t[k]] = line.split(k, 1)[1]
                     break
-        data['file'] = self.music_dir + data['file'] if data['file'] and self.music_dir else None
+        data['file'] = os.path.join(self.music_dir, data['file']) if data['file'] and self.music_dir else None
         data['length'] = int(data['length'].split(':')[1]) if data['length'] else None
 
         for k in data:
