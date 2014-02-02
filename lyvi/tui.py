@@ -237,24 +237,27 @@ class Ui:
                 lyvi.bg.update()
                 self.update()
 
-    def reload_view(self):
+    def reload(self, type):
         """Reload metadata for current view."""
         from lyvi.utils import thread
         import lyvi.metadata
-        lyvi.md.delete(self.view, lyvi.md.artist, lyvi.md.title, lyvi.md.album)
-        thread(lyvi.md.get, (self.view,))
+        lyvi.md.delete(type, lyvi.md.artist, lyvi.md.title, lyvi.md.album)
+        thread(lyvi.md.get, (type,))
 
     def input(self, key):
         """Process input not handled by any widget."""
-        bind = {
-            lyvi.config['key_quit']: lyvi.exit,
-            lyvi.config['key_toggle_views']: self.toggle_views,
-            lyvi.config['key_reload_view']: self.reload_view,
-            lyvi.config['key_toggle_bg_type']: lyvi.bg.toggle_type if lyvi.bg else None,
-            lyvi.config['key_toggle_ui']: self.toggle_visibility,
-        }.get(key)
-        if bind:
-            bind()
+        if key == lyvi.config['key_quit']:
+            lyvi.exit()
+        elif key == lyvi.config['key_toggle_views']:
+            self.toggle_views()
+        elif key == lyvi.config['key_reload_view']:
+            self.reload(self.view)
+        elif key == lyvi.config['key_reload_bg'] and lyvi.bg:
+            self.reload(lyvi.bg.type)
+        elif key == lyvi.config['key_toggle_bg_type'] and lyvi.bg:
+            lyvi.bg.toggle_type()
+        elif key == lyvi.config['key_toggle_ui']:
+            self.toggle_visibility()
 
     def mainloop(self):
         """Start the mainloop."""

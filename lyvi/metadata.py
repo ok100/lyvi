@@ -123,7 +123,7 @@ class Metadata:
         Keyword arguments:
         type -- type of the metadata
         filename -- path to the file metadata will be saved to
-        
+
         Some special substrings can be used in the filename:
         <filename> -- name of the current song without extension
         <songdir> -- directory containing the current song
@@ -182,6 +182,8 @@ class Metadata:
             lyvi.ui.home()
         if type in ('lyrics', 'artistbio', 'guitartabs'):
             setattr(self, type, 'Searching...')
+        elif type in ('backdrops', 'cover'):
+            setattr(self, type, None)
         items = self._query(type, normalize=False) or self._query(type)
         data = None
         if items:

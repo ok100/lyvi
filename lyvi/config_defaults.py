@@ -83,10 +83,15 @@ defaults = {
 # Default value: 'q'
 'key_quit': 'q',
 
-# 'Reload current view' key.
+# 'Reload background' key.
 # Type: str
 # Default value: 'R'
-'key_reload_view': 'R',
+'key_reload_bg': 'R',
+
+# 'Reload current view' key.
+# Type: str
+# Default value: 'r'
+'key_reload_view': 'r',
 
 # 'Toggle background type' key.
 # Type: str

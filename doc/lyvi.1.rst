@@ -53,6 +53,9 @@ KEY BINDINGS
     Quit
 
 ``R``
+    Reload background image
+
+``r``
     Reload metadata for current view
 
 ``s``
@@ -195,7 +198,10 @@ Each option is in the format ``option [type] (default_value)``.
 ``key_quit [str] ('q')``
     "Quit" key.
 
-``key_reload_view [str] ('R')``
+``key_reload_bg [str] ('R')``
+    "Reload background" key.
+
+``key_reload_view [str] ('r')``
     "Reload current view" key.
 
 ``key_toggle_bg_type [str] ('s')``
