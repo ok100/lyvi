@@ -17,22 +17,31 @@ class Player(Player):
     def running(self):
         return os.path.exists(os.path.join(os.environ['HOME'], '.moc/pid'))
 
+    def get_info_value(self, info_line):
+        """Extract 'A value' from line 'ValueName: A value'."""
+        try:
+            return info_line.split(maxsplit=1)[1]
+        except IndexError:
+            # Empty value.
+            return None
+
     def get_status(self):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'length': None}
 
         for line in check_output('mocp -i').splitlines():
+            info_value = self.get_info_value(line)
             if line.startswith('State: '):
-                data['state'] = line.split()[1].lower()
+                data['state'] = info_value.lower()
             elif line.startswith('Artist: '):
-                data['artist'] = line.split(maxsplit=1)[1]
+                data['artist'] = info_value or ''
             elif line.startswith('Album: '):
-                data['album'] = line.split(maxsplit=1)[1]
+                data['album'] = info_value or ''
             elif line.startswith('SongTitle: '):
-                data['title'] = line.split(maxsplit=1)[1]
+                data['title'] = info_value or ''
             elif line.startswith('File: '):
-                data['file'] = line.split(maxsplit=1)[1]
+                data['file'] = info_value
             elif line.startswith('TotalSec: '):
-                data['length'] = int(line.split(maxsplit=1)[1])
+                data['length'] = int(info_value)
 
         for k in data:
             setattr(self, k, data[k])
