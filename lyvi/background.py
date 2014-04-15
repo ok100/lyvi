@@ -7,6 +7,7 @@
 
 
 import os
+import sys
 from io import BytesIO
 
 from PIL import Image
@@ -77,8 +78,8 @@ def resize(image, x, y):
 
 
 class Background:
-    ESCAPE_STR_BEG = 'printf "\e]20;'
-    ESCAPE_STR_END = ';100x100+50+50:op=keep-aspect\a"'
+    ESCAPE_STR_BEG = "\033]20;"
+    ESCAPE_STR_END = ";100x100+50+50:op=keep-aspect\a"
 
     def __init__(self):
         """Initialize the class."""
@@ -107,7 +108,7 @@ class Background:
 
     def _set(self):
         """Set the image file as a terminal background."""
-        os.system(self.ESCAPE_STR_BEG + self.FILE + self.ESCAPE_STR_END)
+        sys.stdout.write(self.ESCAPE_STR_BEG + self.FILE + self.ESCAPE_STR_END)
 
     def update(self, clean=False):
         """Update the background.
@@ -201,8 +202,8 @@ class Tmux:
 
 
 class TmuxBackground(Background):
-    ESCAPE_STR_BEG = 'printf "\ePtmux;\e\e]20;'
-    ESCAPE_STR_END = ';100x100+50+50:op=keep-aspect\a\e\\\\"'
+    ESCAPE_STR_BEG = "\033Ptmux;\033\033]20;"
+    ESCAPE_STR_END = ";100x100+50+50:op=keep-aspect\a\033\\\\"
 
     def __init__(self):
         """Initialize the class."""
