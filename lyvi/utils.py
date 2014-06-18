@@ -51,7 +51,7 @@ def running(process_name):
     process_name -- the name of the process
     """
     for p in process_iter():
-        if p.name == process_name:
+        if p.name() == process_name:
             return True
     return False
 
@@ -63,6 +63,6 @@ def thread(target, args=()):
     target -- the target object
     args -- a tuple of arguments to be passed to the target object
     """
-    worker = Thread(target=target, args=args)
-    worker.daemon = True
-    worker.start()
+    w = Thread(target=target, args=args)
+    w.daemon = True
+    w.start()
