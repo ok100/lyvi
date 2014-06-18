@@ -15,7 +15,7 @@ from lyvi.utils import check_output
 class Player(Player):
     @classmethod
     def running(self):
-        return os.path.exists(os.path.join(os.environ['HOME'], '.moc/pid'))
+        return os.path.exists(os.path.join(os.environ['HOME'], '.moc', 'pid'))
 
     def get_info_value(self, info_line):
         """Extract 'A value' from line 'ValueName: A value'."""

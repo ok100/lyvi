@@ -43,7 +43,7 @@ def parse_args():
 def parse_config():
     """Return a dict with updated configuration options."""
     config = dict(lyvi.config_defaults.defaults)
-    file = args.config_file or os.path.join(os.environ['HOME'], '.config/lyvi/lyvi.conf')
+    file = args.config_file or os.path.join(os.environ['HOME'], '.config', 'lyvi', 'lyvi.conf')
     if os.path.exists(file):
         try:
             config.update((k, v) for k, v in runpy.run_path(file).items() if k in config)

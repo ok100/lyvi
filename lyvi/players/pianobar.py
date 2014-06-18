@@ -13,9 +13,9 @@ from lyvi.utils import process_fifo, running
 
 
 class Player(Player):
-    CONFIG_FILE = os.path.join(os.environ['HOME'], '.config/pianobar/config')
-    NOWPLAYING_FILE = os.path.join(os.environ['HOME'], '.config/pianobar/nowplaying')
-    FIFO = os.path.join(os.environ['HOME'], '.config/pianobar/ctl')
+    CONFIG_FILE = os.path.join(os.environ['HOME'], '.config', 'pianobar', 'config')
+    NOWPLAYING_FILE = os.path.join(os.environ['HOME'], '.config', 'pianobar', 'nowplaying')
+    FIFO = os.path.join(os.environ['HOME'], '.config', 'pianobar', 'ctl')
     # Default control keys
     config = {
         'act_songpausetoggle': 'p',

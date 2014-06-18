@@ -117,12 +117,12 @@ class Metadata:
         if artist and title and album:
             self.cache.delete(plyr.Query(get_type=type, artist=artist, title=title, album=album))
 
-    def save(self, type, filename):
+    def save(self, type, file):
         """Save the given metadata type.
 
         Keyword arguments:
         type -- type of the metadata
-        filename -- path to the file metadata will be saved to
+        file -- path to the file metadata will be saved to
 
         Some special substrings can be used in the filename:
         <filename> -- name of the current song without extension
@@ -133,16 +133,14 @@ class Metadata:
         """
         data = getattr(self, type)
         if self.file and data and data != 'Searching...':
-            replace = {
+            for k, v in {
                 '<filename>': os.path.splitext(os.path.basename(self.file))[0],
                 '<songdir>': os.path.dirname(self.file),
                 '<artist>': self.artist,
                 '<title>': self.title,
                 '<album>': self.album
-            }
-            file = filename
-            for k in replace:
-                file = file.replace(k, replace[k])
+            }:
+                file = file.replace(k, v)
             if not os.path.exists(os.path.dirname(file)):
                 os.makedirs(os.path.dirname(file))
             if not os.path.exists(file):
@@ -151,7 +149,7 @@ class Metadata:
                     f.write(data)
 
     def _query(self, type, normalize=True):
-        """Return the list containing results from the glyr.Query,
+        """Return a list containing results from glyr.Query,
         or None if some tags are missing.
 
         Keyword arguments:
@@ -160,15 +158,13 @@ class Metadata:
         """
         try:
             query = plyr.Query(get_type=type, artist=self.artist, title=self.title, album=self.album)
-        except AttributeError:
-            # Missing tags?
+        except AttributeError:  # Missing tags?
             return None
-        else:
-            query.useragent = lyvi.USERAGENT
-            query.database = self.cache
-            if not normalize:
-                query.normalize = ('none', 'artist', 'album', 'title')
-            return query.commit()
+        query.useragent = lyvi.USERAGENT
+        query.database = self.cache
+        if not normalize:
+            query.normalize = ('none', 'artist', 'album', 'title')
+        return query.commit()
 
     def get(self, type):
         """Download and set the metadata for the given property.
@@ -184,7 +180,7 @@ class Metadata:
             setattr(self, type, 'Searching...')
         elif type in ('backdrops', 'cover'):
             setattr(self, type, None)
-        items = self._query(type, normalize=False) or self._query(type)
+        items = self._query(type) or self._query(type, normalize=False)
         data = None
         if items:
             if type in ('backdrops', 'cover'):

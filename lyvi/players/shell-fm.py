@@ -13,8 +13,8 @@ from lyvi.utils import process_socket, running
 
 
 class Player(Player):
-    NOWPLAYING_FILE = os.path.join(os.environ['HOME'], '.shell-fm/nowplaying')
-    SOCKET = os.path.join(os.environ['HOME'], '.shell-fm/socket')
+    NOWPLAYING_FILE = os.path.join(os.environ['HOME'], '.shell-fm', 'nowplaying')
+    SOCKET = os.path.join(os.environ['HOME'], '.shell-fm', 'socket')
 
     @classmethod
     def running(self):

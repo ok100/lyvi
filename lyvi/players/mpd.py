@@ -11,7 +11,6 @@ from telnetlib import Telnet
 
 import lyvi
 from lyvi.players import Player
-from lyvi.utils import running
 
 
 class Player(Player):
@@ -71,6 +70,6 @@ class Player(Player):
         if cmd:
             self.telnet.write(cmd)
             return True
-    
+
     def cleanup(self):
         self.telnet.close()

@@ -124,7 +124,7 @@ class Autoscroll(Thread):
 
 class Ui:
     """Main UI class.
-    
+
     Attributes:
     view -- current view
     hidden -- whether the UI is hidden
@@ -157,8 +157,8 @@ class Ui:
     def text(self, value):
         self._text = value
         if not self.hidden:
-            self.content[:] = [self.head, urwid.Divider()] + \
-                    [urwid.Text(('content', line)) for line in self.text.splitlines()]
+            lines = [urwid.Text(('content', line)) for line in self.text.splitlines()]
+            self.content[:] = [self.head, urwid.Divider()] + lines
             self._refresh()
 
     def init(self):
