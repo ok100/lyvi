@@ -256,6 +256,7 @@ class Ui:
             self.reload(lyvi.bg.type)
         elif key == lyvi.config['key_toggle_bg_type'] and lyvi.bg:
             lyvi.bg.toggle_type()
+            self.update()
         elif key == lyvi.config['key_toggle_ui']:
             self.toggle_visibility()
 
