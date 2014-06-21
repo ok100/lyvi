@@ -18,7 +18,7 @@ import lyvi.config_defaults
 from lyvi.utils import thread
 
 # Make this PEP 386 compatible:
-__version__ = '2.0-git'
+__version__ = '2.0.0'
 
 
 USERAGENT = 'lyvi/' + __version__
