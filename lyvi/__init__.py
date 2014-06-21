@@ -70,15 +70,24 @@ def init_background():
     """If background is enabled, return the initialized Background class,
     otherwise return None.
     """
-    if config['bg']:
-        import lyvi.background
-        if (config['bg_tmux_backdrops_pane'] is not None
-                and config['bg_tmux_cover_pane'] is not None
-                and config['bg_tmux_window_title'] is not None
-                and 'TMUX' in os.environ):
-            return lyvi.background.TmuxBackground()
-        elif 'rxvt' in os.environ['TERM']:
-            return lyvi.background.Background()
+    if not config['bg']:
+        return None
+
+    try:
+        import PIL
+        assert PIL
+    except ImportError:
+        return None
+
+    import lyvi.background
+    if (config['bg_tmux_backdrops_pane'] is not None
+            and config['bg_tmux_cover_pane'] is not None
+            and config['bg_tmux_window_title'] is not None
+            and 'TMUX' in os.environ):
+        return lyvi.background.TmuxBackground()
+    elif 'rxvt' in os.environ['TERM']:
+        return lyvi.background.Background()
+
     return None
 
 
