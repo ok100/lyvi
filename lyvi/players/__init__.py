@@ -7,33 +7,10 @@
 
 
 import importlib
+import pkgutil
 import sys
 
 import lyvi
-
-
-# List of all player-specific submodules
-players = [
-    'cmus',
-    'moc',
-    'mpg123',
-    'pianobar',
-    'shell-fm',
-    'mplayer',
-    'xmms2',
-    'mpd',
-]
-
-# Enable MPRIS only if dbus and GObject modules are available
-try:
-    import dbus
-    from gi.repository import GObject
-    assert dbus
-    assert GObject
-except ImportError:
-    mpris = False
-else:
-    players.append('mpris')
 
 
 def list():
@@ -137,6 +114,14 @@ class Player:
         pass
 
 
-# Import all players from the players list
-for player in players:
-    importlib.import_module('lyvi.players.' + player)
+# Find and import player-specific submodules
+mpris = False
+players = []
+for _, player, _ in pkgutil.iter_modules(__path__):
+    try:
+        importlib.import_module(__name__ + '.' + player)
+        if player == 'mpris':
+            mpris = True
+        players.append(player)
+    except ImportError:
+        pass
