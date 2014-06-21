@@ -120,8 +120,6 @@ players = []
 for _, player, _ in pkgutil.iter_modules(__path__):
     try:
         importlib.import_module(__name__ + '.' + player)
-        if player == 'mpris':
-            mpris = True
         players.append(player)
     except ImportError:
         pass

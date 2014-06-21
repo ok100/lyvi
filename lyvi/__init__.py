@@ -76,12 +76,10 @@ def init_background():
         return None
 
     try:
-        import PIL
-        assert PIL
+        import lyvi.background
     except ImportError:
         return None
 
-    import lyvi.background
     if (config['bg_tmux_backdrops_pane'] is not None
             and config['bg_tmux_cover_pane'] is not None
             and config['bg_tmux_window_title'] is not None
