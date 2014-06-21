@@ -28,6 +28,8 @@ players = [
 try:
     import dbus
     from gi.repository import GObject
+    assert dbus
+    assert GObject
 except ImportError:
     mpris = False
 else:

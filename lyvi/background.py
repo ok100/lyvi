@@ -230,7 +230,7 @@ class TmuxBackground(Background):
                 to_paste = [cover, backdrops]
             for t in (t for t in to_paste if t['image']):
                 t['image'] = resize(t['image'], t['pane'].w * self._tmux.cell.w,
-                                                t['pane'].h * self._tmux.cell.h)
+                                    t['pane'].h * self._tmux.cell.h)
                 if t['underlying']:
                     t['image'] = blend(t['image'], self.opacity)
                 x1 = t['pane'].x * self._tmux.cell.w

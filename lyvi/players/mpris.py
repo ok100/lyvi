@@ -38,7 +38,7 @@ def find():
 
 def running(playername):
     """Return True if a MPRIS player with the given name is running.
-    
+
     Keyword arguments:
     playername -- mpris player name
     """
@@ -70,7 +70,7 @@ class Player(Player):
         # in the main loop
         bus = dbus.SessionBus()
         playerobject = bus.get_object('org.mpris.MediaPlayer2.' + self.playername,
-                '/org/mpris/MediaPlayer2')
+                                      '/org/mpris/MediaPlayer2')
         self.mprisplayer = dbus.Interface(playerobject, 'org.mpris.MediaPlayer2.Player')
         self.mprisprops = dbus.Interface(playerobject, 'org.freedesktop.DBus.Properties')
         self.mprisprops.connect_to_signal("PropertiesChanged", self.loaddata)
@@ -87,9 +87,9 @@ class Player(Player):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'length': None}
 
         data['state'] = (self.playerstatus['PlaybackStatus']
-                .replace('Stopped', 'stop')
-                .replace('Playing', 'play')
-                .replace('Paused', 'pause'))
+                         .replace('Stopped', 'stop')
+                         .replace('Playing', 'play')
+                         .replace('Paused', 'pause'))
         try:
             data['length'] = round(int(self.playerstatus['Metadata']['mpris:length']) / 1000000)
         except KeyError:
@@ -133,7 +133,7 @@ class Player(Player):
             'prev': self.mprisplayer.Previous,
             'stop': self.mprisplayer.Stop,
         }.get(command)
-        
+
         if cmd:
             try:
                 cmd()

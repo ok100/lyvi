@@ -22,7 +22,7 @@ class Player(Player):
         data = {'artist': None, 'album': None, 'title': None, 'file': None, 'state': 'play', 'length': None}
         try:
             data['state'], data['artist'], data['album'], data['title'], data['file'], data['length'] = \
-                    check_output('xmms2 current -f \'${playback_status}|${artist}|${album}|${title}|${url}|${duration}\'').split('|')
+                check_output('xmms2 current -f \'${playback_status}|${artist}|${album}|${title}|${url}|${duration}\'').split('|')
         except ValueError:
             return
 

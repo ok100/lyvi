@@ -12,6 +12,7 @@ import lyvi
 from lyvi.players import Player
 from lyvi.utils import running
 
+
 class Player(Player):
     LOG_FILE = os.path.join(lyvi.TEMP, 'mpg123.log')
 

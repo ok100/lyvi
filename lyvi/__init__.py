@@ -30,13 +30,15 @@ def parse_args():
     """Return the populated Namespace of command-line args."""
     parser = argparse.ArgumentParser(prog='lyvi')
     parser.add_argument('command', nargs='?',
-        help='send a command to the player and exit')
+                        help='send a command to the player and exit')
     parser.add_argument('-c', '--config-file',
-        help='path to an alternate config file')
+                        help='path to an alternate config file')
     parser.add_argument('-l', '--list-players',
-        help='print a list of supported players and exit', action='store_true')
+                        help='print a list of supported players and exit',
+                        action='store_true')
     parser.add_argument('-v', '--version',
-        help='print version information and exit', action='store_true')
+                        help='print version information and exit',
+                        action='store_true')
     return parser.parse_args()
 
 
@@ -52,7 +54,7 @@ def parse_config():
             import traceback
             tbtype, tbvalue, tb = sys.exc_info()
             sys.stderr.write('\033[31mError in configuration file.\033[0m\n\n%s\n'
-                    % ''.join(traceback.format_exception_only(tbtype, tbvalue)).strip())
+                             % ''.join(traceback.format_exception_only(tbtype, tbvalue)).strip())
             sys.exit(1)
     elif args.config_file:
         sys.stderr.write('Configuration file not found: ' + file + '\n')
