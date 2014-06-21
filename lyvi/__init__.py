@@ -118,8 +118,7 @@ def watch_player():
             if player.artist != md.artist:
                 needsupdate += ['artistbio']
             if bg:
-                if player.artist != md.artist:
-                    needsupdate += ['backdrops']
+                needsupdate += ['backdrops']
                 if player.album != md.album:
                     needsupdate += ['cover']
             md.set_tags()

@@ -7,6 +7,7 @@
 
 
 import os
+import random
 from threading import Lock
 
 import plyr
@@ -148,7 +149,7 @@ class Metadata:
                 with open(file, mode) as f:
                     f.write(data)
 
-    def _query(self, type, normalize=True):
+    def _query(self, type, normalize=True, number=1):
         """Return a list containing results from glyr.Query,
         or None if some tags are missing.
 
@@ -157,7 +158,14 @@ class Metadata:
         normalize -- whether the search strings should be normalized by glyr
         """
         try:
-            query = plyr.Query(get_type=type, artist=self.artist, title=self.title, album=self.album)
+            query = plyr.Query(
+                number=number,
+                parallel=20,
+                get_type=type,
+                artist=self.artist,
+                title=self.title,
+                album=self.album
+            )
         except AttributeError:  # Missing tags?
             return None
         query.useragent = lyvi.USERAGENT
@@ -172,21 +180,28 @@ class Metadata:
         Keyword arguments:
         type -- type of the metadata
         """
-        artist = self.artist
-        title = self.title
         if lyvi.ui.view == type:
             lyvi.ui.home()
+
+        artist = self.artist
+        title = self.title
+
+        number = 1
         if type in ('lyrics', 'artistbio', 'guitartabs'):
             setattr(self, type, 'Searching...')
         elif type in ('backdrops', 'cover'):
             setattr(self, type, None)
-        items = self._query(type) or self._query(type, normalize=False)
+            if type == 'backdrops':
+                number = 20
+
+        items = (self._query(type, number=number)
+                 or self._query(type, number=number, normalize=False))
         data = None
         if items:
             if type in ('backdrops', 'cover'):
-                data = items[0].data
+                data = random.choice(items).data
             else:
-                data = items[0].data.decode()
+                data = random.choice(items).data.decode()
         with self.lock:
             if artist == self.artist and title == self.title:
                 setattr(self, type, data)
