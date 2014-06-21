@@ -87,7 +87,7 @@ Players not mentioned here should work out-of-box.
 Mpd
 ---
 
-- *Optional:* Set ``mpd_host``, ``mpd_port`` and ``mpd_config_file`` configuration options (see below)
+- *Optional:* Set ``mpd_host``, ``mpd_port`` and ``mpd_config_file`` configuration options (see  CONFIGURATION section below)
 
 Mpg123
 ------
@@ -99,9 +99,9 @@ Mpg123
 Mplayer
 -------
 
-- *Optional:* Set ``mplayer_config_dir`` configuration option (see below)
-- Create a fifo::
-    
+- *Optional:* Set ``mplayer_config_dir`` configuration option (see CONFIGURATION section below)
+- Create fifo::
+
     mkfifo /path/to/mplayer/config/dir/fifo
 
 - Add this line to mplayer configuration file::
@@ -110,7 +110,7 @@ Mplayer
 
 - If you're using MPlayer with a front-end (e.g. SMPlayer, UMPlayer...), configure it to save
   MPlayer log to ``/path/to/mplayer/config/dir/log`` file
-   
+
     a. For SMPlayer/UMPlayer, this option is located at
        Options > Preferences > Advanced > Logs > Autosave MPlayer log to file
 
@@ -128,7 +128,7 @@ Pianobar
 
     event_command = /home/USER/.config/pianobar/eventcmd
 
-- Create a fifo::
+- Create fifo::
 
     mkfifo ~/.config/pianobar/ctl
 
@@ -270,7 +270,7 @@ Examples
 
 - Tmux background, assuming that tmux window title is "music" and both cover and backdrops
   are displayed in the pane 2::
-    
+
     bg = True
     bg_tmux_window_title = 'music'
     bg_tmux_backdrops_pane = 2
