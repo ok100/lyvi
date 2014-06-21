@@ -79,7 +79,7 @@ def resize(image, x, y):
 
 class Background:
     ESCAPE_STR_BEG = "\033]20;"
-    ESCAPE_STR_END = ";100x100+50+50:op=keep-aspect\a"
+    ESCAPE_STR_END = ";100:op=keep-aspect\a"
 
     def __init__(self):
         """Initialize the class."""
@@ -121,8 +121,9 @@ class Background:
 
     def cleanup(self):
         """Unset the background and delete the image file."""
-        self.update(clean=True)
-        os.remove(self.FILE)
+        sys.stdout.write(self.ESCAPE_STR_BEG + ';+1000000\a')
+        if os.path.exists(self.FILE):
+            os.remove(self.FILE)
 
 
 class Tmux:
