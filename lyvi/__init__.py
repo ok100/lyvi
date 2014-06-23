@@ -6,11 +6,16 @@
 """Command-line lyrics (and more!) viewer."""
 
 
+import sys
+
+if sys.version < '3':
+    print('Lyvi only supports Python 3.')
+    sys.exit(1)
+
 import argparse
 import os
 import runpy
 import signal
-import sys
 import time
 from tempfile import gettempdir
 
