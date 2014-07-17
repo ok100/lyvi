@@ -198,10 +198,12 @@ class Metadata:
                  or self._query(type, number=number, normalize=False))
         data = None
         if items:
-            if type in ('backdrops', 'cover'):
+            if type == 'backdrops':
                 data = random.choice(items).data
+            elif type == 'cover':
+                data = items[0].data
             else:
-                data = random.choice(items).data.decode()
+                data = items[0].data.decode()
         with self.lock:
             if artist == self.artist and title == self.title:
                 setattr(self, type, data)
