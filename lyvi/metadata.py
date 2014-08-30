@@ -39,7 +39,7 @@ class Metadata:
         if lyvi.ui.autoscroll:
             lyvi.ui.autoscroll.reset()
         if lyvi.config['save_lyrics']:
-            self.save('lyrics', lyvi.config['save_lyrics_filename'])
+            self.save('lyrics', lyvi.config['save_lyrics'])
 
     @property
     def artistbio(self):
