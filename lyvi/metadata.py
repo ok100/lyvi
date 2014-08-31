@@ -140,7 +140,7 @@ class Metadata:
                 '<artist>': self.artist,
                 '<title>': self.title,
                 '<album>': self.album
-            }:
+            }.items():
                 file = file.replace(k, v)
             if not os.path.exists(os.path.dirname(file)):
                 os.makedirs(os.path.dirname(file))
