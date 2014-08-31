@@ -39,7 +39,7 @@ class Metadata:
         if lyvi.ui.autoscroll:
             lyvi.ui.autoscroll.reset()
         if lyvi.config['save_lyrics']:
-            self.save('lyrics', lyvi.config['save_lyrics_filename'])
+            self.save('lyrics', lyvi.config['save_lyrics'])
 
     @property
     def artistbio(self):
@@ -140,7 +140,7 @@ class Metadata:
                 '<artist>': self.artist,
                 '<title>': self.title,
                 '<album>': self.album
-            }:
+            }.items():
                 file = file.replace(k, v)
             if not os.path.exists(os.path.dirname(file)):
                 os.makedirs(os.path.dirname(file))
