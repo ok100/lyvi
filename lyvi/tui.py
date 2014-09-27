@@ -144,9 +144,8 @@ class Ui:
     @header.setter
     def header(self, value):
         self._header = value
-        if not self.hidden:
-            self.head.set_text(('header', self.header))
-            self._refresh()
+        self.head.set_text(('header', self.header if not self.hidden else ''))
+        self._refresh()
 
     @property
     def text(self):
@@ -156,10 +155,11 @@ class Ui:
     @text.setter
     def text(self, value):
         self._text = value
-        if not self.hidden:
-            lines = [urwid.Text(('content', line)) for line in self.text.splitlines()]
-            self.content[:] = [self.head, urwid.Divider()] + lines
-            self._refresh()
+        lines = []
+        for line in self.text.splitlines():
+            lines.append(urwid.Text(('content', line if not self.hidden else '')))
+        self.content[:] = [self.head, urwid.Divider()] + lines
+        self._refresh()
 
     def init(self):
         """Initialize the class."""
