@@ -1,6 +1,9 @@
 Lyvi
 ====
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :target: https://gitter.im/ok100/lyvi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 For more information, see http://ok100.github.io/lyvi/
 
 
