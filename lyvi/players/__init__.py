@@ -27,7 +27,8 @@ def find():
     if lyvi.config['default_player']:
         if mpris and mpris.running(lyvi.config['default_player']):
             return mpris.Player(lyvi.config['default_player'])
-        players.insert(0, players.pop(players.index(lyvi.config['default_player'])))
+        if lyvi.config['default_player'] in players:
+            players.insert(0, players.pop(players.index(lyvi.config['default_player'])))
     for name in players:
         obj = getattr(sys.modules[__name__], name).Player
         if obj.running():
