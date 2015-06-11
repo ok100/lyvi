@@ -265,7 +265,7 @@ Examples
 
 - MPD as a default player, normal background::
 
-    player = 'mpd'
+    default_player = 'mpd'
     bg = True
 
 - Tmux background, assuming that tmux window title is "music" and both cover and backdrops
