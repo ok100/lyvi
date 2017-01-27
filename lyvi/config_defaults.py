@@ -75,8 +75,8 @@ defaults = {
 
 # Foreground color of the header.
 # Type: str
-# Default value: 'white'
-'header_fg': 'white',
+# Default value: 'default,bold'
+'header_fg': 'default,bold',
 
 # 'Quit' key.
 # Type: str
