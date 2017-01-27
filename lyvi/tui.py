@@ -5,7 +5,7 @@
 
 """Curses user interface."""
 
-
+import sys
 from math import ceil
 from time import sleep
 from threading import Thread, Event
@@ -196,6 +196,7 @@ class Ui:
         elif self.view == 'guitartabs':
             self.header = '%s - %s' % (lyvi.md.artist or 'N/A', lyvi.md.title or 'N/A')
             self.text = lyvi.md.guitartabs or 'No guitar tabs found'
+        sys.stdout.write('\x1b]2;{}\x07'.format(self.header))
 
     def home(self):
         """Scroll to the top of the current view."""
