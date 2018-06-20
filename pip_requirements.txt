@@ -1,6 +1,9 @@
 # PIP requirements file.
 # See here for exact syntax and possible options:
 #    http://www.pip-installer.org/en/latest/cookbook.html
+setuptools
+wheel
+cython
 Pillow
 plyr
 urwid
