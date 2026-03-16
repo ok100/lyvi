@@ -1,0 +1,8 @@
+[package]
+name = "lyvi"
+version = "0.1.0"
+authors = ["Ondrej Kipila <ondrej.kipila@icloud.com>"]
+edition = "2024"
+license = "MIT"
+
+[dependencies]
