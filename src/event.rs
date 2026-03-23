@@ -1,5 +1,5 @@
 use crate::lyrics::Lyrics;
-use crate::player::PlayerMetadata;
+use crate::player::{Player, PlayerEvent, PlayerMetadata};
 use crossterm::event::{self, Event as CrosstermEvent, KeyEvent};
 use ratatui_image::protocol::StatefulProtocol;
 use std::time::Duration;
@@ -11,8 +11,19 @@ pub enum Event {
     Key(KeyEvent),
     PlayerStateChanged(PlayerMetadata),
     PlaybackStopped,
+    PlayerDisconnected,
     LyricsReady(Lyrics),
     AlbumArtReady(StatefulProtocol),
+}
+
+impl From<PlayerEvent> for Event {
+    fn from(player_event: PlayerEvent) -> Self {
+        match player_event {
+            PlayerEvent::StateChanged(metadata) => Event::PlayerStateChanged(metadata),
+            PlayerEvent::Stopped => Event::PlaybackStopped,
+            PlayerEvent::Disconnected => Event::PlayerDisconnected,
+        }
+    }
 }
 
 pub struct Events {
@@ -21,39 +32,59 @@ pub struct Events {
 }
 
 impl Events {
-    pub fn new(tick_rate: Duration) -> Self {
+    pub fn new(tick_rate: Duration, player: Box<dyn Player>) -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();
 
-        let key_sender = sender.clone();
+        Self::spawn_key_listener(sender.clone(), tick_rate);
+        Self::spawn_tick_timer(sender.clone(), tick_rate);
+        Self::spawn_player_listener(sender.clone(), player);
+
+        Self { sender, receiver }
+    }
+
+    fn spawn_key_listener(sender: mpsc::UnboundedSender<Event>, tick_rate: Duration) {
         tokio::task::spawn_blocking(move || {
             loop {
                 if event::poll(tick_rate).unwrap_or(false)
                     && let Ok(CrosstermEvent::Key(key)) = event::read()
-                    && key_sender.send(Event::Key(key)).is_err()
+                    && sender.send(Event::Key(key)).is_err()
                 {
                     break;
                 }
 
-                if key_sender.is_closed() {
+                if sender.is_closed() {
                     break;
                 }
             }
         });
+    }
 
-        let tick_sender = sender.clone();
+    fn spawn_tick_timer(sender: mpsc::UnboundedSender<Event>, tick_rate: Duration) {
         tokio::spawn(async move {
             let mut ticker = time::interval(tick_rate);
             loop {
                 ticker.tick().await;
-                if tick_sender.send(Event::Tick).is_err() {
+                if sender.send(Event::Tick).is_err() {
                     break;
                 }
             }
         });
+    }
 
-        // TODO: player task
+    fn spawn_player_listener(sender: mpsc::UnboundedSender<Event>, mut player: Box<dyn Player>) {
+        tokio::spawn(async move {
+            loop {
+                let event = player.next_event().await;
 
-        Self { sender, receiver }
+                if matches!(event, PlayerEvent::Disconnected) {
+                    break;
+                }
+
+                if sender.send(event.into()).is_err() {
+                    break;
+                }
+            }
+        });
     }
 
     pub async fn next(&mut self) -> Option<Event> {

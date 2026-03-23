@@ -13,6 +13,11 @@ pub fn handle_event(
     sender: &mpsc::UnboundedSender<Event>,
     fetch_token: &mut CancellationToken,
 ) -> Result<()> {
+    let mut cancel_fetch_tasks = || {
+        fetch_token.cancel();
+        *fetch_token = CancellationToken::new();
+    };
+
     match event {
         Event::Tick => app.tick(TICK_RATE),
 
@@ -27,8 +32,7 @@ pub fn handle_event(
 
         Event::PlayerStateChanged(metadata) => {
             if app.is_new_track(&metadata) {
-                fetch_token.cancel();
-                *fetch_token = CancellationToken::new();
+                cancel_fetch_tasks();
                 app.set_track(metadata);
                 tasks::fetch_lyrics(sender.clone(), fetch_token.clone());
                 tasks::fetch_album_art(sender.clone(), fetch_token.clone());
@@ -38,9 +42,8 @@ pub fn handle_event(
             }
         }
 
-        Event::PlaybackStopped => {
-            fetch_token.cancel();
-            *fetch_token = CancellationToken::new();
+        Event::PlaybackStopped | Event::PlayerDisconnected => {
+            cancel_fetch_tasks();
             app.clear_track();
         }
 

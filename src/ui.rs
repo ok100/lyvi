@@ -2,18 +2,36 @@ use crate::app::App;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
+    style::{Modifier, Style},
+    text::{Line, Span},
     widgets::{Block, Paragraph},
 };
 
 pub fn render(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(frame.area());
 
-    let lyrics_content = Paragraph::new(app.is_running.to_string())
-        .block(Block::default())
-        .centered();
+    let lyrics_content = match &app.track {
+        None => Paragraph::new("No track playing")
+            .block(Block::default())
+            .centered(),
+
+        Some(track) => {
+            let title = Line::from(vec![Span::styled(
+                &track.title,
+                Style::default().add_modifier(Modifier::BOLD),
+            )]);
+            let artist = Line::from(Span::raw(&track.artist));
+            let album = Line::from(Span::raw(&track.album));
+
+            Paragraph::new(vec![title, artist, album])
+                .block(Block::default())
+                .centered()
+        }
+    };
+
     frame.render_widget(lyrics_content, chunks[0]);
 
     let art_block = Block::default();
