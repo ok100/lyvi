@@ -1,0 +1,31 @@
+name: Lyvi
+
+on:
+  push:
+    branches: [ next ]
+  pull_request:
+    branches: [ next ]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Smart Cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features #-- -D warnings
+
+      - name: Run Tests
+        run: cargo test --verbose
