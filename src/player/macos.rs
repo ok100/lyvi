@@ -51,9 +51,3 @@ impl Player for MacOsPlayer {
             .unwrap_or(PlayerEvent::Disconnected)
     }
 }
-
-impl Drop for MacOsPlayer {
-    fn drop(&mut self) {
-        self._now_playing.unsubscribe(self._token.clone());
-    }
-}

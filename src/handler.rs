@@ -1,23 +1,11 @@
 use crate::TICK_RATE;
 use crate::app::App;
 use crate::event::Event;
-use crate::tasks;
+use crate::tasks::TaskManager;
 use color_eyre::Result;
 use crossterm::event::{KeyCode, KeyEventKind};
-use tokio::sync::mpsc;
-use tokio_util::sync::CancellationToken;
 
-pub fn handle_event(
-    app: &mut App,
-    event: Event,
-    sender: &mpsc::UnboundedSender<Event>,
-    fetch_token: &mut CancellationToken,
-) -> Result<()> {
-    let mut cancel_fetch_tasks = || {
-        fetch_token.cancel();
-        *fetch_token = CancellationToken::new();
-    };
-
+pub fn handle_event(app: &mut App, event: Event, tasks: &mut TaskManager) -> Result<()> {
     match event {
         Event::Tick => app.tick(TICK_RATE),
 
@@ -32,10 +20,10 @@ pub fn handle_event(
 
         Event::PlayerStateChanged(metadata) => {
             if app.is_new_track(&metadata) {
-                cancel_fetch_tasks();
+                tasks.cancel();
                 app.set_track(metadata);
-                tasks::fetch_lyrics(sender.clone(), fetch_token.clone());
-                tasks::fetch_album_art(sender.clone(), fetch_token.clone());
+                tasks.fetch_lyrics();
+                tasks.fetch_album_art();
             } else {
                 app.set_playing(metadata.is_playing);
                 app.sync_position(metadata.position);
@@ -43,7 +31,7 @@ pub fn handle_event(
         }
 
         Event::PlaybackStopped | Event::PlayerDisconnected => {
-            cancel_fetch_tasks();
+            tasks.cancel();
             app.clear_track();
         }
 
