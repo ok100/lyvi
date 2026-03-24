@@ -6,8 +6,9 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Paragraph},
 };
+use ratatui_image::{Resize, StatefulImage};
 
-pub fn render(frame: &mut Frame, app: &App) {
+pub fn render(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -34,6 +35,10 @@ pub fn render(frame: &mut Frame, app: &App) {
 
     frame.render_widget(lyrics_content, chunks[0]);
 
-    let art_block = Block::default();
-    frame.render_widget(art_block, chunks[1]);
+    if let Some(track) = app.track.as_mut()
+        && let Some(protocol) = track.album_art.as_mut()
+    {
+        let image = StatefulImage::default().resize(Resize::Scale(None));
+        frame.render_stateful_widget(image, chunks[1], protocol);
+    }
 }

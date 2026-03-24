@@ -18,15 +18,25 @@ pub fn handle_event(app: &mut App, event: Event, tasks: &mut TaskManager) -> Res
             }
         }
 
-        Event::PlayerStateChanged(metadata) => {
+        Event::PlayerStateChanged(mut metadata) => {
             if app.is_new_track(&metadata) {
                 tasks.cancel();
+                let art = metadata.album_art.take();
                 app.set_track(metadata);
                 tasks.fetch_lyrics();
-                tasks.fetch_album_art();
+                if let Some(album_art) = art {
+                    tasks.process_album_art(album_art);
+                } else {
+                    tasks.fetch_album_art();
+                }
             } else {
                 app.set_playing(metadata.is_playing);
                 app.sync_position(metadata.position);
+                if app.needs_album_art()
+                    && let Some(album_art) = metadata.album_art.take()
+                {
+                    tasks.process_album_art(album_art);
+                }
             }
         }
 

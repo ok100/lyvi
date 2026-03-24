@@ -53,6 +53,13 @@ impl App {
             .unwrap_or(true)
     }
 
+    pub fn needs_album_art(&self) -> bool {
+        self.track
+            .as_ref()
+            .map(|track| track.album_art.is_none())
+            .unwrap_or(false)
+    }
+
     pub fn set_playing(&mut self, is_playing: bool) {
         if let Some(track) = self.track.as_mut() {
             track.is_playing = is_playing;
@@ -95,6 +102,7 @@ mod tests {
             artist: artist.to_string(),
             title: title.to_string(),
             album: album.to_string(),
+            album_art: None,
             file: None,
             is_playing: true,
             position: Duration::ZERO,

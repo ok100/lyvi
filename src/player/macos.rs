@@ -35,6 +35,7 @@ impl MacOsPlayer {
             artist: info.artist.clone().unwrap_or_default(),
             title: info.title.clone().unwrap_or_default(),
             album: info.album.clone().unwrap_or_default(),
+            album_art: info.album_cover.clone(),
             file: None,
             is_playing: info.is_playing.unwrap_or(false),
             position: Duration::from_secs_f64(info.elapsed_time.unwrap_or(0.0)),

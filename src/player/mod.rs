@@ -1,6 +1,7 @@
 use crate::cli::PlayerChoice;
 use async_trait::async_trait;
 use color_eyre::Result;
+use image::DynamicImage;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -16,6 +17,7 @@ pub struct PlayerMetadata {
     pub artist: String,
     pub title: String,
     pub album: String,
+    pub album_art: Option<DynamicImage>,
     pub file: Option<PathBuf>,
     pub is_playing: bool,
     pub position: Duration,
