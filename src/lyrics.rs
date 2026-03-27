@@ -15,11 +15,24 @@ impl LyricLine {
     }
 }
 
+#[derive(Debug)]
+pub struct LyricLines {
+    lines: Vec<LyricLine>,
+}
+
+impl LyricLines {
+    pub fn current_index(&self, position: Duration) -> Option<usize> {
+        self.lines
+            .partition_point(|l| l.timestamp <= position)
+            .checked_sub(1)
+    }
+}
+
 #[derive(Default, Debug)]
 pub enum Lyrics {
     #[default]
     Loading,
-    Found(Vec<LyricLine>),
+    Found(LyricLines),
     NotFound,
     Failed(String),
 }
@@ -29,18 +42,8 @@ impl From<Vec<LyricLine>> for Lyrics {
         if lines.is_empty() {
             return Self::NotFound;
         }
-        lines.sort_by_key(|line| line.timestamp);
-        Self::Found(lines)
-    }
-}
-
-impl Lyrics {
-    pub fn current_line_index(&self, position: Duration) -> Option<usize> {
-        let Self::Found(lines) = self else {
-            return None;
-        };
-        let index = lines.partition_point(|line| line.timestamp <= position);
-        index.checked_sub(1)
+        lines.sort_by_key(|l| l.timestamp);
+        Self::Found(LyricLines { lines })
     }
 }
 
@@ -48,6 +51,10 @@ impl Lyrics {
 mod tests {
     use super::*;
     use std::time::Duration;
+
+    fn secs(secs: u64) -> Duration {
+        Duration::from_secs(secs)
+    }
 
     #[test]
     fn empty_vec_becomes_not_found() {
@@ -59,36 +66,25 @@ mod tests {
     #[test]
     fn sorting_and_lrc_boundaries() {
         let lines = vec![
-            LyricLine::new(Duration::from_secs(10), "Second"),
-            LyricLine::new(Duration::from_secs(5), "First"),
-            LyricLine::new(Duration::from_secs(15), "Third"),
+            LyricLine::new(secs(10), "Second"),
+            LyricLine::new(secs(5), "First"),
+            LyricLine::new(secs(15), "Third"),
         ];
 
         let lyrics = Lyrics::from(lines);
 
-        let Lyrics::Found(sorted_lines) = &lyrics else {
+        let Lyrics::Found(lyric_lines) = &lyrics else {
             panic!("Should have been Found");
         };
 
-        assert_eq!(sorted_lines[0].timestamp.as_secs(), 5);
-        assert_eq!(sorted_lines[1].timestamp.as_secs(), 10);
-        assert_eq!(sorted_lines[2].timestamp.as_secs(), 15);
+        assert_eq!(lyric_lines.lines[0].timestamp.as_secs(), 5);
+        assert_eq!(lyric_lines.lines[1].timestamp.as_secs(), 10);
+        assert_eq!(lyric_lines.lines[2].timestamp.as_secs(), 15);
 
-        assert_eq!(lyrics.current_line_index(Duration::from_secs(2)), None);
-        assert_eq!(lyrics.current_line_index(Duration::from_secs(5)), Some(0));
-        assert_eq!(lyrics.current_line_index(Duration::from_secs(7)), Some(0));
-        assert_eq!(lyrics.current_line_index(Duration::from_secs(10)), Some(1));
-        assert_eq!(lyrics.current_line_index(Duration::from_secs(100)), Some(2));
-    }
-
-    #[test]
-    fn other_variants_return_none() {
-        let loading = Lyrics::Loading;
-        let failed = Lyrics::Failed("error".into());
-        let not_found = Lyrics::NotFound;
-
-        assert_eq!(loading.current_line_index(Duration::from_secs(5)), None);
-        assert_eq!(failed.current_line_index(Duration::from_secs(5)), None);
-        assert_eq!(not_found.current_line_index(Duration::from_secs(5)), None);
+        assert_eq!(lyric_lines.current_index(secs(2)), None);
+        assert_eq!(lyric_lines.current_index(secs(5)), Some(0));
+        assert_eq!(lyric_lines.current_index(secs(7)), Some(0));
+        assert_eq!(lyric_lines.current_index(secs(10)), Some(1));
+        assert_eq!(lyric_lines.current_index(secs(100)), Some(2));
     }
 }
